@@ -1,6 +1,26 @@
 # localsend_rs
 
+WIP: this repository is still WIP. 
+
 A localsend protocol V2 implementation in flutter and rust for better performance.
+
+## Roadmap
+
+- [ ] Protocol V2
+    - [x] Udp announce
+    - [x] Register
+    - [x] Prepare upload
+    - [x] Upload
+    - [ ] Cancel
+    - [ ] Send
+- [ ] User interface
+    - [ ] device page
+    - [ ] discover page
+    - [ ] send page
+    - [ ] setting page
+- [ ] Platform
+  - [x] Windows
+  - [ ] Android
 
 ## Getting Started
 
