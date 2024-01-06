@@ -1,0 +1,22 @@
+[package]
+name = "rust_lib"
+version = "0.1.0"
+edition = "2018"
+
+[lib]
+crate-type = ["cdylib", "staticlib"]
+
+[dependencies]
+# localsendrs_core = { path = "crates/localsendrs_core" } 
+flutter_rust_bridge = "=2.0.0-dev.5"
+axum = { version = "0.7.3"}
+rand = "0.8.5"
+reqwest = "0.11.23"
+serde = "1.0.193"
+serde_derive = "1.0.193"
+serde_json = "1.0.108"
+tokio = { version = "1.35.1", features = ["full"] }
+tower = "0.4.13"
+tokio-util = "0.7.10"
+futures = "0.3.30"
+pin-project = "1.1.3"
