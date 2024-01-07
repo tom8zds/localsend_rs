@@ -24,6 +24,8 @@ jobs:
     - uses: nttld/setup-ndk@v1
       with:
         ndk-version: r25c
+    - name: check ndk
+      run: ls $ANDROID_NDK_HOME && ls $NDK && ls $NDK/toolchains/llvm/prebuilt/linux-x86_64
     - uses: actions-rs/toolchain@v1
       with:
         toolchain: stable
