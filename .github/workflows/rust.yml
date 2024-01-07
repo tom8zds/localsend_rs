@@ -32,6 +32,6 @@ jobs:
       with:
         perl-version: '5.34'
     - name: PreBuild
-      run: export PATH="$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin:$PATH" && rustup target add aarch64-linux-android
+      run: rustup target add aarch64-linux-android
     - name: Build
-      run: cd rust && cargo b --target aarch64-linux-android --release
+      run: cd rust && export PATH="/usr/local/lib/android/sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin:$PATH" && cargo b --target aarch64-linux-android --release
