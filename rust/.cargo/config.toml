@@ -3,8 +3,8 @@ OPENSSL_DIR  = { value = "../ssl/ssl_3", relative = true }
 AARCH64_LINUX_ANDROID_OPENSSL_LIB_DIR = { value = "./ssl/ssl_3/arm64-v8a", relative = true }
 CC = { value = "/usr/local/lib/android/sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang" }
 AR = { value = "/usr/local/lib/android/sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ar" }
-CXX="/usr/local/lib/android/sdk/ndk/25.2.9519653/toolchains/bin/$TARGET$API-clang++"
-LD="/usr/local/lib/android/sdk/ndk/25.2.9519653/toolchainsbin/ld"
-RANLIB="/usr/local/lib/android/sdk/ndk/25.2.9519653/toolchains/bin/llvm-ranlib"
-STRIP="/usr/local/lib/android/sdk/ndk/25.2.9519653/toolchains/bin/llvm-strip"
+CXX="/usr/local/lib/android/sdk/ndk/25.2.9519653/toolchains/toolchains/llvm/prebuilt/linux-x86_64/bin/$TARGET$API-clang++"
+LD="/usr/local/lib/android/sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin/ld"
+RANLIB="/usr/local/lib/android/sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ranlib"
+STRIP="/usr/local/lib/android/sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-strip"
 RUST_BACKTRACE= { value = "1" }
