@@ -22,9 +22,9 @@ jobs:
         path: ssl
     - uses: nttld/setup-ndk@v1
       with:
-        ndk-version: r25c
+        ndk-version: r21e
     - name: check ndk
-      run: ls $ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin
+      run: cd $ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin && pwd && ls
     - uses: actions-rs/toolchain@v1
       with:
         toolchain: stable
@@ -32,6 +32,6 @@ jobs:
       with:
         perl-version: '5.34'
     - name: PreBuild
-      run: rustup target add aarch64-linux-android
+      run: export PATH="$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin:$PATH" && rustup target add aarch64-linux-android
     - name: Build
       run: cd rust && cargo b --target aarch64-linux-android --release
