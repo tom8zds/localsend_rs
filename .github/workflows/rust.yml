@@ -24,7 +24,7 @@ jobs:
       with:
         ndk-version: r25c
     - name: check ndk
-      run: ls $ANDROID_NDK_HOME && ls $ANDROID_NDK_HOME/toolchains/llvm/prebuilt && ls $ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64
+      run: cd $ANDROID_NDK_HOME && pwd
     - uses: actions-rs/toolchain@v1
       with:
         toolchain: stable
