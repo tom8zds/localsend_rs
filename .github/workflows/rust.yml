@@ -20,12 +20,11 @@ jobs:
       with: 
         repository: KDAB/android_openssl
         path: ssl
-    - run: ls && ls ssl
     - uses: nttld/setup-ndk@v1
       with:
         ndk-version: r25c
     - name: check ndk
-      run: ls $ANDROID_NDK_HOME && ls $NDK && ls $NDK/toolchains/llvm/prebuilt/linux-x86_64
+      run: ls $ANDROID_NDK_HOME && ls $ANDROID_NDK_HOME/toolchains/llvm/prebuilt && ls $ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64
     - uses: actions-rs/toolchain@v1
       with:
         toolchain: stable
