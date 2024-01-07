@@ -24,7 +24,10 @@ jobs:
       with:
         ndk-version: r25c
     - name: check ndk
-      run: cd $ANDROID_NDK_HOME && pwd
+      run: ls $CC $AR
+      env:
+        CC: $ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang
+        AR: $ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ar
     - uses: actions-rs/toolchain@v1
       with:
         toolchain: stable
@@ -33,8 +36,5 @@ jobs:
         perl-version: '5.34'
     - name: PreBuild
       run: rustup target add aarch64-linux-android
-      env:
-        CC: $ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang
-        AR: $ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ar
     - name: Build
       run: cd rust && cargo b --target aarch64-linux-android --release

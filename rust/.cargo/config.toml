@@ -1,6 +1,6 @@
 [env]
 OPENSSL_DIR  = { value = "../ssl/ssl_3", relative = true }
 AARCH64_LINUX_ANDROID_OPENSSL_LIB_DIR = { value = "./ssl/ssl_3/arm64-v8a", relative = true }
-# CC = { value = "$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang" }
-# AR = { value = "$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ar" }
+CC = { value = "/usr/local/lib/android/sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang" }
+AR = { value = "/usr/local/lib/android/sdk/ndk/25.2.9519653/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ar" }
 RUST_BACKTRACE= { value = "1" }
