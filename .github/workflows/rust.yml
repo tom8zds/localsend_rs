@@ -18,7 +18,7 @@ jobs:
     - uses: actions/checkout@v3
     - uses: actions/checkout@v4
       with: 
-        repository: https://github.com/KDAB/android_openssl
+        repository: KDAB/android_openssl
         path: ssl
     - run: ls && ls ssl
     - uses: nttld/setup-ndk@v1
