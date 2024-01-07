@@ -4,6 +4,20 @@ WIP: this repository is still WIP.
 
 A localsend protocol V2 implementation in flutter and rust for better performance.
 
+## Compare
+
+Performance compare between localsend original and localsend_rs
+
+Test condition : 
+ - router: TpLink AX3000M
+ - sender: Xiaomi 13 ( localsend )
+ - receiver: Windows PC ( localsend_rs / localsend )
+
+| sender    | receiver     | network speed | disk speed |
+| --------- | ------------ | ------------- | ---------- |
+| localsend | localsend    | 144Mbps       | 26MB/s     |
+| localsend | localsend_rs | 511Mbps       | 102M/s     |
+
 ## Roadmap
 
 - [ ] Protocol V2

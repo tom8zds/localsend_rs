@@ -347,7 +347,7 @@ pub async fn init_server(device: DeviceConfig) {
     let (tx, rx) = mpsc::channel::<ServerRequest>(1);
     let (tx2, rx2) = mpsc::channel::<ServerResponse>(1);
     let (tx3, rx3) = mpsc::channel::<DiscoverState>(1);
-    let (tx4, rx4) = mpsc::channel::<Progress>(1);
+    let (tx4, rx4) = mpsc::channel::<Progress>(16);
 
     let server = Server { device };
     let context = AppContext {
