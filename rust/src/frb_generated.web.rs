@@ -34,8 +34,8 @@ impl CstDecode<crate::api::simple::DeviceConfig>
             .unwrap();
         assert_eq!(
             self_.length(),
-            4,
-            "Expected 4 elements, got {}",
+            5,
+            "Expected 5 elements, got {}",
             self_.length()
         );
         crate::api::simple::DeviceConfig {
@@ -43,6 +43,7 @@ impl CstDecode<crate::api::simple::DeviceConfig>
             fingerprint: self_.get(1).cst_decode(),
             device_model: self_.get(2).cst_decode(),
             device_type: self_.get(3).cst_decode(),
+            store_path: self_.get(4).cst_decode(),
         }
     }
 }
@@ -102,6 +103,27 @@ impl CstDecode<Vec<u8>> for Box<[u8]> {
         self.into_vec()
     }
 }
+impl CstDecode<crate::api::simple::LogEntry>
+    for flutter_rust_bridge::for_generated::wasm_bindgen::JsValue
+{
+    fn cst_decode(self) -> crate::api::simple::LogEntry {
+        let self_ = self
+            .dyn_into::<flutter_rust_bridge::for_generated::js_sys::Array>()
+            .unwrap();
+        assert_eq!(
+            self_.length(),
+            4,
+            "Expected 4 elements, got {}",
+            self_.length()
+        );
+        crate::api::simple::LogEntry {
+            time_millis: self_.get(0).cst_decode(),
+            level: self_.get(1).cst_decode(),
+            tag: self_.get(2).cst_decode(),
+            msg: self_.get(3).cst_decode(),
+        }
+    }
+}
 impl CstDecode<Option<String>> for Option<String> {
     fn cst_decode(self) -> Option<String> {
         self.map(CstDecode::cst_decode)
@@ -113,12 +135,13 @@ impl CstDecode<crate::core::model::Progress>
     fn cst_decode(self) -> crate::core::model::Progress {
         let self_ = self.unchecked_into::<flutter_rust_bridge::for_generated::js_sys::Array>();
         match self_.get(0).unchecked_into_f64() as _ {
-            0 => crate::core::model::Progress::Idle,
-            1 => crate::core::model::Progress::Progress(
+            0 => crate::core::model::Progress::Prepare,
+            1 => crate::core::model::Progress::Idle,
+            2 => crate::core::model::Progress::Progress(
                 self_.get(1).cst_decode(),
                 self_.get(2).cst_decode(),
             ),
-            2 => crate::core::model::Progress::Done,
+            3 => crate::core::model::Progress::Done,
             _ => unreachable!(),
         }
     }
@@ -159,6 +182,15 @@ impl CstDecode<bool> for flutter_rust_bridge::for_generated::wasm_bindgen::JsVal
 impl CstDecode<i32> for flutter_rust_bridge::for_generated::wasm_bindgen::JsValue {
     fn cst_decode(self) -> i32 {
         self.unchecked_into_f64() as _
+    }
+}
+impl CstDecode<i64> for flutter_rust_bridge::for_generated::wasm_bindgen::JsValue {
+    fn cst_decode(self) -> i64 {
+        ::std::convert::TryInto::try_into(
+            self.dyn_into::<flutter_rust_bridge::for_generated::js_sys::BigInt>()
+                .unwrap(),
+        )
+        .unwrap()
     }
 }
 impl CstDecode<Vec<u8>> for flutter_rust_bridge::for_generated::wasm_bindgen::JsValue {
@@ -209,6 +241,16 @@ pub fn dart_fn_deliver_output(
 }
 
 #[wasm_bindgen]
+pub fn wire_accept(port_: flutter_rust_bridge::for_generated::MessagePort, is_accept: bool) {
+    wire_accept_impl(port_, is_accept)
+}
+
+#[wasm_bindgen]
+pub fn wire_create_log_stream(port_: flutter_rust_bridge::for_generated::MessagePort) {
+    wire_create_log_stream_impl(port_)
+}
+
+#[wasm_bindgen]
 pub fn wire_discover(port_: flutter_rust_bridge::for_generated::MessagePort) {
     wire_discover_impl(port_)
 }
@@ -229,6 +271,11 @@ pub fn wire_listen_discover(port_: flutter_rust_bridge::for_generated::MessagePo
 #[wasm_bindgen]
 pub fn wire_listen_progress(port_: flutter_rust_bridge::for_generated::MessagePort) {
     wire_listen_progress_impl(port_)
+}
+
+#[wasm_bindgen]
+pub fn wire_rust_set_up(port_: flutter_rust_bridge::for_generated::MessagePort, isDebug: bool) {
+    wire_rust_set_up_impl(port_, isDebug)
 }
 
 #[wasm_bindgen]

@@ -66,6 +66,7 @@ pub struct UploadTask {
 }
 
 pub enum Progress {
+    Prepare,
     Idle,
     Progress(usize, usize),
     Done,

@@ -32,6 +32,46 @@ flutter_rust_bridge::frb_generated_default_handler!();
 
 // Section: wire_funcs
 
+fn wire_accept_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    is_accept: impl CstDecode<bool> + core::panic::UnwindSafe,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::DcoCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "accept",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let api_is_accept = is_accept.cst_decode();
+            move |context| {
+                transform_result_dco((move || {
+                    Result::<_, ()>::Ok(crate::api::simple::accept(api_is_accept))
+                })())
+            }
+        },
+    )
+}
+fn wire_create_log_stream_impl(port_: flutter_rust_bridge::for_generated::MessagePort) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::DcoCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "create_log_stream",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Stream,
+        },
+        move || {
+            move |context| {
+                transform_result_dco((move || {
+                    crate::api::simple::create_log_stream(StreamSink::new(
+                        context
+                            .rust2dart_context()
+                            .stream_sink::<_, crate::api::simple::LogEntry>(),
+                    ))
+                })())
+            }
+        },
+    )
+}
 fn wire_discover_impl(port_: flutter_rust_bridge::for_generated::MessagePort) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::DcoCodec, _, _>(
         flutter_rust_bridge::for_generated::TaskInfo {
@@ -108,6 +148,26 @@ fn wire_listen_progress_impl(port_: flutter_rust_bridge::for_generated::MessageP
         },
     )
 }
+fn wire_rust_set_up_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    isDebug: impl CstDecode<bool> + core::panic::UnwindSafe,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::DcoCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "rust_set_up",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let api_isDebug = isDebug.cst_decode();
+            move |context| {
+                transform_result_dco((move || {
+                    Result::<_, ()>::Ok(crate::api::simple::rust_set_up(api_isDebug))
+                })())
+            }
+        },
+    )
+}
 fn wire_server_status_impl(port_: flutter_rust_bridge::for_generated::MessagePort) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::DcoCodec, _, _>(
         flutter_rust_bridge::for_generated::TaskInfo {
@@ -177,6 +237,11 @@ impl CstDecode<i32> for i32 {
         self
     }
 }
+impl CstDecode<i64> for i64 {
+    fn cst_decode(self) -> i64 {
+        self
+    }
+}
 impl CstDecode<crate::api::simple::ServerStatus> for i32 {
     fn cst_decode(self) -> crate::api::simple::ServerStatus {
         match self {
@@ -222,11 +287,13 @@ impl SseDecode for crate::api::simple::DeviceConfig {
         let mut var_fingerprint = <String>::sse_decode(deserializer);
         let mut var_deviceModel = <String>::sse_decode(deserializer);
         let mut var_deviceType = <String>::sse_decode(deserializer);
+        let mut var_storePath = <String>::sse_decode(deserializer);
         return crate::api::simple::DeviceConfig {
             alias: var_alias,
             fingerprint: var_fingerprint,
             device_model: var_deviceModel,
             device_type: var_deviceType,
+            store_path: var_storePath,
         };
     }
 }
@@ -285,6 +352,12 @@ impl SseDecode for i32 {
     }
 }
 
+impl SseDecode for i64 {
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        deserializer.cursor.read_i64::<NativeEndian>().unwrap()
+    }
+}
+
 impl SseDecode for Vec<crate::core::model::DeviceInfo> {
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut len_ = <i32>::sse_decode(deserializer);
@@ -307,6 +380,21 @@ impl SseDecode for Vec<u8> {
     }
 }
 
+impl SseDecode for crate::api::simple::LogEntry {
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_timeMillis = <i64>::sse_decode(deserializer);
+        let mut var_level = <i32>::sse_decode(deserializer);
+        let mut var_tag = <String>::sse_decode(deserializer);
+        let mut var_msg = <String>::sse_decode(deserializer);
+        return crate::api::simple::LogEntry {
+            time_millis: var_timeMillis,
+            level: var_level,
+            tag: var_tag,
+            msg: var_msg,
+        };
+    }
+}
+
 impl SseDecode for Option<String> {
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         if (<bool>::sse_decode(deserializer)) {
@@ -322,14 +410,17 @@ impl SseDecode for crate::core::model::Progress {
         let mut tag_ = <i32>::sse_decode(deserializer);
         match tag_ {
             0 => {
-                return crate::core::model::Progress::Idle;
+                return crate::core::model::Progress::Prepare;
             }
             1 => {
+                return crate::core::model::Progress::Idle;
+            }
+            2 => {
                 let mut var_field0 = <usize>::sse_decode(deserializer);
                 let mut var_field1 = <usize>::sse_decode(deserializer);
                 return crate::core::model::Progress::Progress(var_field0, var_field1);
             }
-            2 => {
+            3 => {
                 return crate::core::model::Progress::Done;
             }
             _ => {
@@ -402,6 +493,7 @@ impl flutter_rust_bridge::IntoDart for crate::api::simple::DeviceConfig {
             self.fingerprint.into_into_dart().into_dart(),
             self.device_model.into_into_dart().into_dart(),
             self.device_type.into_into_dart().into_dart(),
+            self.store_path.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
@@ -470,21 +562,43 @@ impl flutter_rust_bridge::IntoIntoDart<crate::api::simple::DiscoverState>
         self
     }
 }
+impl flutter_rust_bridge::IntoDart for crate::api::simple::LogEntry {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        vec![
+            self.time_millis.into_into_dart().into_dart(),
+            self.level.into_into_dart().into_dart(),
+            self.tag.into_into_dart().into_dart(),
+            self.msg.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::api::simple::LogEntry {}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::simple::LogEntry>
+    for crate::api::simple::LogEntry
+{
+    fn into_into_dart(self) -> crate::api::simple::LogEntry {
+        self
+    }
+}
 impl flutter_rust_bridge::IntoDart for crate::core::model::Progress {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         match self {
-            crate::core::model::Progress::Idle => {
+            crate::core::model::Progress::Prepare => {
                 vec![0.into_dart()]
+            }
+            crate::core::model::Progress::Idle => {
+                vec![1.into_dart()]
             }
             crate::core::model::Progress::Progress(field0, field1) => {
                 vec![
-                    1.into_dart(),
+                    2.into_dart(),
                     field0.into_into_dart().into_dart(),
                     field1.into_into_dart().into_dart(),
                 ]
             }
             crate::core::model::Progress::Done => {
-                vec![2.into_dart()]
+                vec![3.into_dart()]
             }
         }
         .into_dart()
@@ -563,6 +677,7 @@ impl SseEncode for crate::api::simple::DeviceConfig {
         <String>::sse_encode(self.fingerprint, serializer);
         <String>::sse_encode(self.device_model, serializer);
         <String>::sse_encode(self.device_type, serializer);
+        <String>::sse_encode(self.store_path, serializer);
     }
 }
 
@@ -602,6 +717,12 @@ impl SseEncode for i32 {
     }
 }
 
+impl SseEncode for i64 {
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        serializer.cursor.write_i64::<NativeEndian>(self).unwrap();
+    }
+}
+
 impl SseEncode for Vec<crate::core::model::DeviceInfo> {
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <i32>::sse_encode(self.len() as _, serializer);
@@ -620,6 +741,15 @@ impl SseEncode for Vec<u8> {
     }
 }
 
+impl SseEncode for crate::api::simple::LogEntry {
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i64>::sse_encode(self.time_millis, serializer);
+        <i32>::sse_encode(self.level, serializer);
+        <String>::sse_encode(self.tag, serializer);
+        <String>::sse_encode(self.msg, serializer);
+    }
+}
+
 impl SseEncode for Option<String> {
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <bool>::sse_encode(self.is_some(), serializer);
@@ -632,16 +762,19 @@ impl SseEncode for Option<String> {
 impl SseEncode for crate::core::model::Progress {
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         match self {
-            crate::core::model::Progress::Idle => {
+            crate::core::model::Progress::Prepare => {
                 <i32>::sse_encode(0, serializer);
             }
-            crate::core::model::Progress::Progress(field0, field1) => {
+            crate::core::model::Progress::Idle => {
                 <i32>::sse_encode(1, serializer);
+            }
+            crate::core::model::Progress::Progress(field0, field1) => {
+                <i32>::sse_encode(2, serializer);
                 <usize>::sse_encode(field0, serializer);
                 <usize>::sse_encode(field1, serializer);
             }
             crate::core::model::Progress::Done => {
-                <i32>::sse_encode(2, serializer);
+                <i32>::sse_encode(3, serializer);
             }
         }
     }

@@ -43,10 +43,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   int dco_decode_i_32(dynamic raw);
 
   @protected
+  int dco_decode_i_64(dynamic raw);
+
+  @protected
   List<DeviceInfo> dco_decode_list_device_info(dynamic raw);
 
   @protected
   Uint8List dco_decode_list_prim_u_8(dynamic raw);
+
+  @protected
+  LogEntry dco_decode_log_entry(dynamic raw);
 
   @protected
   String? dco_decode_opt_String(dynamic raw);
@@ -99,10 +105,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   int sse_decode_i_32(SseDeserializer deserializer);
 
   @protected
+  int sse_decode_i_64(SseDeserializer deserializer);
+
+  @protected
   List<DeviceInfo> sse_decode_list_device_info(SseDeserializer deserializer);
 
   @protected
   Uint8List sse_decode_list_prim_u_8(SseDeserializer deserializer);
+
+  @protected
+  LogEntry sse_decode_log_entry(SseDeserializer deserializer);
 
   @protected
   String? sse_decode_opt_String(SseDeserializer deserializer);
@@ -149,7 +161,8 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
       cst_encode_String(raw.alias),
       cst_encode_String(raw.fingerprint),
       cst_encode_String(raw.deviceModel),
-      cst_encode_String(raw.deviceType)
+      cst_encode_String(raw.deviceType),
+      cst_encode_String(raw.storePath)
     ];
   }
 
@@ -183,6 +196,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   }
 
   @protected
+  Object cst_encode_i_64(int raw) {
+    return castNativeBigInt(raw);
+  }
+
+  @protected
   List<dynamic> cst_encode_list_device_info(List<DeviceInfo> raw) {
     return raw.map(cst_encode_device_info).toList();
   }
@@ -193,20 +211,33 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   }
 
   @protected
+  List<dynamic> cst_encode_log_entry(LogEntry raw) {
+    return [
+      cst_encode_i_64(raw.timeMillis),
+      cst_encode_i_32(raw.level),
+      cst_encode_String(raw.tag),
+      cst_encode_String(raw.msg)
+    ];
+  }
+
+  @protected
   String? cst_encode_opt_String(String? raw) {
     return raw == null ? null : cst_encode_String(raw);
   }
 
   @protected
   List<dynamic> cst_encode_progress(Progress raw) {
-    if (raw is Progress_Idle) {
+    if (raw is Progress_Prepare) {
       return [0];
     }
+    if (raw is Progress_Idle) {
+      return [1];
+    }
     if (raw is Progress_Progress) {
-      return [1, cst_encode_usize(raw.field0), cst_encode_usize(raw.field1)];
+      return [2, cst_encode_usize(raw.field0), cst_encode_usize(raw.field1)];
     }
     if (raw is Progress_Done) {
-      return [2];
+      return [3];
     }
 
     throw Exception('unreachable');
@@ -272,11 +303,17 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_i_32(int self, SseSerializer serializer);
 
   @protected
+  void sse_encode_i_64(int self, SseSerializer serializer);
+
+  @protected
   void sse_encode_list_device_info(
       List<DeviceInfo> self, SseSerializer serializer);
 
   @protected
   void sse_encode_list_prim_u_8(Uint8List self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_log_entry(LogEntry self, SseSerializer serializer);
 
   @protected
   void sse_encode_opt_String(String? self, SseSerializer serializer);
@@ -313,6 +350,12 @@ class RustLibWire extends BaseWire {
       wasmModule.dart_fn_deliver_output(
           call_id, ptr_, rust_vec_len_, data_len_);
 
+  void wire_accept(NativePortType port_, bool is_accept) =>
+      wasmModule.wire_accept(port_, is_accept);
+
+  void wire_create_log_stream(NativePortType port_) =>
+      wasmModule.wire_create_log_stream(port_);
+
   void wire_discover(NativePortType port_) => wasmModule.wire_discover(port_);
 
   void wire_init_server(NativePortType port_, List<dynamic> device) =>
@@ -323,6 +366,9 @@ class RustLibWire extends BaseWire {
 
   void wire_listen_progress(NativePortType port_) =>
       wasmModule.wire_listen_progress(port_);
+
+  void wire_rust_set_up(NativePortType port_, bool isDebug) =>
+      wasmModule.wire_rust_set_up(port_, isDebug);
 
   void wire_server_status(NativePortType port_) =>
       wasmModule.wire_server_status(port_);
@@ -349,6 +395,10 @@ class RustLibWasmModule implements WasmModule {
   external void dart_fn_deliver_output(int call_id,
       PlatformGeneralizedUint8ListPtr ptr_, int rust_vec_len_, int data_len_);
 
+  external void wire_accept(NativePortType port_, bool is_accept);
+
+  external void wire_create_log_stream(NativePortType port_);
+
   external void wire_discover(NativePortType port_);
 
   external void wire_init_server(NativePortType port_, List<dynamic> device);
@@ -356,6 +406,8 @@ class RustLibWasmModule implements WasmModule {
   external void wire_listen_discover(NativePortType port_);
 
   external void wire_listen_progress(NativePortType port_);
+
+  external void wire_rust_set_up(NativePortType port_, bool isDebug);
 
   external void wire_server_status(NativePortType port_);
 

@@ -1,16 +1,32 @@
 use std::collections::HashMap;
-use std::net::{SocketAddrV4, Ipv4Addr};
+use std::net::{Ipv4Addr, SocketAddrV4};
 use std::sync::{self, Arc};
 
-use rand::distributions::Alphanumeric;
-use serde::de;
+use log::info;
 use tokio::sync::{mpsc, Mutex};
 
 use crate::core::model::{self, Progress};
 
-use crate::core::server::{UdpAnnounceProvicer, HttpServer};
+use crate::core::server::{HttpServer, UdpAnnounceProvicer};
 use crate::frb_generated::StreamSink;
 
+use crate::logger;
+
+pub struct LogEntry {
+    pub time_millis: i64,
+    pub level: i32,
+    pub tag: String,
+    pub msg: String,
+}
+
+pub fn create_log_stream(s: StreamSink<LogEntry>) -> Result<(), String> {
+    logger::SendToDartLogger::set_stream_sink(s);
+    Ok(())
+}
+
+pub fn rust_set_up(is_debug: bool) {
+    logger::init_logger(is_debug);
+}
 
 #[derive(Default, Debug, Clone)]
 pub struct DeviceConfig {
@@ -18,8 +34,8 @@ pub struct DeviceConfig {
     pub fingerprint: String,
     pub device_model: String,
     pub device_type: String,
+    pub store_path: String,
 }
-
 
 #[derive(Default, Debug, Clone)]
 pub struct ServerConfig {
@@ -68,6 +84,7 @@ pub enum DiscoverState {
 
 pub enum ServerRequest {
     Start(ServerConfig),
+    Accept(bool),
     Discover,
     Stop,
     Status,
@@ -89,7 +106,10 @@ impl StatusWrapper {
     }
 
     async fn notify(&self) {
-        let _ = self.tx.send(ServerResponse::Status(self.status.clone())).await;
+        let _ = self
+            .tx
+            .send(ServerResponse::Status(self.status.clone()))
+            .await;
     }
 }
 
@@ -117,51 +137,60 @@ impl DevicePoolWrapper {
 impl Server {
     async fn handle_register(message: model::DeviceInfo, fingerprint: String, devices: DevicePool) {
         if &message.fingerprint == &fingerprint {
-            println!("self announce detected");
+            info!("self announce detected");
             return;
         }
         let mut devices = devices.lock().await;
         if devices.contains_key(&message.fingerprint) {
-            println!("device already exists");
+            info!("device already exists");
         } else {
             devices.insert(message.fingerprint.clone(), message.clone());
         }
     }
     async fn send_register(target: String, current_device: &model::DeviceInfo) -> Result<(), &str> {
-        let api: String = target + "/api/localsend/v2/register";
-    
-        println!("register to {}", api);
-    
-        let client = reqwest::Client::builder()
-            .danger_accept_invalid_certs(true)
-            .build()
-            .unwrap();
-        let res = client
-            .post(api)
-            .body(serde_json::to_string(current_device).unwrap())
-            .send()
-            .await;
-        if res.is_err() {
-            println!("http register error: {:?}", res.err());
-            println!("fallback to udp register  announce");
-            return Err("fallback to udp register  announce");
-        }
-        let body = res.unwrap().text().await.unwrap();
-        println!("Register respone:\n{}", body);
+        // let api: String = target + "/api/localsend/v2/register";
+
+        // info!("register to {}", api);
+
+        // let client = reqwest::Client::builder()
+        //     .danger_accept_invalid_certs(true)
+        //     .build()
+        //     .unwrap();
+        // let res = client
+        //     .post(api)
+        //     .body(serde_json::to_string(current_device).unwrap())
+        //     .send()
+        //     .await;
+        // if res.is_err() {
+        //     info!("http register error: {:?}", res.err());
+        //     info!("fallback to udp register  announce");
+        //     return Err("fallback to udp register  announce");
+        // }
+        // let body = res.unwrap().text().await.unwrap();
+        // info!("Register respone:\n{}", body);
         Ok(())
     }
-    async fn handle_serve(devices: DevicePool,device: DeviceConfig, config: ServerConfig,mut rx: mpsc::Receiver<bool>, tx: mpsc::Sender<Progress>) {
+    async fn handle_serve(
+        devices: DevicePool,
+        device: DeviceConfig,
+        config: ServerConfig,
+        mut rx: mpsc::Receiver<ServerRequest>,
+        tx: mpsc::Sender<Progress>,
+    ) {
         let addr = SocketAddrV4::new(Ipv4Addr::new(0, 0, 0, 0), config.port);
-        let multi_addr = SocketAddrV4::new(config.multicast_addr.parse::<Ipv4Addr>().unwrap(), config.port);
-    
-        println!("Starting server on: {}", addr);
-        println!("Multicast address: {}\n", multi_addr);
-    
-        let current_device = model::DeviceInfo::from(device, config);
+        let multi_addr = SocketAddrV4::new(
+            config.multicast_addr.parse::<Ipv4Addr>().unwrap(),
+            config.port,
+        );
+
+        info!("Starting server on: {}", addr);
+        info!("Multicast address: {}\n", multi_addr);
+
+        let current_device = model::DeviceInfo::from(device.clone(), config);
         let fingerprint = current_device.fingerprint.clone();
-    
-        println!("start server");
-    
+
+        info!("start server");
+
         let (mut server, mut announce) = UdpAnnounceProvicer::new(
             fingerprint.clone(),
             Ipv4Addr::new(0, 0, 0, 0),
@@ -169,20 +198,20 @@ impl Server {
             53317,
         )
         .await;
-    
+
         let udp_socket = server.socket.try_clone().unwrap();
-    
+
         let server_handle: tokio::task::JoinHandle<()> = tokio::spawn(async move {
             server.serve().await;
         });
-    
+
         let fingerprint_clone = fingerprint.clone();
         let devices_clone = devices.clone();
         let current_device_clone = current_device.clone();
-    
+
         let announce_handle = tokio::spawn(async move {
             while let Some(message) = announce.recv().await {
-                println!("device announce : {:?}", message.alias);
+                info!("device announce : {:?}", message.alias);
                 let target = format!(
                     "{}://{}:{}",
                     message.protocol,
@@ -191,54 +220,67 @@ impl Server {
                 );
                 match Self::send_register(target, &current_device_clone).await {
                     Ok(_) => {
-                        Self::handle_register(message, fingerprint_clone.clone(), devices_clone.clone())
-                            .await;
+                        Self::handle_register(
+                            message,
+                            fingerprint_clone.clone(),
+                            devices_clone.clone(),
+                        )
+                        .await;
                     }
                     Err(_) => {}
                 }
             }
         });
-    
+
         let current_device_clone = current_device.clone();
+        let device_clone = device.clone();
         let devices_clone = devices.clone();
-    
-        let (mut http_server, mut api_handler) = HttpServer::new(current_device_clone, addr.port(), tx.clone());
-    
+        let (accept_tx, accept_rx) = mpsc::channel::<bool>(1);
+
+        let (mut http_server, mut api_handler) =
+            HttpServer::new(current_device_clone, device_clone.store_path.clone(),addr.port(), tx.clone(), accept_rx);
+
         let http_handle = tokio::spawn(async move {
             http_server.serve().await;
         });
-    
+
         let api_handle = tokio::spawn(async move {
             while let Some(message) = api_handler.recv().await {
                 Self::handle_register(message, fingerprint.clone(), devices_clone.clone()).await;
             }
         });
-    
+
         let send_buf: Vec<u8> = serde_json::to_vec(&current_device.clone()).unwrap();
         let handles = vec![server_handle, announce_handle, http_handle, api_handle];
-    
+
         while let Some(command) = rx.recv().await {
-            if command {
-                // send announce
-                println!("send announce");
-                for _ in 0..5 {
-                    let _ = udp_socket.send_to(&send_buf, multi_addr);
-                    std::thread::sleep(std::time::Duration::from_secs(1));
-                }
-            } else {
-                for h in handles {
-                    h.abort();
-                    match h.await {
-                        Ok(_) => {}
-                        Err(_) => {}
+            match command {
+                ServerRequest::Discover => {
+                    info!("send announce");
+                    for _ in 0..5 {
+                        let _ = udp_socket.send_to(&send_buf, multi_addr);
+                        std::thread::sleep(std::time::Duration::from_secs(1));
                     }
-                }
-                println!("server stopped");
-                break;
+                },
+                ServerRequest::Accept(is_accept) => {
+                    accept_tx.send(is_accept).await.unwrap();
+                },
+                ServerRequest::Stop => {
+                    for h in handles {
+                        h.abort();
+                        match h.await {
+                            Ok(_) => {}
+                            Err(_) => {}
+                        }
+                    }
+                    info!("server stopped");
+                    break;
+                },
+                _ => {}
             }
         }
     }
-    
+
     async fn serve(
         &self,
         mut rx: mpsc::Receiver<ServerRequest>,
@@ -246,7 +288,7 @@ impl Server {
         discover_tx: mpsc::Sender<DiscoverState>,
         progress_tx: mpsc::Sender<Progress>,
     ) -> Result<(), AppError> {
-        let mut optx: Option<Arc<Mutex<mpsc::Sender<bool>>>> = None;
+        let mut optx: Option<mpsc::Sender<ServerRequest>> = None;
         let mut status = StatusWrapper {
             status: ServerStatus::Stopped,
             tx: status_tx.clone(),
@@ -260,14 +302,14 @@ impl Server {
             match command {
                 ServerRequest::Start(config) => {
                     if optx.is_some() {
-                        println!("server already started");
+                        info!("server already started");
                     }
 
-                    let (inner_tx, inner_rx) = mpsc::channel::<bool>(1);
+                    let (inner_tx, inner_rx) = mpsc::channel::<ServerRequest>(1);
 
-                    optx.replace(Arc::new(Mutex::new(inner_tx)));
+                    optx.replace(inner_tx);
 
-                    println!("server started");
+                    info!("server started");
                     status.change(ServerStatus::Starting).await;
 
                     let config = config.clone();
@@ -277,11 +319,18 @@ impl Server {
 
                     tokio::spawn(async move {
                         let handle = tokio::spawn(async move {
-                            Self::handle_serve(devices_clone, device, config, inner_rx, progress_tx).await;
+                            Self::handle_serve(
+                                devices_clone,
+                                device,
+                                config,
+                                inner_rx,
+                                progress_tx,
+                            )
+                            .await;
                         });
 
                         handle.await.unwrap();
-                        println!("server stopped , send status");
+                        info!("server stopped , send status");
                         match CONTEXT.get() {
                             Some(context) => {
                                 let _ = context.signal_tx.send(ServerRequest::Status).await;
@@ -294,35 +343,42 @@ impl Server {
                     discover_tx.send(DiscoverState::Done).await.unwrap();
                 }
                 ServerRequest::Discover => {
+                    let optx = optx.clone();
                     if optx.is_some() {
                         devices.lock().await.devices.clear();
-                        println!("announce signal sent");
-                        let arc = optx.as_ref().unwrap();
-                        let tx_mutex = arc.lock().await;
-                        tx_mutex.send(true).await.unwrap();
+                        info!("announce signal sent");
+                        optx.unwrap().send(ServerRequest::Discover).await.unwrap();
                     } else {
-                        println!("server not started");
+                        info!("server not started");
                     }
-                },
+                }
                 ServerRequest::Stop => {
                     let optx = optx.take();
                     if optx.is_some() {
                         status.change(ServerStatus::Stopping).await;
-                        println!("stop signal sent");
-                        let arc = optx.as_ref().unwrap();
-                        let tx_mutex = arc.lock().await;
-                        tx_mutex.send(false).await.unwrap();
+                        info!("stop signal sent");
+                        optx.unwrap().send(ServerRequest::Stop).await.unwrap();
                     } else {
-                        println!("server not started");
+                        info!("server not started");
                     }
                     status.change(ServerStatus::Stopped).await;
                 }
                 ServerRequest::Status => {
                     status.notify().await;
                 }
+                ServerRequest::Accept(_) => {
+                    let optx = optx.clone();
+                    if optx.is_some() {
+                        devices.lock().await.devices.clear();
+                        info!("accept signal sent");
+                        optx.unwrap().send(command).await.unwrap();
+                    } else {
+                        info!("server not started");
+                    }
+                },
             }
         }
-        println!("server stopped");
+        info!("server stopped");
         Ok(())
     }
 }
@@ -335,6 +391,7 @@ pub struct AppError {
 struct AppContext {
     server: Server,
     signal_tx: mpsc::Sender<ServerRequest>,
+    accept_tx: mpsc::Sender<bool>,
     status_rx: Mutex<mpsc::Receiver<ServerResponse>>,
     discover_rx: Mutex<mpsc::Receiver<DiscoverState>>,
     progress_rx: Mutex<mpsc::Receiver<Progress>>,
@@ -348,18 +405,20 @@ pub async fn init_server(device: DeviceConfig) {
     let (tx2, rx2) = mpsc::channel::<ServerResponse>(1);
     let (tx3, rx3) = mpsc::channel::<DiscoverState>(1);
     let (tx4, rx4) = mpsc::channel::<Progress>(16);
+    let (tx5, rx5) = mpsc::channel::<bool>(1);
 
     let server = Server { device };
     let context = AppContext {
         server,
         signal_tx: tx,
+        accept_tx: tx5,
         status_rx: Mutex::new(rx2),
         discover_rx: Mutex::new(rx3),
         progress_rx: Mutex::new(rx4),
     };
 
     CONTEXT.get_or_init(|| {
-        println!("App context is being created..."); // 初始化打印
+        info!("App context is being created..."); // 初始化打印
         context
     });
 
@@ -368,7 +427,7 @@ pub async fn init_server(device: DeviceConfig) {
 }
 
 #[tokio::main]
-pub async fn start_server(config: ServerConfig){
+pub async fn start_server(config: ServerConfig) {
     let _ = CONTEXT
         .get()
         .unwrap()
@@ -387,7 +446,6 @@ pub async fn stop_server() {
         .await;
 }
 
-
 #[tokio::main]
 pub async fn discover() {
     let _ = CONTEXT
@@ -399,14 +457,24 @@ pub async fn discover() {
 }
 
 #[tokio::main]
+pub async fn accept(is_accept: bool) {
+    let _ = CONTEXT
+        .get()
+        .unwrap()
+        .signal_tx
+        .send(ServerRequest::Accept(is_accept))
+        .await;
+}
+
+#[tokio::main]
 pub async fn listen_progress(sink: StreamSink<Progress>) {
     match CONTEXT.get() {
         Some(context) => {
             let mut rx: tokio::sync::MutexGuard<'_, mpsc::Receiver<Progress>> =
-                    context.progress_rx.lock().await;
-                while let Some(response) =rx.recv().await {
-                    sink.add(response);
-                }
+                context.progress_rx.lock().await;
+            while let Some(response) = rx.recv().await {
+                sink.add(response);
+            }
         }
         None => {}
     }
@@ -417,10 +485,10 @@ pub async fn listen_discover(sink: StreamSink<DiscoverState>) {
     match CONTEXT.get() {
         Some(context) => {
             let mut rx: tokio::sync::MutexGuard<'_, mpsc::Receiver<DiscoverState>> =
-                    context.discover_rx.lock().await;
-                while let Some(response) =rx.recv().await {
-                    sink.add(response);
-                }
+                context.discover_rx.lock().await;
+            while let Some(response) = rx.recv().await {
+                sink.add(response);
+            }
         }
         None => {}
     }
@@ -433,15 +501,15 @@ pub async fn server_status(sink: StreamSink<ServerStatus>) {
             let _ = context.signal_tx.send(ServerRequest::Status).await;
 
             let mut rx: tokio::sync::MutexGuard<'_, mpsc::Receiver<ServerResponse>> =
-                    context.status_rx.lock().await;
-                while let Some(response) =rx.recv().await {
-                    match response {
-                        ServerResponse::Status(status) => {
-                            sink.add(status);
-                        }
-                        _ => {}
+                context.status_rx.lock().await;
+            while let Some(response) = rx.recv().await {
+                match response {
+                    ServerResponse::Status(status) => {
+                        sink.add(status);
                     }
+                    _ => {}
                 }
+            }
         }
         None => {}
     }

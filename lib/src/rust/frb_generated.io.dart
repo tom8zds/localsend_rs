@@ -44,10 +44,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   int dco_decode_i_32(dynamic raw);
 
   @protected
+  int dco_decode_i_64(dynamic raw);
+
+  @protected
   List<DeviceInfo> dco_decode_list_device_info(dynamic raw);
 
   @protected
   Uint8List dco_decode_list_prim_u_8(dynamic raw);
+
+  @protected
+  LogEntry dco_decode_log_entry(dynamic raw);
 
   @protected
   String? dco_decode_opt_String(dynamic raw);
@@ -100,10 +106,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   int sse_decode_i_32(SseDeserializer deserializer);
 
   @protected
+  int sse_decode_i_64(SseDeserializer deserializer);
+
+  @protected
   List<DeviceInfo> sse_decode_list_device_info(SseDeserializer deserializer);
 
   @protected
   Uint8List sse_decode_list_prim_u_8(SseDeserializer deserializer);
+
+  @protected
+  LogEntry sse_decode_log_entry(SseDeserializer deserializer);
 
   @protected
   String? sse_decode_opt_String(SseDeserializer deserializer);
@@ -151,6 +163,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   }
 
   @protected
+  int cst_encode_i_64(int raw) {
+    return raw.toInt();
+  }
+
+  @protected
   ffi.Pointer<wire_cst_list_device_info> cst_encode_list_device_info(
       List<DeviceInfo> raw) {
     final ans = wire.cst_new_list_device_info(raw.length);
@@ -191,6 +208,7 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
     wireObj.fingerprint = cst_encode_String(apiObj.fingerprint);
     wireObj.device_model = cst_encode_String(apiObj.deviceModel);
     wireObj.device_type = cst_encode_String(apiObj.deviceType);
+    wireObj.store_path = cst_encode_String(apiObj.storePath);
   }
 
   @protected
@@ -226,23 +244,36 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   }
 
   @protected
+  void cst_api_fill_to_wire_log_entry(
+      LogEntry apiObj, wire_cst_log_entry wireObj) {
+    wireObj.time_millis = cst_encode_i_64(apiObj.timeMillis);
+    wireObj.level = cst_encode_i_32(apiObj.level);
+    wireObj.tag = cst_encode_String(apiObj.tag);
+    wireObj.msg = cst_encode_String(apiObj.msg);
+  }
+
+  @protected
   void cst_api_fill_to_wire_progress(
       Progress apiObj, wire_cst_progress wireObj) {
-    if (apiObj is Progress_Idle) {
+    if (apiObj is Progress_Prepare) {
       wireObj.tag = 0;
+      return;
+    }
+    if (apiObj is Progress_Idle) {
+      wireObj.tag = 1;
       return;
     }
     if (apiObj is Progress_Progress) {
       var pre_field0 = cst_encode_usize(apiObj.field0);
       var pre_field1 = cst_encode_usize(apiObj.field1);
-      wireObj.tag = 1;
+      wireObj.tag = 2;
       wireObj.kind = wire.cst_inflate_Progress_Progress();
       wireObj.kind.ref.Progress.ref.field0 = pre_field0;
       wireObj.kind.ref.Progress.ref.field1 = pre_field1;
       return;
     }
     if (apiObj is Progress_Done) {
-      wireObj.tag = 2;
+      wireObj.tag = 3;
       return;
     }
   }
@@ -306,11 +337,17 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_i_32(int self, SseSerializer serializer);
 
   @protected
+  void sse_encode_i_64(int self, SseSerializer serializer);
+
+  @protected
   void sse_encode_list_device_info(
       List<DeviceInfo> self, SseSerializer serializer);
 
   @protected
   void sse_encode_list_prim_u_8(Uint8List self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_log_entry(LogEntry self, SseSerializer serializer);
 
   @protected
   void sse_encode_opt_String(String? self, SseSerializer serializer);
@@ -385,6 +422,36 @@ class RustLibWire implements BaseWire {
   late final _dart_fn_deliver_output = _dart_fn_deliver_outputPtr
       .asFunction<void Function(int, ffi.Pointer<ffi.Uint8>, int, int)>();
 
+  void wire_accept(
+    int port_,
+    bool is_accept,
+  ) {
+    return _wire_accept(
+      port_,
+      is_accept,
+    );
+  }
+
+  late final _wire_acceptPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64, ffi.Bool)>>(
+          'wire_accept');
+  late final _wire_accept =
+      _wire_acceptPtr.asFunction<void Function(int, bool)>();
+
+  void wire_create_log_stream(
+    int port_,
+  ) {
+    return _wire_create_log_stream(
+      port_,
+    );
+  }
+
+  late final _wire_create_log_streamPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>(
+          'wire_create_log_stream');
+  late final _wire_create_log_stream =
+      _wire_create_log_streamPtr.asFunction<void Function(int)>();
+
   void wire_discover(
     int port_,
   ) {
@@ -443,6 +510,22 @@ class RustLibWire implements BaseWire {
           'wire_listen_progress');
   late final _wire_listen_progress =
       _wire_listen_progressPtr.asFunction<void Function(int)>();
+
+  void wire_rust_set_up(
+    int port_,
+    bool isDebug,
+  ) {
+    return _wire_rust_set_up(
+      port_,
+      isDebug,
+    );
+  }
+
+  late final _wire_rust_set_upPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64, ffi.Bool)>>(
+          'wire_rust_set_up');
+  late final _wire_rust_set_up =
+      _wire_rust_set_upPtr.asFunction<void Function(int, bool)>();
 
   void wire_server_status(
     int port_,
@@ -588,6 +671,8 @@ final class wire_cst_device_config extends ffi.Struct {
   external ffi.Pointer<wire_cst_list_prim_u_8> device_model;
 
   external ffi.Pointer<wire_cst_list_prim_u_8> device_type;
+
+  external ffi.Pointer<wire_cst_list_prim_u_8> store_path;
 }
 
 final class wire_cst_server_config extends ffi.Struct {
@@ -655,6 +740,8 @@ final class DiscoverStateKind extends ffi.Union {
   external ffi.Pointer<wire_cst_DiscoverState_Done> Done;
 }
 
+final class wire_cst_Progress_Prepare extends ffi.Opaque {}
+
 final class wire_cst_Progress_Idle extends ffi.Opaque {}
 
 final class wire_cst_Progress_Progress extends ffi.Struct {
@@ -668,6 +755,8 @@ final class wire_cst_Progress_Progress extends ffi.Struct {
 final class wire_cst_Progress_Done extends ffi.Opaque {}
 
 final class ProgressKind extends ffi.Union {
+  external ffi.Pointer<wire_cst_Progress_Prepare> Prepare;
+
   external ffi.Pointer<wire_cst_Progress_Idle> Idle;
 
   external ffi.Pointer<wire_cst_Progress_Progress> Progress;
@@ -680,6 +769,18 @@ final class wire_cst_discover_state extends ffi.Struct {
   external int tag;
 
   external ffi.Pointer<DiscoverStateKind> kind;
+}
+
+final class wire_cst_log_entry extends ffi.Struct {
+  @ffi.Int64()
+  external int time_millis;
+
+  @ffi.Int32()
+  external int level;
+
+  external ffi.Pointer<wire_cst_list_prim_u_8> tag;
+
+  external ffi.Pointer<wire_cst_list_prim_u_8> msg;
 }
 
 final class wire_cst_progress extends ffi.Struct {

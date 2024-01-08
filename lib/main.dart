@@ -1,20 +1,37 @@
 import 'dart:async';
+import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:localsend_rs/src/rust/api/simple.dart';
 import 'package:localsend_rs/src/rust/core/model.dart';
 import 'package:localsend_rs/src/rust/frb_generated.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   await RustLib.init();
+  String storePath;
+  if (Platform.isAndroid) {
+    storePath = "/storage/emulated/0/Download";
+  } else {
+    storePath = (await getDownloadsDirectory())!.absolute.path;
+  }
   initServer(
-    device: const DeviceConfig(
+    device: DeviceConfig(
       alias: "test",
       fingerprint: "fingerprint",
       deviceModel: "rust",
       deviceType: "mobile",
+      storePath: storePath,
     ),
   );
+  await rustSetUp(isDebug: kDebugMode);
+  // createLogStream().listen((event) {
+  //   print(
+  //       'rust log [${event.level}] - ${event.tag} ${event.msg}(rust_time=${event.timeMillis})');
+  // });
   runApp(const MyApp());
 }
 
@@ -47,6 +64,16 @@ class MyApp extends StatelessWidget {
                     },
                     child: const Text("start server"),
                   ),
+                  FutureBuilder(
+                    future: getDownloadsDirectory(),
+                    builder: (context, snapshot) {
+                      if (snapshot.hasData) {
+                        return Text("external storage: ${snapshot.data}");
+                      } else {
+                        return const Text("external storage: unknown");
+                      }
+                    },
+                  ),
                   ElevatedButton(
                     onPressed: () async {
                       await stopServer();
@@ -58,6 +85,27 @@ class MyApp extends StatelessWidget {
                       await discover();
                     },
                     child: const Text("discover"),
+                  ),
+                  Container(
+                    child: Row(
+                      children: [
+                        const Text("send request"),
+                        ElevatedButton(
+                            onPressed: () async {
+                              if (await Permission.manageExternalStorage
+                                  .request()
+                                  .isGranted) {
+                                accept(isAccept: true);
+                              }
+                            },
+                            child: Text("accept")),
+                        ElevatedButton(
+                            onPressed: () {
+                              accept(isAccept: false);
+                            },
+                            child: Text("reject")),
+                      ],
+                    ),
                   ),
                   const ProgressWidget(),
                 ],
@@ -193,6 +241,29 @@ class _ProgressWidgetState extends State<ProgressWidget> {
                   },
                   done: () {
                     return Container();
+                  },
+                  prepare: () {
+                    return Container(
+                      child: Row(
+                        children: [
+                          const Text("send request"),
+                          ElevatedButton(
+                              onPressed: () async {
+                                if (await Permission.manageExternalStorage
+                                    .request()
+                                    .isGranted) {
+                                  accept(isAccept: true);
+                                }
+                              },
+                              child: Text("accept")),
+                          ElevatedButton(
+                              onPressed: () {
+                                accept(isAccept: false);
+                              },
+                              child: Text("reject")),
+                        ],
+                      ),
+                    );
                   },
                 ) ??
                 Container();

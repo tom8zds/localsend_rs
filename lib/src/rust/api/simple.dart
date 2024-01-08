@@ -9,6 +9,12 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:freezed_annotation/freezed_annotation.dart' hide protected;
 part 'simple.freezed.dart';
 
+Stream<LogEntry> createLogStream({dynamic hint}) =>
+    RustLib.instance.api.createLogStream(hint: hint);
+
+Future<void> rustSetUp({required bool isDebug, dynamic hint}) =>
+    RustLib.instance.api.rustSetUp(isDebug: isDebug, hint: hint);
+
 Future<void> initServer({required DeviceConfig device, dynamic hint}) =>
     RustLib.instance.api.initServer(device: device, hint: hint);
 
@@ -20,6 +26,9 @@ Future<void> stopServer({dynamic hint}) =>
 
 Future<void> discover({dynamic hint}) =>
     RustLib.instance.api.discover(hint: hint);
+
+Future<void> accept({required bool isAccept, dynamic hint}) =>
+    RustLib.instance.api.accept(isAccept: isAccept, hint: hint);
 
 Stream<Progress> listenProgress({dynamic hint}) =>
     RustLib.instance.api.listenProgress(hint: hint);
@@ -35,12 +44,14 @@ class DeviceConfig {
   final String fingerprint;
   final String deviceModel;
   final String deviceType;
+  final String storePath;
 
   const DeviceConfig({
     required this.alias,
     required this.fingerprint,
     required this.deviceModel,
     required this.deviceType,
+    required this.storePath,
   });
 
   @override
@@ -48,7 +59,8 @@ class DeviceConfig {
       alias.hashCode ^
       fingerprint.hashCode ^
       deviceModel.hashCode ^
-      deviceType.hashCode;
+      deviceType.hashCode ^
+      storePath.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -58,7 +70,8 @@ class DeviceConfig {
           alias == other.alias &&
           fingerprint == other.fingerprint &&
           deviceModel == other.deviceModel &&
-          deviceType == other.deviceType;
+          deviceType == other.deviceType &&
+          storePath == other.storePath;
 }
 
 @freezed
@@ -67,6 +80,34 @@ sealed class DiscoverState with _$DiscoverState {
     List<DeviceInfo> field0,
   ) = DiscoverState_Discovering;
   const factory DiscoverState.done() = DiscoverState_Done;
+}
+
+class LogEntry {
+  final int timeMillis;
+  final int level;
+  final String tag;
+  final String msg;
+
+  const LogEntry({
+    required this.timeMillis,
+    required this.level,
+    required this.tag,
+    required this.msg,
+  });
+
+  @override
+  int get hashCode =>
+      timeMillis.hashCode ^ level.hashCode ^ tag.hashCode ^ msg.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is LogEntry &&
+          runtimeType == other.runtimeType &&
+          timeMillis == other.timeMillis &&
+          level == other.level &&
+          tag == other.tag &&
+          msg == other.msg;
 }
 
 class ServerConfig {

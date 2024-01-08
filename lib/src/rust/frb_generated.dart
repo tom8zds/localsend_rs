@@ -57,6 +57,10 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
 }
 
 abstract class RustLibApi extends BaseApi {
+  Future<void> accept({required bool isAccept, dynamic hint});
+
+  Stream<LogEntry> createLogStream({dynamic hint});
+
   Future<void> discover({dynamic hint});
 
   Future<void> initServer({required DeviceConfig device, dynamic hint});
@@ -64,6 +68,8 @@ abstract class RustLibApi extends BaseApi {
   Stream<DiscoverState> listenDiscover({dynamic hint});
 
   Stream<Progress> listenProgress({dynamic hint});
+
+  Future<void> rustSetUp({required bool isDebug, dynamic hint});
 
   Stream<ServerStatus> serverStatus({dynamic hint});
 
@@ -79,6 +85,51 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     required super.generalizedFrbRustBinding,
     required super.portManager,
   });
+
+  @override
+  Future<void> accept({required bool isAccept, dynamic hint}) {
+    return handler.executeNormal(NormalTask(
+      callFfi: (port_) {
+        var arg0 = cst_encode_bool(isAccept);
+        return wire.wire_accept(port_, arg0);
+      },
+      codec: DcoCodec(
+        decodeSuccessData: dco_decode_unit,
+        decodeErrorData: null,
+      ),
+      constMeta: kAcceptConstMeta,
+      argValues: [isAccept],
+      apiImpl: this,
+      hint: hint,
+    ));
+  }
+
+  TaskConstMeta get kAcceptConstMeta => const TaskConstMeta(
+        debugName: "accept",
+        argNames: ["isAccept"],
+      );
+
+  @override
+  Stream<LogEntry> createLogStream({dynamic hint}) {
+    return handler.executeStream(StreamTask(
+      callFfi: (port_) {
+        return wire.wire_create_log_stream(port_);
+      },
+      codec: DcoCodec(
+        decodeSuccessData: dco_decode_log_entry,
+        decodeErrorData: dco_decode_String,
+      ),
+      constMeta: kCreateLogStreamConstMeta,
+      argValues: [],
+      apiImpl: this,
+      hint: hint,
+    ));
+  }
+
+  TaskConstMeta get kCreateLogStreamConstMeta => const TaskConstMeta(
+        debugName: "create_log_stream",
+        argNames: [],
+      );
 
   @override
   Future<void> discover({dynamic hint}) {
@@ -167,6 +218,29 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   TaskConstMeta get kListenProgressConstMeta => const TaskConstMeta(
         debugName: "listen_progress",
         argNames: [],
+      );
+
+  @override
+  Future<void> rustSetUp({required bool isDebug, dynamic hint}) {
+    return handler.executeNormal(NormalTask(
+      callFfi: (port_) {
+        var arg0 = cst_encode_bool(isDebug);
+        return wire.wire_rust_set_up(port_, arg0);
+      },
+      codec: DcoCodec(
+        decodeSuccessData: dco_decode_unit,
+        decodeErrorData: null,
+      ),
+      constMeta: kRustSetUpConstMeta,
+      argValues: [isDebug],
+      apiImpl: this,
+      hint: hint,
+    ));
+  }
+
+  TaskConstMeta get kRustSetUpConstMeta => const TaskConstMeta(
+        debugName: "rust_set_up",
+        argNames: ["isDebug"],
       );
 
   @override
@@ -259,13 +333,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   @protected
   DeviceConfig dco_decode_device_config(dynamic raw) {
     final arr = raw as List<dynamic>;
-    if (arr.length != 4)
-      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    if (arr.length != 5)
+      throw Exception('unexpected arr length: expect 5 but see ${arr.length}');
     return DeviceConfig(
       alias: dco_decode_String(arr[0]),
       fingerprint: dco_decode_String(arr[1]),
       deviceModel: dco_decode_String(arr[2]),
       deviceType: dco_decode_String(arr[3]),
+      storePath: dco_decode_String(arr[4]),
     );
   }
 
@@ -309,6 +384,11 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  int dco_decode_i_64(dynamic raw) {
+    return dcoDecodeI64OrU64(raw);
+  }
+
+  @protected
   List<DeviceInfo> dco_decode_list_device_info(dynamic raw) {
     return (raw as List<dynamic>).map(dco_decode_device_info).toList();
   }
@@ -316,6 +396,19 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   @protected
   Uint8List dco_decode_list_prim_u_8(dynamic raw) {
     return raw as Uint8List;
+  }
+
+  @protected
+  LogEntry dco_decode_log_entry(dynamic raw) {
+    final arr = raw as List<dynamic>;
+    if (arr.length != 4)
+      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    return LogEntry(
+      timeMillis: dco_decode_i_64(arr[0]),
+      level: dco_decode_i_32(arr[1]),
+      tag: dco_decode_String(arr[2]),
+      msg: dco_decode_String(arr[3]),
+    );
   }
 
   @protected
@@ -327,13 +420,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Progress dco_decode_progress(dynamic raw) {
     switch (raw[0]) {
       case 0:
-        return Progress_Idle();
+        return Progress_Prepare();
       case 1:
+        return Progress_Idle();
+      case 2:
         return Progress_Progress(
           dco_decode_usize(raw[1]),
           dco_decode_usize(raw[2]),
         );
-      case 2:
+      case 3:
         return Progress_Done();
       default:
         throw Exception("unreachable");
@@ -409,11 +504,13 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_fingerprint = sse_decode_String(deserializer);
     var var_deviceModel = sse_decode_String(deserializer);
     var var_deviceType = sse_decode_String(deserializer);
+    var var_storePath = sse_decode_String(deserializer);
     return DeviceConfig(
         alias: var_alias,
         fingerprint: var_fingerprint,
         deviceModel: var_deviceModel,
-        deviceType: var_deviceType);
+        deviceType: var_deviceType,
+        storePath: var_storePath);
   }
 
   @protected
@@ -463,6 +560,11 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  int sse_decode_i_64(SseDeserializer deserializer) {
+    return deserializer.buffer.getInt64();
+  }
+
+  @protected
   List<DeviceInfo> sse_decode_list_device_info(SseDeserializer deserializer) {
     var len_ = sse_decode_i_32(deserializer);
     var ans_ = <DeviceInfo>[];
@@ -479,6 +581,19 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  LogEntry sse_decode_log_entry(SseDeserializer deserializer) {
+    var var_timeMillis = sse_decode_i_64(deserializer);
+    var var_level = sse_decode_i_32(deserializer);
+    var var_tag = sse_decode_String(deserializer);
+    var var_msg = sse_decode_String(deserializer);
+    return LogEntry(
+        timeMillis: var_timeMillis,
+        level: var_level,
+        tag: var_tag,
+        msg: var_msg);
+  }
+
+  @protected
   String? sse_decode_opt_String(SseDeserializer deserializer) {
     if (sse_decode_bool(deserializer)) {
       return (sse_decode_String(deserializer));
@@ -492,12 +607,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var tag_ = sse_decode_i_32(deserializer);
     switch (tag_) {
       case 0:
-        return Progress_Idle();
+        return Progress_Prepare();
       case 1:
+        return Progress_Idle();
+      case 2:
         var var_field0 = sse_decode_usize(deserializer);
         var var_field1 = sse_decode_usize(deserializer);
         return Progress_Progress(var_field0, var_field1);
-      case 2:
+      case 3:
         return Progress_Done();
       default:
         throw UnimplementedError('');
@@ -608,6 +725,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_String(self.fingerprint, serializer);
     sse_encode_String(self.deviceModel, serializer);
     sse_encode_String(self.deviceType, serializer);
+    sse_encode_String(self.storePath, serializer);
   }
 
   @protected
@@ -642,6 +760,11 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_i_64(int self, SseSerializer serializer) {
+    serializer.buffer.putInt64(self);
+  }
+
+  @protected
   void sse_encode_list_device_info(
       List<DeviceInfo> self, SseSerializer serializer) {
     sse_encode_i_32(self.length, serializer);
@@ -657,6 +780,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_log_entry(LogEntry self, SseSerializer serializer) {
+    sse_encode_i_64(self.timeMillis, serializer);
+    sse_encode_i_32(self.level, serializer);
+    sse_encode_String(self.tag, serializer);
+    sse_encode_String(self.msg, serializer);
+  }
+
+  @protected
   void sse_encode_opt_String(String? self, SseSerializer serializer) {
     sse_encode_bool(self != null, serializer);
     if (self != null) {
@@ -667,14 +798,16 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   @protected
   void sse_encode_progress(Progress self, SseSerializer serializer) {
     switch (self) {
-      case Progress_Idle():
+      case Progress_Prepare():
         sse_encode_i_32(0, serializer);
-      case Progress_Progress(field0: final field0, field1: final field1):
+      case Progress_Idle():
         sse_encode_i_32(1, serializer);
+      case Progress_Progress(field0: final field0, field1: final field1):
+        sse_encode_i_32(2, serializer);
         sse_encode_usize(field0, serializer);
         sse_encode_usize(field1, serializer);
       case Progress_Done():
-        sse_encode_i_32(2, serializer);
+        sse_encode_i_32(3, serializer);
     }
   }
 

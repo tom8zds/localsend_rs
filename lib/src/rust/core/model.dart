@@ -69,6 +69,7 @@ class DeviceInfo {
 
 @freezed
 sealed class Progress with _$Progress {
+  const factory Progress.prepare() = Progress_Prepare;
   const factory Progress.idle() = Progress_Idle;
   const factory Progress.progress(
     int field0,

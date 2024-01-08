@@ -18,6 +18,7 @@ final _privateConstructorUsedError = UnsupportedError(
 mixin _$Progress {
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
+    required TResult Function() prepare,
     required TResult Function() idle,
     required TResult Function(int field0, int field1) progress,
     required TResult Function() done,
@@ -25,6 +26,7 @@ mixin _$Progress {
       throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
+    TResult? Function()? prepare,
     TResult? Function()? idle,
     TResult? Function(int field0, int field1)? progress,
     TResult? Function()? done,
@@ -32,6 +34,7 @@ mixin _$Progress {
       throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
+    TResult Function()? prepare,
     TResult Function()? idle,
     TResult Function(int field0, int field1)? progress,
     TResult Function()? done,
@@ -40,6 +43,7 @@ mixin _$Progress {
       throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult map<TResult extends Object?>({
+    required TResult Function(Progress_Prepare value) prepare,
     required TResult Function(Progress_Idle value) idle,
     required TResult Function(Progress_Progress value) progress,
     required TResult Function(Progress_Done value) done,
@@ -47,6 +51,7 @@ mixin _$Progress {
       throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
+    TResult? Function(Progress_Prepare value)? prepare,
     TResult? Function(Progress_Idle value)? idle,
     TResult? Function(Progress_Progress value)? progress,
     TResult? Function(Progress_Done value)? done,
@@ -54,6 +59,7 @@ mixin _$Progress {
       throw _privateConstructorUsedError;
   @optionalTypeArgs
   TResult maybeMap<TResult extends Object?>({
+    TResult Function(Progress_Prepare value)? prepare,
     TResult Function(Progress_Idle value)? idle,
     TResult Function(Progress_Progress value)? progress,
     TResult Function(Progress_Done value)? done,
@@ -77,6 +83,120 @@ class _$ProgressCopyWithImpl<$Res, $Val extends Progress>
   final $Val _value;
   // ignore: unused_field
   final $Res Function($Val) _then;
+}
+
+/// @nodoc
+abstract class _$$Progress_PrepareImplCopyWith<$Res> {
+  factory _$$Progress_PrepareImplCopyWith(_$Progress_PrepareImpl value,
+          $Res Function(_$Progress_PrepareImpl) then) =
+      __$$Progress_PrepareImplCopyWithImpl<$Res>;
+}
+
+/// @nodoc
+class __$$Progress_PrepareImplCopyWithImpl<$Res>
+    extends _$ProgressCopyWithImpl<$Res, _$Progress_PrepareImpl>
+    implements _$$Progress_PrepareImplCopyWith<$Res> {
+  __$$Progress_PrepareImplCopyWithImpl(_$Progress_PrepareImpl _value,
+      $Res Function(_$Progress_PrepareImpl) _then)
+      : super(_value, _then);
+}
+
+/// @nodoc
+
+class _$Progress_PrepareImpl implements Progress_Prepare {
+  const _$Progress_PrepareImpl();
+
+  @override
+  String toString() {
+    return 'Progress.prepare()';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType && other is _$Progress_PrepareImpl);
+  }
+
+  @override
+  int get hashCode => runtimeType.hashCode;
+
+  @override
+  @optionalTypeArgs
+  TResult when<TResult extends Object?>({
+    required TResult Function() prepare,
+    required TResult Function() idle,
+    required TResult Function(int field0, int field1) progress,
+    required TResult Function() done,
+  }) {
+    return prepare();
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? whenOrNull<TResult extends Object?>({
+    TResult? Function()? prepare,
+    TResult? Function()? idle,
+    TResult? Function(int field0, int field1)? progress,
+    TResult? Function()? done,
+  }) {
+    return prepare?.call();
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeWhen<TResult extends Object?>({
+    TResult Function()? prepare,
+    TResult Function()? idle,
+    TResult Function(int field0, int field1)? progress,
+    TResult Function()? done,
+    required TResult orElse(),
+  }) {
+    if (prepare != null) {
+      return prepare();
+    }
+    return orElse();
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult map<TResult extends Object?>({
+    required TResult Function(Progress_Prepare value) prepare,
+    required TResult Function(Progress_Idle value) idle,
+    required TResult Function(Progress_Progress value) progress,
+    required TResult Function(Progress_Done value) done,
+  }) {
+    return prepare(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult? mapOrNull<TResult extends Object?>({
+    TResult? Function(Progress_Prepare value)? prepare,
+    TResult? Function(Progress_Idle value)? idle,
+    TResult? Function(Progress_Progress value)? progress,
+    TResult? Function(Progress_Done value)? done,
+  }) {
+    return prepare?.call(this);
+  }
+
+  @override
+  @optionalTypeArgs
+  TResult maybeMap<TResult extends Object?>({
+    TResult Function(Progress_Prepare value)? prepare,
+    TResult Function(Progress_Idle value)? idle,
+    TResult Function(Progress_Progress value)? progress,
+    TResult Function(Progress_Done value)? done,
+    required TResult orElse(),
+  }) {
+    if (prepare != null) {
+      return prepare(this);
+    }
+    return orElse();
+  }
+}
+
+abstract class Progress_Prepare implements Progress {
+  const factory Progress_Prepare() = _$Progress_PrepareImpl;
 }
 
 /// @nodoc
@@ -117,6 +237,7 @@ class _$Progress_IdleImpl implements Progress_Idle {
   @override
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
+    required TResult Function() prepare,
     required TResult Function() idle,
     required TResult Function(int field0, int field1) progress,
     required TResult Function() done,
@@ -127,6 +248,7 @@ class _$Progress_IdleImpl implements Progress_Idle {
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
+    TResult? Function()? prepare,
     TResult? Function()? idle,
     TResult? Function(int field0, int field1)? progress,
     TResult? Function()? done,
@@ -137,6 +259,7 @@ class _$Progress_IdleImpl implements Progress_Idle {
   @override
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
+    TResult Function()? prepare,
     TResult Function()? idle,
     TResult Function(int field0, int field1)? progress,
     TResult Function()? done,
@@ -151,6 +274,7 @@ class _$Progress_IdleImpl implements Progress_Idle {
   @override
   @optionalTypeArgs
   TResult map<TResult extends Object?>({
+    required TResult Function(Progress_Prepare value) prepare,
     required TResult Function(Progress_Idle value) idle,
     required TResult Function(Progress_Progress value) progress,
     required TResult Function(Progress_Done value) done,
@@ -161,6 +285,7 @@ class _$Progress_IdleImpl implements Progress_Idle {
   @override
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
+    TResult? Function(Progress_Prepare value)? prepare,
     TResult? Function(Progress_Idle value)? idle,
     TResult? Function(Progress_Progress value)? progress,
     TResult? Function(Progress_Done value)? done,
@@ -171,6 +296,7 @@ class _$Progress_IdleImpl implements Progress_Idle {
   @override
   @optionalTypeArgs
   TResult maybeMap<TResult extends Object?>({
+    TResult Function(Progress_Prepare value)? prepare,
     TResult Function(Progress_Idle value)? idle,
     TResult Function(Progress_Progress value)? progress,
     TResult Function(Progress_Done value)? done,
@@ -260,6 +386,7 @@ class _$Progress_ProgressImpl implements Progress_Progress {
   @override
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
+    required TResult Function() prepare,
     required TResult Function() idle,
     required TResult Function(int field0, int field1) progress,
     required TResult Function() done,
@@ -270,6 +397,7 @@ class _$Progress_ProgressImpl implements Progress_Progress {
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
+    TResult? Function()? prepare,
     TResult? Function()? idle,
     TResult? Function(int field0, int field1)? progress,
     TResult? Function()? done,
@@ -280,6 +408,7 @@ class _$Progress_ProgressImpl implements Progress_Progress {
   @override
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
+    TResult Function()? prepare,
     TResult Function()? idle,
     TResult Function(int field0, int field1)? progress,
     TResult Function()? done,
@@ -294,6 +423,7 @@ class _$Progress_ProgressImpl implements Progress_Progress {
   @override
   @optionalTypeArgs
   TResult map<TResult extends Object?>({
+    required TResult Function(Progress_Prepare value) prepare,
     required TResult Function(Progress_Idle value) idle,
     required TResult Function(Progress_Progress value) progress,
     required TResult Function(Progress_Done value) done,
@@ -304,6 +434,7 @@ class _$Progress_ProgressImpl implements Progress_Progress {
   @override
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
+    TResult? Function(Progress_Prepare value)? prepare,
     TResult? Function(Progress_Idle value)? idle,
     TResult? Function(Progress_Progress value)? progress,
     TResult? Function(Progress_Done value)? done,
@@ -314,6 +445,7 @@ class _$Progress_ProgressImpl implements Progress_Progress {
   @override
   @optionalTypeArgs
   TResult maybeMap<TResult extends Object?>({
+    TResult Function(Progress_Prepare value)? prepare,
     TResult Function(Progress_Idle value)? idle,
     TResult Function(Progress_Progress value)? progress,
     TResult Function(Progress_Done value)? done,
@@ -375,6 +507,7 @@ class _$Progress_DoneImpl implements Progress_Done {
   @override
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
+    required TResult Function() prepare,
     required TResult Function() idle,
     required TResult Function(int field0, int field1) progress,
     required TResult Function() done,
@@ -385,6 +518,7 @@ class _$Progress_DoneImpl implements Progress_Done {
   @override
   @optionalTypeArgs
   TResult? whenOrNull<TResult extends Object?>({
+    TResult? Function()? prepare,
     TResult? Function()? idle,
     TResult? Function(int field0, int field1)? progress,
     TResult? Function()? done,
@@ -395,6 +529,7 @@ class _$Progress_DoneImpl implements Progress_Done {
   @override
   @optionalTypeArgs
   TResult maybeWhen<TResult extends Object?>({
+    TResult Function()? prepare,
     TResult Function()? idle,
     TResult Function(int field0, int field1)? progress,
     TResult Function()? done,
@@ -409,6 +544,7 @@ class _$Progress_DoneImpl implements Progress_Done {
   @override
   @optionalTypeArgs
   TResult map<TResult extends Object?>({
+    required TResult Function(Progress_Prepare value) prepare,
     required TResult Function(Progress_Idle value) idle,
     required TResult Function(Progress_Progress value) progress,
     required TResult Function(Progress_Done value) done,
@@ -419,6 +555,7 @@ class _$Progress_DoneImpl implements Progress_Done {
   @override
   @optionalTypeArgs
   TResult? mapOrNull<TResult extends Object?>({
+    TResult? Function(Progress_Prepare value)? prepare,
     TResult? Function(Progress_Idle value)? idle,
     TResult? Function(Progress_Progress value)? progress,
     TResult? Function(Progress_Done value)? done,
@@ -429,6 +566,7 @@ class _$Progress_DoneImpl implements Progress_Done {
   @override
   @optionalTypeArgs
   TResult maybeMap<TResult extends Object?>({
+    TResult Function(Progress_Prepare value)? prepare,
     TResult Function(Progress_Idle value)? idle,
     TResult Function(Progress_Progress value)? progress,
     TResult Function(Progress_Done value)? done,

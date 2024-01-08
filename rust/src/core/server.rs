@@ -1,6 +1,7 @@
 use std::{
     collections::HashMap,
-    net::{Ipv4Addr, UdpSocket}, sync::Arc,
+    net::{Ipv4Addr, UdpSocket},
+    sync::Arc,
 };
 
 use axum::{
@@ -11,10 +12,18 @@ use axum::{
     BoxError, Json, Router,
 };
 use futures::{Stream, TryStreamExt};
-use tokio::{fs::File, io::BufWriter, sync::{Mutex, mpsc}};
+use log::{error, info};
+use tokio::{
+    fs::File,
+    io::BufWriter,
+    sync::{mpsc, Mutex},
+};
 use tokio_util::io::StreamReader;
 
-use crate::core::{model::{DeviceInfo, FileInfo, FileRequest, FileResponse, UploadTask, Progress}, adapter::ProgressReadAdapter};
+use crate::core::{
+    adapter::ProgressReadAdapter,
+    model::{DeviceInfo, FileInfo, FileRequest, FileResponse, Progress, UploadTask},
+};
 
 pub struct UdpAnnounceProvicer {
     fingerprint: String,
@@ -75,7 +84,9 @@ pub struct HttpServer {
     current_device: DeviceInfo,
     port: u16,
     sender: mpsc::Sender<Announce>,
+    receiver: Arc<Mutex<mpsc::Receiver<bool>>>,
     progress: mpsc::Sender<Progress>,
+    store_path: String,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -86,11 +97,21 @@ pub struct SendSession {
 }
 
 pub struct AppState {
+    pub current_device: DeviceInfo,
+    pub sender_tx: mpsc::Sender<Announce>,
+    pub store_path: String,
     pub progress_tx: mpsc::Sender<Progress>,
-    pub session_map: Arc<Mutex<HashMap<String, SendSession>>>,
+    pub accept_rx: Arc<Mutex<mpsc::Receiver<bool>>>,
+    pub current_session: Mutex<Option<SendSession>>,
 }
 
-async fn stream_to_file<S, E>(path: &str, stream: S, tx: mpsc::Sender<Progress>, total_bytes: usize) -> Result<(), (StatusCode, String)>
+async fn stream_to_file<S, E>(
+    path: &str,
+    file_path: &str,
+    stream: S,
+    tx: mpsc::Sender<Progress>,
+    total_bytes: usize,
+) -> Result<(), (StatusCode, String)>
 where
     S: Stream<Item = Result<Bytes, E>>,
     E: Into<BoxError>,
@@ -103,26 +124,27 @@ where
         futures::pin_mut!(body_reader);
 
         // Create the file. `File` implements `AsyncWrite`.
-        let path = std::path::Path::new("./").join(path);
+        let path = std::path::Path::new(path).join(file_path);
         let dir = path.parent().unwrap();
         if dir.exists() == false {
             tokio::fs::create_dir_all(dir).await?;
         }
-        
+
         let mut file = BufWriter::new(File::create(path).await?);
-        let mut read = ProgressReadAdapter::new(body_reader, total_bytes, tx.clone());
+        // let mut read = ProgressReadAdapter::new(body_reader, total_bytes, tx.clone());
 
         // Copy the body into the file.
-        tokio::io::copy(&mut read, &mut file).await?;
+        tokio::io::copy(&mut body_reader, &mut file).await?;
 
-        tx.send(
-            Progress::Done
-        ).await.unwrap();
+        tx.send(Progress::Done).await.unwrap();
 
         Ok::<_, std::io::Error>(())
     }
     .await
-    .map_err(|err| (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()))
+    .map_err(|err| {
+        error!("store file error {:?} in {}", err, path);
+        (StatusCode::INTERNAL_SERVER_ERROR, err.to_string())
+    })
 }
 
 // Save a `Stream` to a fil
@@ -134,25 +156,37 @@ impl HttpServer {
         request: Request,
     ) -> Result<(), (StatusCode, String)> {
         let task: UploadTask = task.0;
-        println!("handle_upload {:?}", task);
-        let state: Arc<AppState> = state;
-        let session_map = state.session_map.lock().await;
-        println!("session_map {:?}", session_map);
-        let session = session_map.get(&task.session_id).unwrap();
+        info!("handle_upload {:?}", task);
+        let session = state.current_session.lock().await;
+        if session.is_none() {
+            return Err((StatusCode::BAD_REQUEST, "session not found".to_string()));
+        }
+        let session = session.as_ref().unwrap();
+        if session.id != task.session_id {
+            return Err((StatusCode::BAD_REQUEST, "session not match".to_string()));
+        }
         let token = session.token_map.get(&task.file_id).unwrap();
         let file_info = session.info_map.get(token).unwrap();
         let file_name = file_info.file_name.clone();
         let file_size = file_info.size;
+        let store_path = state.store_path.clone();
         // ...
         let body_stream = request.into_body().into_data_stream();
-        stream_to_file(&file_name, body_stream, state.progress_tx.clone(), file_size as usize).await
+        stream_to_file(
+            &store_path,
+            &file_name,
+            body_stream,
+            state.progress_tx.clone(),
+            file_size as usize,
+        )
+        .await
     }
 
     async fn prepare_upload(
         State(state): State<Arc<AppState>>,
         Json(payload): Json<FileRequest>,
-    ) -> Json<FileResponse> {
-        println!("prepare_upload {:?}", payload);
+    ) -> Result<Json<FileResponse>, (StatusCode, String)> {
+        info!("prepare_upload {:?}", payload);
         let mut files = HashMap::new();
         let mut tokens = HashMap::new();
         payload.files.iter().for_each(|(key, value)| {
@@ -164,24 +198,26 @@ impl HttpServer {
             token_map: tokens,
             info_map: payload.files.clone(),
         };
-        let state: Arc<AppState> = state;
-        state
-            .session_map
-            .lock()
-            .await
-            .insert(session.id.clone(), session);
-        Json(FileResponse {
+        state.current_session.lock().await.replace(session);
+        state.progress_tx.send(Progress::Prepare).await.unwrap();
+        let result = state.accept_rx.lock().await.recv().await.unwrap();
+        if result == false {
+            return Err((StatusCode::BAD_REQUEST, "user reject".to_string()));
+        }
+        state.progress_tx.send(Progress::Idle).await.unwrap();
+        Ok(Json(FileResponse {
             session_id: "1234567890".to_string(),
             files: files,
-        })
+        }))
     }
 
     async fn handle_register(
+        State(state): State<Arc<AppState>>,
         Json(payload): Json<DeviceInfo>,
-        sender: Arc<mpsc::Sender<Announce>>,
-        current_device: DeviceInfo,
     ) -> Json<DeviceInfo> {
-        println!("register {:?}", payload);
+        info!("register {:?}", payload);
+        let current_device = state.current_device.clone();
+        let sender = state.sender_tx.clone();
         match sender.send(payload).await {
             Ok(_) => {
                 return Json(current_device);
@@ -191,7 +227,13 @@ impl HttpServer {
             }
         }
     }
-    pub fn new(current_device: DeviceInfo, port: u16, progress_tx: mpsc::Sender<Progress>) -> (Self, mpsc::Receiver<Announce>) {
+    pub fn new(
+        current_device: DeviceInfo,
+        store_path: String,
+        port: u16,
+        progress_tx: mpsc::Sender<Progress>,
+        accept_rx: mpsc::Receiver<bool>,
+    ) -> (Self, mpsc::Receiver<Announce>) {
         let (tx, rx) = mpsc::channel(1);
 
         (
@@ -199,26 +241,25 @@ impl HttpServer {
                 current_device,
                 port,
                 sender: tx,
+                receiver: Arc::new(Mutex::new(accept_rx)),
                 progress: progress_tx,
+                store_path,
             },
-            rx
+            rx,
         )
     }
 
     pub async fn serve(&mut self) {
         let app_state = Arc::new(AppState {
+            current_device: self.current_device.clone(),
+            sender_tx: self.sender.clone(),
+            accept_rx: self.receiver.clone(),
+            store_path: self.store_path.clone(),
             progress_tx: self.progress.clone(),
-            session_map: Arc::new(Mutex::new(HashMap::new())),
+            current_session: Mutex::new(None),
         });
         let api_routes = Router::new()
-            .route(
-                "/register",
-                post({
-                    let sender = Arc::new(self.sender.clone());
-                    let current_device = self.current_device.clone();
-                    move |body| Self::handle_register(body, sender, current_device)
-                }),
-            )
+            .route("/register", post(Self::handle_register))
             .route("/prepare-upload", post(Self::prepare_upload))
             .route("/upload", post(Self::handle_upload))
             .with_state(app_state);
@@ -227,7 +268,7 @@ impl HttpServer {
 
         let bind_addr = format!("0.0.0.0:{}", self.port);
 
-        println!("http listening on {}", bind_addr);
+        info!("http listening on {}", bind_addr);
 
         let listener = tokio::net::TcpListener::bind(bind_addr).await.unwrap();
         axum::serve(listener, app).await.unwrap();

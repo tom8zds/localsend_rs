@@ -35,6 +35,7 @@ impl CstDecode<crate::api::simple::DeviceConfig> for wire_cst_device_config {
             fingerprint: self.fingerprint.cst_decode(),
             device_model: self.device_model.cst_decode(),
             device_type: self.device_type.cst_decode(),
+            store_path: self.store_path.cst_decode(),
         }
     }
 }
@@ -85,11 +86,22 @@ impl CstDecode<Vec<u8>> for *mut wire_cst_list_prim_u_8 {
         }
     }
 }
+impl CstDecode<crate::api::simple::LogEntry> for wire_cst_log_entry {
+    fn cst_decode(self) -> crate::api::simple::LogEntry {
+        crate::api::simple::LogEntry {
+            time_millis: self.time_millis.cst_decode(),
+            level: self.level.cst_decode(),
+            tag: self.tag.cst_decode(),
+            msg: self.msg.cst_decode(),
+        }
+    }
+}
 impl CstDecode<crate::core::model::Progress> for wire_cst_progress {
     fn cst_decode(self) -> crate::core::model::Progress {
         match self.tag {
-            0 => crate::core::model::Progress::Idle,
-            1 => unsafe {
+            0 => crate::core::model::Progress::Prepare,
+            1 => crate::core::model::Progress::Idle,
+            2 => unsafe {
                 let ans = flutter_rust_bridge::for_generated::box_from_leak_ptr(self.kind);
                 let ans = flutter_rust_bridge::for_generated::box_from_leak_ptr(ans.Progress);
                 crate::core::model::Progress::Progress(
@@ -97,7 +109,7 @@ impl CstDecode<crate::core::model::Progress> for wire_cst_progress {
                     ans.field1.cst_decode(),
                 )
             },
-            2 => crate::core::model::Progress::Done,
+            3 => crate::core::model::Progress::Done,
             _ => unreachable!(),
         }
     }
@@ -130,6 +142,7 @@ impl NewWithNullPtr for wire_cst_device_config {
             fingerprint: core::ptr::null_mut(),
             device_model: core::ptr::null_mut(),
             device_type: core::ptr::null_mut(),
+            store_path: core::ptr::null_mut(),
         }
     }
 }
@@ -169,6 +182,21 @@ impl NewWithNullPtr for wire_cst_discover_state {
     }
 }
 impl Default for wire_cst_discover_state {
+    fn default() -> Self {
+        Self::new_with_null_ptr()
+    }
+}
+impl NewWithNullPtr for wire_cst_log_entry {
+    fn new_with_null_ptr() -> Self {
+        Self {
+            time_millis: Default::default(),
+            level: Default::default(),
+            tag: core::ptr::null_mut(),
+            msg: core::ptr::null_mut(),
+        }
+    }
+}
+impl Default for wire_cst_log_entry {
     fn default() -> Self {
         Self::new_with_null_ptr()
     }
@@ -222,6 +250,16 @@ pub extern "C" fn dart_fn_deliver_output(
 }
 
 #[no_mangle]
+pub extern "C" fn wire_accept(port_: i64, is_accept: bool) {
+    wire_accept_impl(port_, is_accept)
+}
+
+#[no_mangle]
+pub extern "C" fn wire_create_log_stream(port_: i64) {
+    wire_create_log_stream_impl(port_)
+}
+
+#[no_mangle]
 pub extern "C" fn wire_discover(port_: i64) {
     wire_discover_impl(port_)
 }
@@ -239,6 +277,11 @@ pub extern "C" fn wire_listen_discover(port_: i64) {
 #[no_mangle]
 pub extern "C" fn wire_listen_progress(port_: i64) {
     wire_listen_progress_impl(port_)
+}
+
+#[no_mangle]
+pub extern "C" fn wire_rust_set_up(port_: i64, isDebug: bool) {
+    wire_rust_set_up_impl(port_, isDebug)
 }
 
 #[no_mangle]
@@ -317,6 +360,7 @@ pub struct wire_cst_device_config {
     fingerprint: *mut wire_cst_list_prim_u_8,
     device_model: *mut wire_cst_list_prim_u_8,
     device_type: *mut wire_cst_list_prim_u_8,
+    store_path: *mut wire_cst_list_prim_u_8,
 }
 #[repr(C)]
 #[derive(Clone)]
@@ -366,16 +410,28 @@ pub struct wire_cst_list_prim_u_8 {
 }
 #[repr(C)]
 #[derive(Clone)]
+pub struct wire_cst_log_entry {
+    time_millis: i64,
+    level: i32,
+    tag: *mut wire_cst_list_prim_u_8,
+    msg: *mut wire_cst_list_prim_u_8,
+}
+#[repr(C)]
+#[derive(Clone)]
 pub struct wire_cst_progress {
     tag: i32,
     kind: *mut ProgressKind,
 }
 #[repr(C)]
 pub union ProgressKind {
+    Prepare: *mut wire_cst_Progress_Prepare,
     Idle: *mut wire_cst_Progress_Idle,
     Progress: *mut wire_cst_Progress_Progress,
     Done: *mut wire_cst_Progress_Done,
 }
+#[repr(C)]
+#[derive(Clone)]
+pub struct wire_cst_Progress_Prepare {}
 #[repr(C)]
 #[derive(Clone)]
 pub struct wire_cst_Progress_Idle {}
