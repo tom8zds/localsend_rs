@@ -3,11 +3,13 @@
 
 // ignore_for_file: unused_import, unused_element, unnecessary_import, duplicate_ignore, invalid_use_of_internal_member, annotate_overrides, non_constant_identifier_names, curly_braces_in_flow_control_structures, prefer_const_literals_to_create_immutables
 
-import 'api/simple.dart';
-import 'core/model.dart';
+import 'api/model.dart';
+import 'bridge/bridge.dart';
 import 'dart:async';
 import 'dart:convert';
+import 'discovery/model.dart';
 import 'frb_generated.io.dart' if (dart.library.html) 'frb_generated.web.dart';
+import 'logger.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 /// Main entrypoint of the Rust API
@@ -57,25 +59,24 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
 }
 
 abstract class RustLibApi extends BaseApi {
-  Future<void> accept({required bool isAccept, dynamic hint});
+  Future<void> acceptMission(
+      {required String missionId, required bool accept, dynamic hint});
 
   Stream<LogEntry> createLogStream({dynamic hint});
 
   Future<void> discover({dynamic hint});
 
-  Future<void> initServer({required DeviceConfig device, dynamic hint});
+  Stream<MissionItem> missionChannel({dynamic hint});
 
-  Stream<DiscoverState> listenDiscover({dynamic hint});
-
-  Stream<Progress> listenProgress({dynamic hint});
+  Stream<List<Node>> nodeChannel({dynamic hint});
 
   Future<void> rustSetUp({required bool isDebug, dynamic hint});
 
-  Stream<ServerStatus> serverStatus({dynamic hint});
+  Future<void> setup({dynamic hint});
 
-  Future<void> startServer({required ServerConfig config, dynamic hint});
+  Future<void> start({dynamic hint});
 
-  Future<void> stopServer({dynamic hint});
+  Future<void> stop({dynamic hint});
 }
 
 class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
@@ -87,26 +88,28 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   });
 
   @override
-  Future<void> accept({required bool isAccept, dynamic hint}) {
+  Future<void> acceptMission(
+      {required String missionId, required bool accept, dynamic hint}) {
     return handler.executeNormal(NormalTask(
       callFfi: (port_) {
-        var arg0 = cst_encode_bool(isAccept);
-        return wire.wire_accept(port_, arg0);
+        var arg0 = cst_encode_String(missionId);
+        var arg1 = cst_encode_bool(accept);
+        return wire.wire_accept_mission(port_, arg0, arg1);
       },
       codec: DcoCodec(
         decodeSuccessData: dco_decode_unit,
         decodeErrorData: null,
       ),
-      constMeta: kAcceptConstMeta,
-      argValues: [isAccept],
+      constMeta: kAcceptMissionConstMeta,
+      argValues: [missionId, accept],
       apiImpl: this,
       hint: hint,
     ));
   }
 
-  TaskConstMeta get kAcceptConstMeta => const TaskConstMeta(
-        debugName: "accept",
-        argNames: ["isAccept"],
+  TaskConstMeta get kAcceptMissionConstMeta => const TaskConstMeta(
+        debugName: "accept_mission",
+        argNames: ["missionId", "accept"],
       );
 
   @override
@@ -154,69 +157,46 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Future<void> initServer({required DeviceConfig device, dynamic hint}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        var arg0 = cst_encode_box_autoadd_device_config(device);
-        return wire.wire_init_server(port_, arg0);
-      },
-      codec: DcoCodec(
-        decodeSuccessData: dco_decode_unit,
-        decodeErrorData: null,
-      ),
-      constMeta: kInitServerConstMeta,
-      argValues: [device],
-      apiImpl: this,
-      hint: hint,
-    ));
-  }
-
-  TaskConstMeta get kInitServerConstMeta => const TaskConstMeta(
-        debugName: "init_server",
-        argNames: ["device"],
-      );
-
-  @override
-  Stream<DiscoverState> listenDiscover({dynamic hint}) {
+  Stream<MissionItem> missionChannel({dynamic hint}) {
     return handler.executeStream(StreamTask(
       callFfi: (port_) {
-        return wire.wire_listen_discover(port_);
+        return wire.wire_mission_channel(port_);
       },
       codec: DcoCodec(
-        decodeSuccessData: dco_decode_discover_state,
+        decodeSuccessData: dco_decode_mission_item,
         decodeErrorData: null,
       ),
-      constMeta: kListenDiscoverConstMeta,
+      constMeta: kMissionChannelConstMeta,
       argValues: [],
       apiImpl: this,
       hint: hint,
     ));
   }
 
-  TaskConstMeta get kListenDiscoverConstMeta => const TaskConstMeta(
-        debugName: "listen_discover",
+  TaskConstMeta get kMissionChannelConstMeta => const TaskConstMeta(
+        debugName: "mission_channel",
         argNames: [],
       );
 
   @override
-  Stream<Progress> listenProgress({dynamic hint}) {
+  Stream<List<Node>> nodeChannel({dynamic hint}) {
     return handler.executeStream(StreamTask(
       callFfi: (port_) {
-        return wire.wire_listen_progress(port_);
+        return wire.wire_node_channel(port_);
       },
       codec: DcoCodec(
-        decodeSuccessData: dco_decode_progress,
+        decodeSuccessData: dco_decode_list_node,
         decodeErrorData: null,
       ),
-      constMeta: kListenProgressConstMeta,
+      constMeta: kNodeChannelConstMeta,
       argValues: [],
       apiImpl: this,
       hint: hint,
     ));
   }
 
-  TaskConstMeta get kListenProgressConstMeta => const TaskConstMeta(
-        debugName: "listen_progress",
+  TaskConstMeta get kNodeChannelConstMeta => const TaskConstMeta(
+        debugName: "node_channel",
         argNames: [],
       );
 
@@ -244,69 +224,68 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Stream<ServerStatus> serverStatus({dynamic hint}) {
-    return handler.executeStream(StreamTask(
+  Future<void> setup({dynamic hint}) {
+    return handler.executeNormal(NormalTask(
       callFfi: (port_) {
-        return wire.wire_server_status(port_);
+        return wire.wire_setup(port_);
       },
       codec: DcoCodec(
-        decodeSuccessData: dco_decode_server_status,
+        decodeSuccessData: dco_decode_unit,
         decodeErrorData: null,
       ),
-      constMeta: kServerStatusConstMeta,
+      constMeta: kSetupConstMeta,
       argValues: [],
       apiImpl: this,
       hint: hint,
     ));
   }
 
-  TaskConstMeta get kServerStatusConstMeta => const TaskConstMeta(
-        debugName: "server_status",
+  TaskConstMeta get kSetupConstMeta => const TaskConstMeta(
+        debugName: "setup",
         argNames: [],
       );
 
   @override
-  Future<void> startServer({required ServerConfig config, dynamic hint}) {
+  Future<void> start({dynamic hint}) {
     return handler.executeNormal(NormalTask(
       callFfi: (port_) {
-        var arg0 = cst_encode_box_autoadd_server_config(config);
-        return wire.wire_start_server(port_, arg0);
+        return wire.wire_start(port_);
       },
       codec: DcoCodec(
         decodeSuccessData: dco_decode_unit,
         decodeErrorData: null,
       ),
-      constMeta: kStartServerConstMeta,
-      argValues: [config],
-      apiImpl: this,
-      hint: hint,
-    ));
-  }
-
-  TaskConstMeta get kStartServerConstMeta => const TaskConstMeta(
-        debugName: "start_server",
-        argNames: ["config"],
-      );
-
-  @override
-  Future<void> stopServer({dynamic hint}) {
-    return handler.executeNormal(NormalTask(
-      callFfi: (port_) {
-        return wire.wire_stop_server(port_);
-      },
-      codec: DcoCodec(
-        decodeSuccessData: dco_decode_unit,
-        decodeErrorData: null,
-      ),
-      constMeta: kStopServerConstMeta,
+      constMeta: kStartConstMeta,
       argValues: [],
       apiImpl: this,
       hint: hint,
     ));
   }
 
-  TaskConstMeta get kStopServerConstMeta => const TaskConstMeta(
-        debugName: "stop_server",
+  TaskConstMeta get kStartConstMeta => const TaskConstMeta(
+        debugName: "start",
+        argNames: [],
+      );
+
+  @override
+  Future<void> stop({dynamic hint}) {
+    return handler.executeNormal(NormalTask(
+      callFfi: (port_) {
+        return wire.wire_stop(port_);
+      },
+      codec: DcoCodec(
+        decodeSuccessData: dco_decode_unit,
+        decodeErrorData: null,
+      ),
+      constMeta: kStopConstMeta,
+      argValues: [],
+      apiImpl: this,
+      hint: hint,
+    ));
+  }
+
+  TaskConstMeta get kStopConstMeta => const TaskConstMeta(
+        debugName: "stop",
         argNames: [],
       );
 
@@ -321,61 +300,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  DeviceConfig dco_decode_box_autoadd_device_config(dynamic raw) {
-    return dco_decode_device_config(raw);
-  }
-
-  @protected
-  ServerConfig dco_decode_box_autoadd_server_config(dynamic raw) {
-    return dco_decode_server_config(raw);
-  }
-
-  @protected
-  DeviceConfig dco_decode_device_config(dynamic raw) {
+  FileInfo dco_decode_file_info(dynamic raw) {
     final arr = raw as List<dynamic>;
-    if (arr.length != 5)
-      throw Exception('unexpected arr length: expect 5 but see ${arr.length}');
-    return DeviceConfig(
-      alias: dco_decode_String(arr[0]),
-      fingerprint: dco_decode_String(arr[1]),
-      deviceModel: dco_decode_String(arr[2]),
-      deviceType: dco_decode_String(arr[3]),
-      storePath: dco_decode_String(arr[4]),
+    if (arr.length != 6)
+      throw Exception('unexpected arr length: expect 6 but see ${arr.length}');
+    return FileInfo(
+      id: dco_decode_String(arr[0]),
+      fileName: dco_decode_String(arr[1]),
+      size: dco_decode_i_64(arr[2]),
+      fileType: dco_decode_String(arr[3]),
+      sha256: dco_decode_opt_String(arr[4]),
+      preview: dco_decode_opt_list_prim_u_8(arr[5]),
     );
-  }
-
-  @protected
-  DeviceInfo dco_decode_device_info(dynamic raw) {
-    final arr = raw as List<dynamic>;
-    if (arr.length != 11)
-      throw Exception('unexpected arr length: expect 11 but see ${arr.length}');
-    return DeviceInfo(
-      alias: dco_decode_String(arr[0]),
-      version: dco_decode_String(arr[1]),
-      deviceModel: dco_decode_String(arr[2]),
-      deviceType: dco_decode_String(arr[3]),
-      fingerprint: dco_decode_String(arr[4]),
-      address: dco_decode_opt_String(arr[5]),
-      port: dco_decode_u_16(arr[6]),
-      protocol: dco_decode_String(arr[7]),
-      download: dco_decode_bool(arr[8]),
-      announcement: dco_decode_bool(arr[9]),
-      announce: dco_decode_bool(arr[10]),
-    );
-  }
-
-  @protected
-  DiscoverState dco_decode_discover_state(dynamic raw) {
-    switch (raw[0]) {
-      case 0:
-        return DiscoverState_Discovering(
-          dco_decode_list_device_info(raw[1]),
-        );
-      case 1:
-        return DiscoverState_Done();
-      default:
-        throw Exception("unreachable");
-    }
   }
 
   @protected
@@ -389,8 +325,13 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  List<DeviceInfo> dco_decode_list_device_info(dynamic raw) {
-    return (raw as List<dynamic>).map(dco_decode_device_info).toList();
+  List<FileInfo> dco_decode_list_file_info(dynamic raw) {
+    return (raw as List<dynamic>).map(dco_decode_file_info).toList();
+  }
+
+  @protected
+  List<Node> dco_decode_list_node(dynamic raw) {
+    return (raw as List<dynamic>).map(dco_decode_node).toList();
   }
 
   @protected
@@ -412,47 +353,44 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  MissionItem dco_decode_mission_item(dynamic raw) {
+    final arr = raw as List<dynamic>;
+    if (arr.length != 2)
+      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    return MissionItem(
+      id: dco_decode_String(arr[0]),
+      fileInfo: dco_decode_list_file_info(arr[1]),
+    );
+  }
+
+  @protected
+  Node dco_decode_node(dynamic raw) {
+    final arr = raw as List<dynamic>;
+    if (arr.length != 11)
+      throw Exception('unexpected arr length: expect 11 but see ${arr.length}');
+    return Node(
+      alias: dco_decode_String(arr[0]),
+      version: dco_decode_String(arr[1]),
+      deviceModel: dco_decode_String(arr[2]),
+      deviceType: dco_decode_String(arr[3]),
+      fingerprint: dco_decode_String(arr[4]),
+      address: dco_decode_String(arr[5]),
+      port: dco_decode_u_16(arr[6]),
+      protocol: dco_decode_String(arr[7]),
+      download: dco_decode_bool(arr[8]),
+      announcement: dco_decode_bool(arr[9]),
+      announce: dco_decode_bool(arr[10]),
+    );
+  }
+
+  @protected
   String? dco_decode_opt_String(dynamic raw) {
     return raw == null ? null : dco_decode_String(raw);
   }
 
   @protected
-  Progress dco_decode_progress(dynamic raw) {
-    switch (raw[0]) {
-      case 0:
-        return Progress_Prepare();
-      case 1:
-        return Progress_Idle();
-      case 2:
-        return Progress_Progress(
-          dco_decode_usize(raw[1]),
-          dco_decode_usize(raw[2]),
-        );
-      case 3:
-        return Progress_Done();
-      default:
-        throw Exception("unreachable");
-    }
-  }
-
-  @protected
-  ServerConfig dco_decode_server_config(dynamic raw) {
-    final arr = raw as List<dynamic>;
-    if (arr.length != 6)
-      throw Exception('unexpected arr length: expect 6 but see ${arr.length}');
-    return ServerConfig(
-      multicastAddr: dco_decode_String(arr[0]),
-      port: dco_decode_u_16(arr[1]),
-      protocol: dco_decode_String(arr[2]),
-      download: dco_decode_bool(arr[3]),
-      announcement: dco_decode_bool(arr[4]),
-      announce: dco_decode_bool(arr[5]),
-    );
-  }
-
-  @protected
-  ServerStatus dco_decode_server_status(dynamic raw) {
-    return ServerStatus.values[raw as int];
+  Uint8List? dco_decode_opt_list_prim_u_8(dynamic raw) {
+    return raw == null ? null : dco_decode_list_prim_u_8(raw);
   }
 
   @protected
@@ -471,11 +409,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  int dco_decode_usize(dynamic raw) {
-    return dcoDecodeI64OrU64(raw);
-  }
-
-  @protected
   String sse_decode_String(SseDeserializer deserializer) {
     var inner = sse_decode_list_prim_u_8(deserializer);
     return utf8.decoder.convert(inner);
@@ -487,71 +420,20 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  DeviceConfig sse_decode_box_autoadd_device_config(
-      SseDeserializer deserializer) {
-    return (sse_decode_device_config(deserializer));
-  }
-
-  @protected
-  ServerConfig sse_decode_box_autoadd_server_config(
-      SseDeserializer deserializer) {
-    return (sse_decode_server_config(deserializer));
-  }
-
-  @protected
-  DeviceConfig sse_decode_device_config(SseDeserializer deserializer) {
-    var var_alias = sse_decode_String(deserializer);
-    var var_fingerprint = sse_decode_String(deserializer);
-    var var_deviceModel = sse_decode_String(deserializer);
-    var var_deviceType = sse_decode_String(deserializer);
-    var var_storePath = sse_decode_String(deserializer);
-    return DeviceConfig(
-        alias: var_alias,
-        fingerprint: var_fingerprint,
-        deviceModel: var_deviceModel,
-        deviceType: var_deviceType,
-        storePath: var_storePath);
-  }
-
-  @protected
-  DeviceInfo sse_decode_device_info(SseDeserializer deserializer) {
-    var var_alias = sse_decode_String(deserializer);
-    var var_version = sse_decode_String(deserializer);
-    var var_deviceModel = sse_decode_String(deserializer);
-    var var_deviceType = sse_decode_String(deserializer);
-    var var_fingerprint = sse_decode_String(deserializer);
-    var var_address = sse_decode_opt_String(deserializer);
-    var var_port = sse_decode_u_16(deserializer);
-    var var_protocol = sse_decode_String(deserializer);
-    var var_download = sse_decode_bool(deserializer);
-    var var_announcement = sse_decode_bool(deserializer);
-    var var_announce = sse_decode_bool(deserializer);
-    return DeviceInfo(
-        alias: var_alias,
-        version: var_version,
-        deviceModel: var_deviceModel,
-        deviceType: var_deviceType,
-        fingerprint: var_fingerprint,
-        address: var_address,
-        port: var_port,
-        protocol: var_protocol,
-        download: var_download,
-        announcement: var_announcement,
-        announce: var_announce);
-  }
-
-  @protected
-  DiscoverState sse_decode_discover_state(SseDeserializer deserializer) {
-    var tag_ = sse_decode_i_32(deserializer);
-    switch (tag_) {
-      case 0:
-        var var_field0 = sse_decode_list_device_info(deserializer);
-        return DiscoverState_Discovering(var_field0);
-      case 1:
-        return DiscoverState_Done();
-      default:
-        throw UnimplementedError('');
-    }
+  FileInfo sse_decode_file_info(SseDeserializer deserializer) {
+    var var_id = sse_decode_String(deserializer);
+    var var_fileName = sse_decode_String(deserializer);
+    var var_size = sse_decode_i_64(deserializer);
+    var var_fileType = sse_decode_String(deserializer);
+    var var_sha256 = sse_decode_opt_String(deserializer);
+    var var_preview = sse_decode_opt_list_prim_u_8(deserializer);
+    return FileInfo(
+        id: var_id,
+        fileName: var_fileName,
+        size: var_size,
+        fileType: var_fileType,
+        sha256: var_sha256,
+        preview: var_preview);
   }
 
   @protected
@@ -565,11 +447,21 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  List<DeviceInfo> sse_decode_list_device_info(SseDeserializer deserializer) {
+  List<FileInfo> sse_decode_list_file_info(SseDeserializer deserializer) {
     var len_ = sse_decode_i_32(deserializer);
-    var ans_ = <DeviceInfo>[];
+    var ans_ = <FileInfo>[];
     for (var idx_ = 0; idx_ < len_; ++idx_) {
-      ans_.add(sse_decode_device_info(deserializer));
+      ans_.add(sse_decode_file_info(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
+  List<Node> sse_decode_list_node(SseDeserializer deserializer) {
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <Node>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_node(deserializer));
     }
     return ans_;
   }
@@ -594,6 +486,40 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  MissionItem sse_decode_mission_item(SseDeserializer deserializer) {
+    var var_id = sse_decode_String(deserializer);
+    var var_fileInfo = sse_decode_list_file_info(deserializer);
+    return MissionItem(id: var_id, fileInfo: var_fileInfo);
+  }
+
+  @protected
+  Node sse_decode_node(SseDeserializer deserializer) {
+    var var_alias = sse_decode_String(deserializer);
+    var var_version = sse_decode_String(deserializer);
+    var var_deviceModel = sse_decode_String(deserializer);
+    var var_deviceType = sse_decode_String(deserializer);
+    var var_fingerprint = sse_decode_String(deserializer);
+    var var_address = sse_decode_String(deserializer);
+    var var_port = sse_decode_u_16(deserializer);
+    var var_protocol = sse_decode_String(deserializer);
+    var var_download = sse_decode_bool(deserializer);
+    var var_announcement = sse_decode_bool(deserializer);
+    var var_announce = sse_decode_bool(deserializer);
+    return Node(
+        alias: var_alias,
+        version: var_version,
+        deviceModel: var_deviceModel,
+        deviceType: var_deviceType,
+        fingerprint: var_fingerprint,
+        address: var_address,
+        port: var_port,
+        protocol: var_protocol,
+        download: var_download,
+        announcement: var_announcement,
+        announce: var_announce);
+  }
+
+  @protected
   String? sse_decode_opt_String(SseDeserializer deserializer) {
     if (sse_decode_bool(deserializer)) {
       return (sse_decode_String(deserializer));
@@ -603,45 +529,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  Progress sse_decode_progress(SseDeserializer deserializer) {
-    var tag_ = sse_decode_i_32(deserializer);
-    switch (tag_) {
-      case 0:
-        return Progress_Prepare();
-      case 1:
-        return Progress_Idle();
-      case 2:
-        var var_field0 = sse_decode_usize(deserializer);
-        var var_field1 = sse_decode_usize(deserializer);
-        return Progress_Progress(var_field0, var_field1);
-      case 3:
-        return Progress_Done();
-      default:
-        throw UnimplementedError('');
+  Uint8List? sse_decode_opt_list_prim_u_8(SseDeserializer deserializer) {
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_list_prim_u_8(deserializer));
+    } else {
+      return null;
     }
-  }
-
-  @protected
-  ServerConfig sse_decode_server_config(SseDeserializer deserializer) {
-    var var_multicastAddr = sse_decode_String(deserializer);
-    var var_port = sse_decode_u_16(deserializer);
-    var var_protocol = sse_decode_String(deserializer);
-    var var_download = sse_decode_bool(deserializer);
-    var var_announcement = sse_decode_bool(deserializer);
-    var var_announce = sse_decode_bool(deserializer);
-    return ServerConfig(
-        multicastAddr: var_multicastAddr,
-        port: var_port,
-        protocol: var_protocol,
-        download: var_download,
-        announcement: var_announcement,
-        announce: var_announce);
-  }
-
-  @protected
-  ServerStatus sse_decode_server_status(SseDeserializer deserializer) {
-    var inner = sse_decode_i_32(deserializer);
-    return ServerStatus.values[inner];
   }
 
   @protected
@@ -658,11 +551,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   void sse_decode_unit(SseDeserializer deserializer) {}
 
   @protected
-  int sse_decode_usize(SseDeserializer deserializer) {
-    return deserializer.buffer.getUint64();
-  }
-
-  @protected
   bool cst_encode_bool(bool raw) {
     return raw;
   }
@@ -670,11 +558,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   @protected
   int cst_encode_i_32(int raw) {
     return raw;
-  }
-
-  @protected
-  int cst_encode_server_status(ServerStatus raw) {
-    return cst_encode_i_32(raw.index);
   }
 
   @protected
@@ -693,11 +576,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  int cst_encode_usize(int raw) {
-    return raw;
-  }
-
-  @protected
   void sse_encode_String(String self, SseSerializer serializer) {
     sse_encode_list_prim_u_8(utf8.encoder.convert(self), serializer);
   }
@@ -708,50 +586,13 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  void sse_encode_box_autoadd_device_config(
-      DeviceConfig self, SseSerializer serializer) {
-    sse_encode_device_config(self, serializer);
-  }
-
-  @protected
-  void sse_encode_box_autoadd_server_config(
-      ServerConfig self, SseSerializer serializer) {
-    sse_encode_server_config(self, serializer);
-  }
-
-  @protected
-  void sse_encode_device_config(DeviceConfig self, SseSerializer serializer) {
-    sse_encode_String(self.alias, serializer);
-    sse_encode_String(self.fingerprint, serializer);
-    sse_encode_String(self.deviceModel, serializer);
-    sse_encode_String(self.deviceType, serializer);
-    sse_encode_String(self.storePath, serializer);
-  }
-
-  @protected
-  void sse_encode_device_info(DeviceInfo self, SseSerializer serializer) {
-    sse_encode_String(self.alias, serializer);
-    sse_encode_String(self.version, serializer);
-    sse_encode_String(self.deviceModel, serializer);
-    sse_encode_String(self.deviceType, serializer);
-    sse_encode_String(self.fingerprint, serializer);
-    sse_encode_opt_String(self.address, serializer);
-    sse_encode_u_16(self.port, serializer);
-    sse_encode_String(self.protocol, serializer);
-    sse_encode_bool(self.download, serializer);
-    sse_encode_bool(self.announcement, serializer);
-    sse_encode_bool(self.announce, serializer);
-  }
-
-  @protected
-  void sse_encode_discover_state(DiscoverState self, SseSerializer serializer) {
-    switch (self) {
-      case DiscoverState_Discovering(field0: final field0):
-        sse_encode_i_32(0, serializer);
-        sse_encode_list_device_info(field0, serializer);
-      case DiscoverState_Done():
-        sse_encode_i_32(1, serializer);
-    }
+  void sse_encode_file_info(FileInfo self, SseSerializer serializer) {
+    sse_encode_String(self.id, serializer);
+    sse_encode_String(self.fileName, serializer);
+    sse_encode_i_64(self.size, serializer);
+    sse_encode_String(self.fileType, serializer);
+    sse_encode_opt_String(self.sha256, serializer);
+    sse_encode_opt_list_prim_u_8(self.preview, serializer);
   }
 
   @protected
@@ -765,11 +606,19 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  void sse_encode_list_device_info(
-      List<DeviceInfo> self, SseSerializer serializer) {
+  void sse_encode_list_file_info(
+      List<FileInfo> self, SseSerializer serializer) {
     sse_encode_i_32(self.length, serializer);
     for (final item in self) {
-      sse_encode_device_info(item, serializer);
+      sse_encode_file_info(item, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_list_node(List<Node> self, SseSerializer serializer) {
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_node(item, serializer);
     }
   }
 
@@ -788,32 +637,19 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  void sse_encode_opt_String(String? self, SseSerializer serializer) {
-    sse_encode_bool(self != null, serializer);
-    if (self != null) {
-      sse_encode_String(self, serializer);
-    }
+  void sse_encode_mission_item(MissionItem self, SseSerializer serializer) {
+    sse_encode_String(self.id, serializer);
+    sse_encode_list_file_info(self.fileInfo, serializer);
   }
 
   @protected
-  void sse_encode_progress(Progress self, SseSerializer serializer) {
-    switch (self) {
-      case Progress_Prepare():
-        sse_encode_i_32(0, serializer);
-      case Progress_Idle():
-        sse_encode_i_32(1, serializer);
-      case Progress_Progress(field0: final field0, field1: final field1):
-        sse_encode_i_32(2, serializer);
-        sse_encode_usize(field0, serializer);
-        sse_encode_usize(field1, serializer);
-      case Progress_Done():
-        sse_encode_i_32(3, serializer);
-    }
-  }
-
-  @protected
-  void sse_encode_server_config(ServerConfig self, SseSerializer serializer) {
-    sse_encode_String(self.multicastAddr, serializer);
+  void sse_encode_node(Node self, SseSerializer serializer) {
+    sse_encode_String(self.alias, serializer);
+    sse_encode_String(self.version, serializer);
+    sse_encode_String(self.deviceModel, serializer);
+    sse_encode_String(self.deviceType, serializer);
+    sse_encode_String(self.fingerprint, serializer);
+    sse_encode_String(self.address, serializer);
     sse_encode_u_16(self.port, serializer);
     sse_encode_String(self.protocol, serializer);
     sse_encode_bool(self.download, serializer);
@@ -822,8 +658,19 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  void sse_encode_server_status(ServerStatus self, SseSerializer serializer) {
-    sse_encode_i_32(self.index, serializer);
+  void sse_encode_opt_String(String? self, SseSerializer serializer) {
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_String(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_list_prim_u_8(Uint8List? self, SseSerializer serializer) {
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_list_prim_u_8(self, serializer);
+    }
   }
 
   @protected
@@ -838,9 +685,4 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   @protected
   void sse_encode_unit(void self, SseSerializer serializer) {}
-
-  @protected
-  void sse_encode_usize(int self, SseSerializer serializer) {
-    serializer.buffer.putUint64(self);
-  }
 }

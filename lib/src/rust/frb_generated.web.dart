@@ -3,11 +3,13 @@
 
 // ignore_for_file: unused_import, unused_element, unnecessary_import, duplicate_ignore, invalid_use_of_internal_member, annotate_overrides, non_constant_identifier_names, curly_braces_in_flow_control_structures, prefer_const_literals_to_create_immutables
 
-import 'api/simple.dart';
-import 'core/model.dart';
+import 'api/model.dart';
+import 'bridge/bridge.dart';
 import 'dart:async';
 import 'dart:convert';
+import 'discovery/model.dart';
 import 'frb_generated.dart';
+import 'logger.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated_web.dart';
 
 abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
@@ -25,19 +27,7 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   bool dco_decode_bool(dynamic raw);
 
   @protected
-  DeviceConfig dco_decode_box_autoadd_device_config(dynamic raw);
-
-  @protected
-  ServerConfig dco_decode_box_autoadd_server_config(dynamic raw);
-
-  @protected
-  DeviceConfig dco_decode_device_config(dynamic raw);
-
-  @protected
-  DeviceInfo dco_decode_device_info(dynamic raw);
-
-  @protected
-  DiscoverState dco_decode_discover_state(dynamic raw);
+  FileInfo dco_decode_file_info(dynamic raw);
 
   @protected
   int dco_decode_i_32(dynamic raw);
@@ -46,7 +36,10 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   int dco_decode_i_64(dynamic raw);
 
   @protected
-  List<DeviceInfo> dco_decode_list_device_info(dynamic raw);
+  List<FileInfo> dco_decode_list_file_info(dynamic raw);
+
+  @protected
+  List<Node> dco_decode_list_node(dynamic raw);
 
   @protected
   Uint8List dco_decode_list_prim_u_8(dynamic raw);
@@ -55,16 +48,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   LogEntry dco_decode_log_entry(dynamic raw);
 
   @protected
+  MissionItem dco_decode_mission_item(dynamic raw);
+
+  @protected
+  Node dco_decode_node(dynamic raw);
+
+  @protected
   String? dco_decode_opt_String(dynamic raw);
 
   @protected
-  Progress dco_decode_progress(dynamic raw);
-
-  @protected
-  ServerConfig dco_decode_server_config(dynamic raw);
-
-  @protected
-  ServerStatus dco_decode_server_status(dynamic raw);
+  Uint8List? dco_decode_opt_list_prim_u_8(dynamic raw);
 
   @protected
   int dco_decode_u_16(dynamic raw);
@@ -76,30 +69,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void dco_decode_unit(dynamic raw);
 
   @protected
-  int dco_decode_usize(dynamic raw);
-
-  @protected
   String sse_decode_String(SseDeserializer deserializer);
 
   @protected
   bool sse_decode_bool(SseDeserializer deserializer);
 
   @protected
-  DeviceConfig sse_decode_box_autoadd_device_config(
-      SseDeserializer deserializer);
-
-  @protected
-  ServerConfig sse_decode_box_autoadd_server_config(
-      SseDeserializer deserializer);
-
-  @protected
-  DeviceConfig sse_decode_device_config(SseDeserializer deserializer);
-
-  @protected
-  DeviceInfo sse_decode_device_info(SseDeserializer deserializer);
-
-  @protected
-  DiscoverState sse_decode_discover_state(SseDeserializer deserializer);
+  FileInfo sse_decode_file_info(SseDeserializer deserializer);
 
   @protected
   int sse_decode_i_32(SseDeserializer deserializer);
@@ -108,7 +84,10 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   int sse_decode_i_64(SseDeserializer deserializer);
 
   @protected
-  List<DeviceInfo> sse_decode_list_device_info(SseDeserializer deserializer);
+  List<FileInfo> sse_decode_list_file_info(SseDeserializer deserializer);
+
+  @protected
+  List<Node> sse_decode_list_node(SseDeserializer deserializer);
 
   @protected
   Uint8List sse_decode_list_prim_u_8(SseDeserializer deserializer);
@@ -117,16 +96,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   LogEntry sse_decode_log_entry(SseDeserializer deserializer);
 
   @protected
+  MissionItem sse_decode_mission_item(SseDeserializer deserializer);
+
+  @protected
+  Node sse_decode_node(SseDeserializer deserializer);
+
+  @protected
   String? sse_decode_opt_String(SseDeserializer deserializer);
 
   @protected
-  Progress sse_decode_progress(SseDeserializer deserializer);
-
-  @protected
-  ServerConfig sse_decode_server_config(SseDeserializer deserializer);
-
-  @protected
-  ServerStatus sse_decode_server_status(SseDeserializer deserializer);
+  Uint8List? sse_decode_opt_list_prim_u_8(SseDeserializer deserializer);
 
   @protected
   int sse_decode_u_16(SseDeserializer deserializer);
@@ -138,61 +117,20 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_decode_unit(SseDeserializer deserializer);
 
   @protected
-  int sse_decode_usize(SseDeserializer deserializer);
-
-  @protected
   String cst_encode_String(String raw) {
     return raw;
   }
 
   @protected
-  List<dynamic> cst_encode_box_autoadd_device_config(DeviceConfig raw) {
-    return cst_encode_device_config(raw);
-  }
-
-  @protected
-  List<dynamic> cst_encode_box_autoadd_server_config(ServerConfig raw) {
-    return cst_encode_server_config(raw);
-  }
-
-  @protected
-  List<dynamic> cst_encode_device_config(DeviceConfig raw) {
+  List<dynamic> cst_encode_file_info(FileInfo raw) {
     return [
-      cst_encode_String(raw.alias),
-      cst_encode_String(raw.fingerprint),
-      cst_encode_String(raw.deviceModel),
-      cst_encode_String(raw.deviceType),
-      cst_encode_String(raw.storePath)
+      cst_encode_String(raw.id),
+      cst_encode_String(raw.fileName),
+      cst_encode_i_64(raw.size),
+      cst_encode_String(raw.fileType),
+      cst_encode_opt_String(raw.sha256),
+      cst_encode_opt_list_prim_u_8(raw.preview)
     ];
-  }
-
-  @protected
-  List<dynamic> cst_encode_device_info(DeviceInfo raw) {
-    return [
-      cst_encode_String(raw.alias),
-      cst_encode_String(raw.version),
-      cst_encode_String(raw.deviceModel),
-      cst_encode_String(raw.deviceType),
-      cst_encode_String(raw.fingerprint),
-      cst_encode_opt_String(raw.address),
-      cst_encode_u_16(raw.port),
-      cst_encode_String(raw.protocol),
-      cst_encode_bool(raw.download),
-      cst_encode_bool(raw.announcement),
-      cst_encode_bool(raw.announce)
-    ];
-  }
-
-  @protected
-  List<dynamic> cst_encode_discover_state(DiscoverState raw) {
-    if (raw is DiscoverState_Discovering) {
-      return [0, cst_encode_list_device_info(raw.field0)];
-    }
-    if (raw is DiscoverState_Done) {
-      return [1];
-    }
-
-    throw Exception('unreachable');
   }
 
   @protected
@@ -201,8 +139,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   }
 
   @protected
-  List<dynamic> cst_encode_list_device_info(List<DeviceInfo> raw) {
-    return raw.map(cst_encode_device_info).toList();
+  List<dynamic> cst_encode_list_file_info(List<FileInfo> raw) {
+    return raw.map(cst_encode_file_info).toList();
+  }
+
+  @protected
+  List<dynamic> cst_encode_list_node(List<Node> raw) {
+    return raw.map(cst_encode_node).toList();
   }
 
   @protected
@@ -221,32 +164,19 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   }
 
   @protected
-  String? cst_encode_opt_String(String? raw) {
-    return raw == null ? null : cst_encode_String(raw);
+  List<dynamic> cst_encode_mission_item(MissionItem raw) {
+    return [cst_encode_String(raw.id), cst_encode_list_file_info(raw.fileInfo)];
   }
 
   @protected
-  List<dynamic> cst_encode_progress(Progress raw) {
-    if (raw is Progress_Prepare) {
-      return [0];
-    }
-    if (raw is Progress_Idle) {
-      return [1];
-    }
-    if (raw is Progress_Progress) {
-      return [2, cst_encode_usize(raw.field0), cst_encode_usize(raw.field1)];
-    }
-    if (raw is Progress_Done) {
-      return [3];
-    }
-
-    throw Exception('unreachable');
-  }
-
-  @protected
-  List<dynamic> cst_encode_server_config(ServerConfig raw) {
+  List<dynamic> cst_encode_node(Node raw) {
     return [
-      cst_encode_String(raw.multicastAddr),
+      cst_encode_String(raw.alias),
+      cst_encode_String(raw.version),
+      cst_encode_String(raw.deviceModel),
+      cst_encode_String(raw.deviceType),
+      cst_encode_String(raw.fingerprint),
+      cst_encode_String(raw.address),
       cst_encode_u_16(raw.port),
       cst_encode_String(raw.protocol),
       cst_encode_bool(raw.download),
@@ -256,13 +186,20 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   }
 
   @protected
+  String? cst_encode_opt_String(String? raw) {
+    return raw == null ? null : cst_encode_String(raw);
+  }
+
+  @protected
+  Uint8List? cst_encode_opt_list_prim_u_8(Uint8List? raw) {
+    return raw == null ? null : cst_encode_list_prim_u_8(raw);
+  }
+
+  @protected
   bool cst_encode_bool(bool raw);
 
   @protected
   int cst_encode_i_32(int raw);
-
-  @protected
-  int cst_encode_server_status(ServerStatus raw);
 
   @protected
   int cst_encode_u_16(int raw);
@@ -274,30 +211,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void cst_encode_unit(void raw);
 
   @protected
-  int cst_encode_usize(int raw);
-
-  @protected
   void sse_encode_String(String self, SseSerializer serializer);
 
   @protected
   void sse_encode_bool(bool self, SseSerializer serializer);
 
   @protected
-  void sse_encode_box_autoadd_device_config(
-      DeviceConfig self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_box_autoadd_server_config(
-      ServerConfig self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_device_config(DeviceConfig self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_device_info(DeviceInfo self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_discover_state(DiscoverState self, SseSerializer serializer);
+  void sse_encode_file_info(FileInfo self, SseSerializer serializer);
 
   @protected
   void sse_encode_i_32(int self, SseSerializer serializer);
@@ -306,8 +226,10 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_i_64(int self, SseSerializer serializer);
 
   @protected
-  void sse_encode_list_device_info(
-      List<DeviceInfo> self, SseSerializer serializer);
+  void sse_encode_list_file_info(List<FileInfo> self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_list_node(List<Node> self, SseSerializer serializer);
 
   @protected
   void sse_encode_list_prim_u_8(Uint8List self, SseSerializer serializer);
@@ -316,16 +238,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_log_entry(LogEntry self, SseSerializer serializer);
 
   @protected
+  void sse_encode_mission_item(MissionItem self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_node(Node self, SseSerializer serializer);
+
+  @protected
   void sse_encode_opt_String(String? self, SseSerializer serializer);
 
   @protected
-  void sse_encode_progress(Progress self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_server_config(ServerConfig self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_server_status(ServerStatus self, SseSerializer serializer);
+  void sse_encode_opt_list_prim_u_8(Uint8List? self, SseSerializer serializer);
 
   @protected
   void sse_encode_u_16(int self, SseSerializer serializer);
@@ -335,9 +257,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_unit(void self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_usize(int self, SseSerializer serializer);
 }
 
 // Section: wire_class
@@ -350,34 +269,29 @@ class RustLibWire extends BaseWire {
       wasmModule.dart_fn_deliver_output(
           call_id, ptr_, rust_vec_len_, data_len_);
 
-  void wire_accept(NativePortType port_, bool is_accept) =>
-      wasmModule.wire_accept(port_, is_accept);
+  void wire_accept_mission(
+          NativePortType port_, String mission_id, bool accept) =>
+      wasmModule.wire_accept_mission(port_, mission_id, accept);
 
   void wire_create_log_stream(NativePortType port_) =>
       wasmModule.wire_create_log_stream(port_);
 
   void wire_discover(NativePortType port_) => wasmModule.wire_discover(port_);
 
-  void wire_init_server(NativePortType port_, List<dynamic> device) =>
-      wasmModule.wire_init_server(port_, device);
+  void wire_mission_channel(NativePortType port_) =>
+      wasmModule.wire_mission_channel(port_);
 
-  void wire_listen_discover(NativePortType port_) =>
-      wasmModule.wire_listen_discover(port_);
+  void wire_node_channel(NativePortType port_) =>
+      wasmModule.wire_node_channel(port_);
 
-  void wire_listen_progress(NativePortType port_) =>
-      wasmModule.wire_listen_progress(port_);
+  void wire_rust_set_up(NativePortType port_, bool is_debug) =>
+      wasmModule.wire_rust_set_up(port_, is_debug);
 
-  void wire_rust_set_up(NativePortType port_, bool isDebug) =>
-      wasmModule.wire_rust_set_up(port_, isDebug);
+  void wire_setup(NativePortType port_) => wasmModule.wire_setup(port_);
 
-  void wire_server_status(NativePortType port_) =>
-      wasmModule.wire_server_status(port_);
+  void wire_start(NativePortType port_) => wasmModule.wire_start(port_);
 
-  void wire_start_server(NativePortType port_, List<dynamic> config) =>
-      wasmModule.wire_start_server(port_, config);
-
-  void wire_stop_server(NativePortType port_) =>
-      wasmModule.wire_stop_server(port_);
+  void wire_stop(NativePortType port_) => wasmModule.wire_stop(port_);
 }
 
 @JS('wasm_bindgen')
@@ -395,23 +309,22 @@ class RustLibWasmModule implements WasmModule {
   external void dart_fn_deliver_output(int call_id,
       PlatformGeneralizedUint8ListPtr ptr_, int rust_vec_len_, int data_len_);
 
-  external void wire_accept(NativePortType port_, bool is_accept);
+  external void wire_accept_mission(
+      NativePortType port_, String mission_id, bool accept);
 
   external void wire_create_log_stream(NativePortType port_);
 
   external void wire_discover(NativePortType port_);
 
-  external void wire_init_server(NativePortType port_, List<dynamic> device);
+  external void wire_mission_channel(NativePortType port_);
 
-  external void wire_listen_discover(NativePortType port_);
+  external void wire_node_channel(NativePortType port_);
 
-  external void wire_listen_progress(NativePortType port_);
+  external void wire_rust_set_up(NativePortType port_, bool is_debug);
 
-  external void wire_rust_set_up(NativePortType port_, bool isDebug);
+  external void wire_setup(NativePortType port_);
 
-  external void wire_server_status(NativePortType port_);
+  external void wire_start(NativePortType port_);
 
-  external void wire_start_server(NativePortType port_, List<dynamic> config);
-
-  external void wire_stop_server(NativePortType port_);
+  external void wire_stop(NativePortType port_);
 }

@@ -25,32 +25,100 @@ impl CstDecode<String> for String {
         self
     }
 }
-impl CstDecode<crate::api::simple::DeviceConfig>
+impl CstDecode<crate::api::model::FileInfo>
     for flutter_rust_bridge::for_generated::wasm_bindgen::JsValue
 {
-    fn cst_decode(self) -> crate::api::simple::DeviceConfig {
+    fn cst_decode(self) -> crate::api::model::FileInfo {
         let self_ = self
             .dyn_into::<flutter_rust_bridge::for_generated::js_sys::Array>()
             .unwrap();
         assert_eq!(
             self_.length(),
-            5,
-            "Expected 5 elements, got {}",
+            6,
+            "Expected 6 elements, got {}",
             self_.length()
         );
-        crate::api::simple::DeviceConfig {
-            alias: self_.get(0).cst_decode(),
-            fingerprint: self_.get(1).cst_decode(),
-            device_model: self_.get(2).cst_decode(),
-            device_type: self_.get(3).cst_decode(),
-            store_path: self_.get(4).cst_decode(),
+        crate::api::model::FileInfo {
+            id: self_.get(0).cst_decode(),
+            file_name: self_.get(1).cst_decode(),
+            size: self_.get(2).cst_decode(),
+            file_type: self_.get(3).cst_decode(),
+            sha256: self_.get(4).cst_decode(),
+            preview: self_.get(5).cst_decode(),
         }
     }
 }
-impl CstDecode<crate::core::model::DeviceInfo>
+impl CstDecode<Vec<crate::api::model::FileInfo>>
     for flutter_rust_bridge::for_generated::wasm_bindgen::JsValue
 {
-    fn cst_decode(self) -> crate::core::model::DeviceInfo {
+    fn cst_decode(self) -> Vec<crate::api::model::FileInfo> {
+        self.dyn_into::<flutter_rust_bridge::for_generated::js_sys::Array>()
+            .unwrap()
+            .iter()
+            .map(CstDecode::cst_decode)
+            .collect()
+    }
+}
+impl CstDecode<Vec<crate::discovery::model::Node>>
+    for flutter_rust_bridge::for_generated::wasm_bindgen::JsValue
+{
+    fn cst_decode(self) -> Vec<crate::discovery::model::Node> {
+        self.dyn_into::<flutter_rust_bridge::for_generated::js_sys::Array>()
+            .unwrap()
+            .iter()
+            .map(CstDecode::cst_decode)
+            .collect()
+    }
+}
+impl CstDecode<Vec<u8>> for Box<[u8]> {
+    fn cst_decode(self) -> Vec<u8> {
+        self.into_vec()
+    }
+}
+impl CstDecode<crate::logger::LogEntry>
+    for flutter_rust_bridge::for_generated::wasm_bindgen::JsValue
+{
+    fn cst_decode(self) -> crate::logger::LogEntry {
+        let self_ = self
+            .dyn_into::<flutter_rust_bridge::for_generated::js_sys::Array>()
+            .unwrap();
+        assert_eq!(
+            self_.length(),
+            4,
+            "Expected 4 elements, got {}",
+            self_.length()
+        );
+        crate::logger::LogEntry {
+            time_millis: self_.get(0).cst_decode(),
+            level: self_.get(1).cst_decode(),
+            tag: self_.get(2).cst_decode(),
+            msg: self_.get(3).cst_decode(),
+        }
+    }
+}
+impl CstDecode<crate::bridge::bridge::MissionItem>
+    for flutter_rust_bridge::for_generated::wasm_bindgen::JsValue
+{
+    fn cst_decode(self) -> crate::bridge::bridge::MissionItem {
+        let self_ = self
+            .dyn_into::<flutter_rust_bridge::for_generated::js_sys::Array>()
+            .unwrap();
+        assert_eq!(
+            self_.length(),
+            2,
+            "Expected 2 elements, got {}",
+            self_.length()
+        );
+        crate::bridge::bridge::MissionItem {
+            id: self_.get(0).cst_decode(),
+            file_info: self_.get(1).cst_decode(),
+        }
+    }
+}
+impl CstDecode<crate::discovery::model::Node>
+    for flutter_rust_bridge::for_generated::wasm_bindgen::JsValue
+{
+    fn cst_decode(self) -> crate::discovery::model::Node {
         let self_ = self
             .dyn_into::<flutter_rust_bridge::for_generated::js_sys::Array>()
             .unwrap();
@@ -60,7 +128,7 @@ impl CstDecode<crate::core::model::DeviceInfo>
             "Expected 11 elements, got {}",
             self_.length()
         );
-        crate::core::model::DeviceInfo {
+        crate::discovery::model::Node {
             alias: self_.get(0).cst_decode(),
             version: self_.get(1).cst_decode(),
             device_model: self_.get(2).cst_decode(),
@@ -75,98 +143,14 @@ impl CstDecode<crate::core::model::DeviceInfo>
         }
     }
 }
-impl CstDecode<crate::api::simple::DiscoverState>
-    for flutter_rust_bridge::for_generated::wasm_bindgen::JsValue
-{
-    fn cst_decode(self) -> crate::api::simple::DiscoverState {
-        let self_ = self.unchecked_into::<flutter_rust_bridge::for_generated::js_sys::Array>();
-        match self_.get(0).unchecked_into_f64() as _ {
-            0 => crate::api::simple::DiscoverState::Discovering(self_.get(1).cst_decode()),
-            1 => crate::api::simple::DiscoverState::Done,
-            _ => unreachable!(),
-        }
-    }
-}
-impl CstDecode<Vec<crate::core::model::DeviceInfo>>
-    for flutter_rust_bridge::for_generated::wasm_bindgen::JsValue
-{
-    fn cst_decode(self) -> Vec<crate::core::model::DeviceInfo> {
-        self.dyn_into::<flutter_rust_bridge::for_generated::js_sys::Array>()
-            .unwrap()
-            .iter()
-            .map(CstDecode::cst_decode)
-            .collect()
-    }
-}
-impl CstDecode<Vec<u8>> for Box<[u8]> {
-    fn cst_decode(self) -> Vec<u8> {
-        self.into_vec()
-    }
-}
-impl CstDecode<crate::api::simple::LogEntry>
-    for flutter_rust_bridge::for_generated::wasm_bindgen::JsValue
-{
-    fn cst_decode(self) -> crate::api::simple::LogEntry {
-        let self_ = self
-            .dyn_into::<flutter_rust_bridge::for_generated::js_sys::Array>()
-            .unwrap();
-        assert_eq!(
-            self_.length(),
-            4,
-            "Expected 4 elements, got {}",
-            self_.length()
-        );
-        crate::api::simple::LogEntry {
-            time_millis: self_.get(0).cst_decode(),
-            level: self_.get(1).cst_decode(),
-            tag: self_.get(2).cst_decode(),
-            msg: self_.get(3).cst_decode(),
-        }
-    }
-}
 impl CstDecode<Option<String>> for Option<String> {
     fn cst_decode(self) -> Option<String> {
         self.map(CstDecode::cst_decode)
     }
 }
-impl CstDecode<crate::core::model::Progress>
-    for flutter_rust_bridge::for_generated::wasm_bindgen::JsValue
-{
-    fn cst_decode(self) -> crate::core::model::Progress {
-        let self_ = self.unchecked_into::<flutter_rust_bridge::for_generated::js_sys::Array>();
-        match self_.get(0).unchecked_into_f64() as _ {
-            0 => crate::core::model::Progress::Prepare,
-            1 => crate::core::model::Progress::Idle,
-            2 => crate::core::model::Progress::Progress(
-                self_.get(1).cst_decode(),
-                self_.get(2).cst_decode(),
-            ),
-            3 => crate::core::model::Progress::Done,
-            _ => unreachable!(),
-        }
-    }
-}
-impl CstDecode<crate::api::simple::ServerConfig>
-    for flutter_rust_bridge::for_generated::wasm_bindgen::JsValue
-{
-    fn cst_decode(self) -> crate::api::simple::ServerConfig {
-        let self_ = self
-            .dyn_into::<flutter_rust_bridge::for_generated::js_sys::Array>()
-            .unwrap();
-        assert_eq!(
-            self_.length(),
-            6,
-            "Expected 6 elements, got {}",
-            self_.length()
-        );
-        crate::api::simple::ServerConfig {
-            multicast_addr: self_.get(0).cst_decode(),
-            port: self_.get(1).cst_decode(),
-            protocol: self_.get(2).cst_decode(),
-            download: self_.get(3).cst_decode(),
-            announcement: self_.get(4).cst_decode(),
-            announce: self_.get(5).cst_decode(),
-        }
+impl CstDecode<Option<Vec<u8>>> for Option<Box<[u8]>> {
+    fn cst_decode(self) -> Option<Vec<u8>> {
+        self.map(CstDecode::cst_decode)
     }
 }
 impl CstDecode<String> for flutter_rust_bridge::for_generated::wasm_bindgen::JsValue {
@@ -200,13 +184,6 @@ impl CstDecode<Vec<u8>> for flutter_rust_bridge::for_generated::wasm_bindgen::Js
             .into()
     }
 }
-impl CstDecode<crate::api::simple::ServerStatus>
-    for flutter_rust_bridge::for_generated::wasm_bindgen::JsValue
-{
-    fn cst_decode(self) -> crate::api::simple::ServerStatus {
-        (self.unchecked_into_f64() as i32).cst_decode()
-    }
-}
 impl CstDecode<u16> for flutter_rust_bridge::for_generated::wasm_bindgen::JsValue {
     fn cst_decode(self) -> u16 {
         self.unchecked_into_f64() as _
@@ -214,11 +191,6 @@ impl CstDecode<u16> for flutter_rust_bridge::for_generated::wasm_bindgen::JsValu
 }
 impl CstDecode<u8> for flutter_rust_bridge::for_generated::wasm_bindgen::JsValue {
     fn cst_decode(self) -> u8 {
-        self.unchecked_into_f64() as _
-    }
-}
-impl CstDecode<usize> for flutter_rust_bridge::for_generated::wasm_bindgen::JsValue {
-    fn cst_decode(self) -> usize {
         self.unchecked_into_f64() as _
     }
 }
@@ -241,8 +213,12 @@ pub fn dart_fn_deliver_output(
 }
 
 #[wasm_bindgen]
-pub fn wire_accept(port_: flutter_rust_bridge::for_generated::MessagePort, is_accept: bool) {
-    wire_accept_impl(port_, is_accept)
+pub fn wire_accept_mission(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    mission_id: String,
+    accept: bool,
+) {
+    wire_accept_mission_impl(port_, mission_id, accept)
 }
 
 #[wasm_bindgen]
@@ -256,42 +232,31 @@ pub fn wire_discover(port_: flutter_rust_bridge::for_generated::MessagePort) {
 }
 
 #[wasm_bindgen]
-pub fn wire_init_server(
-    port_: flutter_rust_bridge::for_generated::MessagePort,
-    device: flutter_rust_bridge::for_generated::wasm_bindgen::JsValue,
-) {
-    wire_init_server_impl(port_, device)
+pub fn wire_mission_channel(port_: flutter_rust_bridge::for_generated::MessagePort) {
+    wire_mission_channel_impl(port_)
 }
 
 #[wasm_bindgen]
-pub fn wire_listen_discover(port_: flutter_rust_bridge::for_generated::MessagePort) {
-    wire_listen_discover_impl(port_)
+pub fn wire_node_channel(port_: flutter_rust_bridge::for_generated::MessagePort) {
+    wire_node_channel_impl(port_)
 }
 
 #[wasm_bindgen]
-pub fn wire_listen_progress(port_: flutter_rust_bridge::for_generated::MessagePort) {
-    wire_listen_progress_impl(port_)
+pub fn wire_rust_set_up(port_: flutter_rust_bridge::for_generated::MessagePort, is_debug: bool) {
+    wire_rust_set_up_impl(port_, is_debug)
 }
 
 #[wasm_bindgen]
-pub fn wire_rust_set_up(port_: flutter_rust_bridge::for_generated::MessagePort, isDebug: bool) {
-    wire_rust_set_up_impl(port_, isDebug)
+pub fn wire_setup(port_: flutter_rust_bridge::for_generated::MessagePort) {
+    wire_setup_impl(port_)
 }
 
 #[wasm_bindgen]
-pub fn wire_server_status(port_: flutter_rust_bridge::for_generated::MessagePort) {
-    wire_server_status_impl(port_)
+pub fn wire_start(port_: flutter_rust_bridge::for_generated::MessagePort) {
+    wire_start_impl(port_)
 }
 
 #[wasm_bindgen]
-pub fn wire_start_server(
-    port_: flutter_rust_bridge::for_generated::MessagePort,
-    config: flutter_rust_bridge::for_generated::wasm_bindgen::JsValue,
-) {
-    wire_start_server_impl(port_, config)
-}
-
-#[wasm_bindgen]
-pub fn wire_stop_server(port_: flutter_rust_bridge::for_generated::MessagePort) {
-    wire_stop_server_impl(port_)
+pub fn wire_stop(port_: flutter_rust_bridge::for_generated::MessagePort) {
+    wire_stop_impl(port_)
 }

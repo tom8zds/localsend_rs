@@ -3,12 +3,14 @@
 
 // ignore_for_file: unused_import, unused_element, unnecessary_import, duplicate_ignore, invalid_use_of_internal_member, annotate_overrides, non_constant_identifier_names, curly_braces_in_flow_control_structures, prefer_const_literals_to_create_immutables
 
-import 'api/simple.dart';
-import 'core/model.dart';
+import 'api/model.dart';
+import 'bridge/bridge.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:ffi' as ffi;
+import 'discovery/model.dart';
 import 'frb_generated.dart';
+import 'logger.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated_io.dart';
 
 abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
@@ -26,19 +28,7 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   bool dco_decode_bool(dynamic raw);
 
   @protected
-  DeviceConfig dco_decode_box_autoadd_device_config(dynamic raw);
-
-  @protected
-  ServerConfig dco_decode_box_autoadd_server_config(dynamic raw);
-
-  @protected
-  DeviceConfig dco_decode_device_config(dynamic raw);
-
-  @protected
-  DeviceInfo dco_decode_device_info(dynamic raw);
-
-  @protected
-  DiscoverState dco_decode_discover_state(dynamic raw);
+  FileInfo dco_decode_file_info(dynamic raw);
 
   @protected
   int dco_decode_i_32(dynamic raw);
@@ -47,7 +37,10 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   int dco_decode_i_64(dynamic raw);
 
   @protected
-  List<DeviceInfo> dco_decode_list_device_info(dynamic raw);
+  List<FileInfo> dco_decode_list_file_info(dynamic raw);
+
+  @protected
+  List<Node> dco_decode_list_node(dynamic raw);
 
   @protected
   Uint8List dco_decode_list_prim_u_8(dynamic raw);
@@ -56,16 +49,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   LogEntry dco_decode_log_entry(dynamic raw);
 
   @protected
+  MissionItem dco_decode_mission_item(dynamic raw);
+
+  @protected
+  Node dco_decode_node(dynamic raw);
+
+  @protected
   String? dco_decode_opt_String(dynamic raw);
 
   @protected
-  Progress dco_decode_progress(dynamic raw);
-
-  @protected
-  ServerConfig dco_decode_server_config(dynamic raw);
-
-  @protected
-  ServerStatus dco_decode_server_status(dynamic raw);
+  Uint8List? dco_decode_opt_list_prim_u_8(dynamic raw);
 
   @protected
   int dco_decode_u_16(dynamic raw);
@@ -77,30 +70,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void dco_decode_unit(dynamic raw);
 
   @protected
-  int dco_decode_usize(dynamic raw);
-
-  @protected
   String sse_decode_String(SseDeserializer deserializer);
 
   @protected
   bool sse_decode_bool(SseDeserializer deserializer);
 
   @protected
-  DeviceConfig sse_decode_box_autoadd_device_config(
-      SseDeserializer deserializer);
-
-  @protected
-  ServerConfig sse_decode_box_autoadd_server_config(
-      SseDeserializer deserializer);
-
-  @protected
-  DeviceConfig sse_decode_device_config(SseDeserializer deserializer);
-
-  @protected
-  DeviceInfo sse_decode_device_info(SseDeserializer deserializer);
-
-  @protected
-  DiscoverState sse_decode_discover_state(SseDeserializer deserializer);
+  FileInfo sse_decode_file_info(SseDeserializer deserializer);
 
   @protected
   int sse_decode_i_32(SseDeserializer deserializer);
@@ -109,7 +85,10 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   int sse_decode_i_64(SseDeserializer deserializer);
 
   @protected
-  List<DeviceInfo> sse_decode_list_device_info(SseDeserializer deserializer);
+  List<FileInfo> sse_decode_list_file_info(SseDeserializer deserializer);
+
+  @protected
+  List<Node> sse_decode_list_node(SseDeserializer deserializer);
 
   @protected
   Uint8List sse_decode_list_prim_u_8(SseDeserializer deserializer);
@@ -118,16 +97,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   LogEntry sse_decode_log_entry(SseDeserializer deserializer);
 
   @protected
+  MissionItem sse_decode_mission_item(SseDeserializer deserializer);
+
+  @protected
+  Node sse_decode_node(SseDeserializer deserializer);
+
+  @protected
   String? sse_decode_opt_String(SseDeserializer deserializer);
 
   @protected
-  Progress sse_decode_progress(SseDeserializer deserializer);
-
-  @protected
-  ServerConfig sse_decode_server_config(SseDeserializer deserializer);
-
-  @protected
-  ServerStatus sse_decode_server_status(SseDeserializer deserializer);
+  Uint8List? sse_decode_opt_list_prim_u_8(SseDeserializer deserializer);
 
   @protected
   int sse_decode_u_16(SseDeserializer deserializer);
@@ -139,27 +118,8 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_decode_unit(SseDeserializer deserializer);
 
   @protected
-  int sse_decode_usize(SseDeserializer deserializer);
-
-  @protected
   ffi.Pointer<wire_cst_list_prim_u_8> cst_encode_String(String raw) {
     return cst_encode_list_prim_u_8(utf8.encoder.convert(raw));
-  }
-
-  @protected
-  ffi.Pointer<wire_cst_device_config> cst_encode_box_autoadd_device_config(
-      DeviceConfig raw) {
-    final ptr = wire.cst_new_box_autoadd_device_config();
-    cst_api_fill_to_wire_device_config(raw, ptr.ref);
-    return ptr;
-  }
-
-  @protected
-  ffi.Pointer<wire_cst_server_config> cst_encode_box_autoadd_server_config(
-      ServerConfig raw) {
-    final ptr = wire.cst_new_box_autoadd_server_config();
-    cst_api_fill_to_wire_server_config(raw, ptr.ref);
-    return ptr;
   }
 
   @protected
@@ -168,11 +128,20 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   }
 
   @protected
-  ffi.Pointer<wire_cst_list_device_info> cst_encode_list_device_info(
-      List<DeviceInfo> raw) {
-    final ans = wire.cst_new_list_device_info(raw.length);
+  ffi.Pointer<wire_cst_list_file_info> cst_encode_list_file_info(
+      List<FileInfo> raw) {
+    final ans = wire.cst_new_list_file_info(raw.length);
     for (var i = 0; i < raw.length; ++i) {
-      cst_api_fill_to_wire_device_info(raw[i], ans.ref.ptr[i]);
+      cst_api_fill_to_wire_file_info(raw[i], ans.ref.ptr[i]);
+    }
+    return ans;
+  }
+
+  @protected
+  ffi.Pointer<wire_cst_list_node> cst_encode_list_node(List<Node> raw) {
+    final ans = wire.cst_new_list_node(raw.length);
+    for (var i = 0; i < raw.length; ++i) {
+      cst_api_fill_to_wire_node(raw[i], ans.ref.ptr[i]);
     }
     return ans;
   }
@@ -190,57 +159,20 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   }
 
   @protected
-  void cst_api_fill_to_wire_box_autoadd_device_config(
-      DeviceConfig apiObj, ffi.Pointer<wire_cst_device_config> wireObj) {
-    cst_api_fill_to_wire_device_config(apiObj, wireObj.ref);
+  ffi.Pointer<wire_cst_list_prim_u_8> cst_encode_opt_list_prim_u_8(
+      Uint8List? raw) {
+    return raw == null ? ffi.nullptr : cst_encode_list_prim_u_8(raw);
   }
 
   @protected
-  void cst_api_fill_to_wire_box_autoadd_server_config(
-      ServerConfig apiObj, ffi.Pointer<wire_cst_server_config> wireObj) {
-    cst_api_fill_to_wire_server_config(apiObj, wireObj.ref);
-  }
-
-  @protected
-  void cst_api_fill_to_wire_device_config(
-      DeviceConfig apiObj, wire_cst_device_config wireObj) {
-    wireObj.alias = cst_encode_String(apiObj.alias);
-    wireObj.fingerprint = cst_encode_String(apiObj.fingerprint);
-    wireObj.device_model = cst_encode_String(apiObj.deviceModel);
-    wireObj.device_type = cst_encode_String(apiObj.deviceType);
-    wireObj.store_path = cst_encode_String(apiObj.storePath);
-  }
-
-  @protected
-  void cst_api_fill_to_wire_device_info(
-      DeviceInfo apiObj, wire_cst_device_info wireObj) {
-    wireObj.alias = cst_encode_String(apiObj.alias);
-    wireObj.version = cst_encode_String(apiObj.version);
-    wireObj.device_model = cst_encode_String(apiObj.deviceModel);
-    wireObj.device_type = cst_encode_String(apiObj.deviceType);
-    wireObj.fingerprint = cst_encode_String(apiObj.fingerprint);
-    wireObj.address = cst_encode_opt_String(apiObj.address);
-    wireObj.port = cst_encode_u_16(apiObj.port);
-    wireObj.protocol = cst_encode_String(apiObj.protocol);
-    wireObj.download = cst_encode_bool(apiObj.download);
-    wireObj.announcement = cst_encode_bool(apiObj.announcement);
-    wireObj.announce = cst_encode_bool(apiObj.announce);
-  }
-
-  @protected
-  void cst_api_fill_to_wire_discover_state(
-      DiscoverState apiObj, wire_cst_discover_state wireObj) {
-    if (apiObj is DiscoverState_Discovering) {
-      var pre_field0 = cst_encode_list_device_info(apiObj.field0);
-      wireObj.tag = 0;
-      wireObj.kind = wire.cst_inflate_DiscoverState_Discovering();
-      wireObj.kind.ref.Discovering.ref.field0 = pre_field0;
-      return;
-    }
-    if (apiObj is DiscoverState_Done) {
-      wireObj.tag = 1;
-      return;
-    }
+  void cst_api_fill_to_wire_file_info(
+      FileInfo apiObj, wire_cst_file_info wireObj) {
+    wireObj.id = cst_encode_String(apiObj.id);
+    wireObj.file_name = cst_encode_String(apiObj.fileName);
+    wireObj.size = cst_encode_i_64(apiObj.size);
+    wireObj.file_type = cst_encode_String(apiObj.fileType);
+    wireObj.sha256 = cst_encode_opt_String(apiObj.sha256);
+    wireObj.preview = cst_encode_opt_list_prim_u_8(apiObj.preview);
   }
 
   @protected
@@ -253,35 +185,20 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   }
 
   @protected
-  void cst_api_fill_to_wire_progress(
-      Progress apiObj, wire_cst_progress wireObj) {
-    if (apiObj is Progress_Prepare) {
-      wireObj.tag = 0;
-      return;
-    }
-    if (apiObj is Progress_Idle) {
-      wireObj.tag = 1;
-      return;
-    }
-    if (apiObj is Progress_Progress) {
-      var pre_field0 = cst_encode_usize(apiObj.field0);
-      var pre_field1 = cst_encode_usize(apiObj.field1);
-      wireObj.tag = 2;
-      wireObj.kind = wire.cst_inflate_Progress_Progress();
-      wireObj.kind.ref.Progress.ref.field0 = pre_field0;
-      wireObj.kind.ref.Progress.ref.field1 = pre_field1;
-      return;
-    }
-    if (apiObj is Progress_Done) {
-      wireObj.tag = 3;
-      return;
-    }
+  void cst_api_fill_to_wire_mission_item(
+      MissionItem apiObj, wire_cst_mission_item wireObj) {
+    wireObj.id = cst_encode_String(apiObj.id);
+    wireObj.file_info = cst_encode_list_file_info(apiObj.fileInfo);
   }
 
   @protected
-  void cst_api_fill_to_wire_server_config(
-      ServerConfig apiObj, wire_cst_server_config wireObj) {
-    wireObj.multicast_addr = cst_encode_String(apiObj.multicastAddr);
+  void cst_api_fill_to_wire_node(Node apiObj, wire_cst_node wireObj) {
+    wireObj.alias = cst_encode_String(apiObj.alias);
+    wireObj.version = cst_encode_String(apiObj.version);
+    wireObj.device_model = cst_encode_String(apiObj.deviceModel);
+    wireObj.device_type = cst_encode_String(apiObj.deviceType);
+    wireObj.fingerprint = cst_encode_String(apiObj.fingerprint);
+    wireObj.address = cst_encode_String(apiObj.address);
     wireObj.port = cst_encode_u_16(apiObj.port);
     wireObj.protocol = cst_encode_String(apiObj.protocol);
     wireObj.download = cst_encode_bool(apiObj.download);
@@ -296,9 +213,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   int cst_encode_i_32(int raw);
 
   @protected
-  int cst_encode_server_status(ServerStatus raw);
-
-  @protected
   int cst_encode_u_16(int raw);
 
   @protected
@@ -308,30 +222,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void cst_encode_unit(void raw);
 
   @protected
-  int cst_encode_usize(int raw);
-
-  @protected
   void sse_encode_String(String self, SseSerializer serializer);
 
   @protected
   void sse_encode_bool(bool self, SseSerializer serializer);
 
   @protected
-  void sse_encode_box_autoadd_device_config(
-      DeviceConfig self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_box_autoadd_server_config(
-      ServerConfig self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_device_config(DeviceConfig self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_device_info(DeviceInfo self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_discover_state(DiscoverState self, SseSerializer serializer);
+  void sse_encode_file_info(FileInfo self, SseSerializer serializer);
 
   @protected
   void sse_encode_i_32(int self, SseSerializer serializer);
@@ -340,8 +237,10 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_i_64(int self, SseSerializer serializer);
 
   @protected
-  void sse_encode_list_device_info(
-      List<DeviceInfo> self, SseSerializer serializer);
+  void sse_encode_list_file_info(List<FileInfo> self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_list_node(List<Node> self, SseSerializer serializer);
 
   @protected
   void sse_encode_list_prim_u_8(Uint8List self, SseSerializer serializer);
@@ -350,16 +249,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_log_entry(LogEntry self, SseSerializer serializer);
 
   @protected
+  void sse_encode_mission_item(MissionItem self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_node(Node self, SseSerializer serializer);
+
+  @protected
   void sse_encode_opt_String(String? self, SseSerializer serializer);
 
   @protected
-  void sse_encode_progress(Progress self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_server_config(ServerConfig self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_server_status(ServerStatus self, SseSerializer serializer);
+  void sse_encode_opt_list_prim_u_8(Uint8List? self, SseSerializer serializer);
 
   @protected
   void sse_encode_u_16(int self, SseSerializer serializer);
@@ -369,9 +268,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_unit(void self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_usize(int self, SseSerializer serializer);
 }
 
 // Section: wire_class
@@ -422,21 +318,24 @@ class RustLibWire implements BaseWire {
   late final _dart_fn_deliver_output = _dart_fn_deliver_outputPtr
       .asFunction<void Function(int, ffi.Pointer<ffi.Uint8>, int, int)>();
 
-  void wire_accept(
+  void wire_accept_mission(
     int port_,
-    bool is_accept,
+    ffi.Pointer<wire_cst_list_prim_u_8> mission_id,
+    bool accept,
   ) {
-    return _wire_accept(
+    return _wire_accept_mission(
       port_,
-      is_accept,
+      mission_id,
+      accept,
     );
   }
 
-  late final _wire_acceptPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64, ffi.Bool)>>(
-          'wire_accept');
-  late final _wire_accept =
-      _wire_acceptPtr.asFunction<void Function(int, bool)>();
+  late final _wire_accept_missionPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Void Function(ffi.Int64, ffi.Pointer<wire_cst_list_prim_u_8>,
+              ffi.Bool)>>('wire_accept_mission');
+  late final _wire_accept_mission = _wire_accept_missionPtr.asFunction<
+      void Function(int, ffi.Pointer<wire_cst_list_prim_u_8>, bool)>();
 
   void wire_create_log_stream(
     int port_,
@@ -466,58 +365,41 @@ class RustLibWire implements BaseWire {
   late final _wire_discover =
       _wire_discoverPtr.asFunction<void Function(int)>();
 
-  void wire_init_server(
-    int port_,
-    ffi.Pointer<wire_cst_device_config> device,
-  ) {
-    return _wire_init_server(
-      port_,
-      device,
-    );
-  }
-
-  late final _wire_init_serverPtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Void Function(ffi.Int64,
-              ffi.Pointer<wire_cst_device_config>)>>('wire_init_server');
-  late final _wire_init_server = _wire_init_serverPtr
-      .asFunction<void Function(int, ffi.Pointer<wire_cst_device_config>)>();
-
-  void wire_listen_discover(
+  void wire_mission_channel(
     int port_,
   ) {
-    return _wire_listen_discover(
+    return _wire_mission_channel(
       port_,
     );
   }
 
-  late final _wire_listen_discoverPtr =
+  late final _wire_mission_channelPtr =
       _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>(
-          'wire_listen_discover');
-  late final _wire_listen_discover =
-      _wire_listen_discoverPtr.asFunction<void Function(int)>();
+          'wire_mission_channel');
+  late final _wire_mission_channel =
+      _wire_mission_channelPtr.asFunction<void Function(int)>();
 
-  void wire_listen_progress(
+  void wire_node_channel(
     int port_,
   ) {
-    return _wire_listen_progress(
+    return _wire_node_channel(
       port_,
     );
   }
 
-  late final _wire_listen_progressPtr =
+  late final _wire_node_channelPtr =
       _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>(
-          'wire_listen_progress');
-  late final _wire_listen_progress =
-      _wire_listen_progressPtr.asFunction<void Function(int)>();
+          'wire_node_channel');
+  late final _wire_node_channel =
+      _wire_node_channelPtr.asFunction<void Function(int)>();
 
   void wire_rust_set_up(
     int port_,
-    bool isDebug,
+    bool is_debug,
   ) {
     return _wire_rust_set_up(
       port_,
-      isDebug,
+      is_debug,
     );
   }
 
@@ -527,87 +409,71 @@ class RustLibWire implements BaseWire {
   late final _wire_rust_set_up =
       _wire_rust_set_upPtr.asFunction<void Function(int, bool)>();
 
-  void wire_server_status(
+  void wire_setup(
     int port_,
   ) {
-    return _wire_server_status(
+    return _wire_setup(
       port_,
     );
   }
 
-  late final _wire_server_statusPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>(
-          'wire_server_status');
-  late final _wire_server_status =
-      _wire_server_statusPtr.asFunction<void Function(int)>();
+  late final _wire_setupPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>('wire_setup');
+  late final _wire_setup = _wire_setupPtr.asFunction<void Function(int)>();
 
-  void wire_start_server(
-    int port_,
-    ffi.Pointer<wire_cst_server_config> config,
-  ) {
-    return _wire_start_server(
-      port_,
-      config,
-    );
-  }
-
-  late final _wire_start_serverPtr = _lookup<
-      ffi.NativeFunction<
-          ffi.Void Function(ffi.Int64,
-              ffi.Pointer<wire_cst_server_config>)>>('wire_start_server');
-  late final _wire_start_server = _wire_start_serverPtr
-      .asFunction<void Function(int, ffi.Pointer<wire_cst_server_config>)>();
-
-  void wire_stop_server(
+  void wire_start(
     int port_,
   ) {
-    return _wire_stop_server(
+    return _wire_start(
       port_,
     );
   }
 
-  late final _wire_stop_serverPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>(
-          'wire_stop_server');
-  late final _wire_stop_server =
-      _wire_stop_serverPtr.asFunction<void Function(int)>();
+  late final _wire_startPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>('wire_start');
+  late final _wire_start = _wire_startPtr.asFunction<void Function(int)>();
 
-  ffi.Pointer<wire_cst_device_config> cst_new_box_autoadd_device_config() {
-    return _cst_new_box_autoadd_device_config();
+  void wire_stop(
+    int port_,
+  ) {
+    return _wire_stop(
+      port_,
+    );
   }
 
-  late final _cst_new_box_autoadd_device_configPtr = _lookup<
-          ffi.NativeFunction<ffi.Pointer<wire_cst_device_config> Function()>>(
-      'cst_new_box_autoadd_device_config');
-  late final _cst_new_box_autoadd_device_config =
-      _cst_new_box_autoadd_device_configPtr
-          .asFunction<ffi.Pointer<wire_cst_device_config> Function()>();
+  late final _wire_stopPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Int64)>>('wire_stop');
+  late final _wire_stop = _wire_stopPtr.asFunction<void Function(int)>();
 
-  ffi.Pointer<wire_cst_server_config> cst_new_box_autoadd_server_config() {
-    return _cst_new_box_autoadd_server_config();
-  }
-
-  late final _cst_new_box_autoadd_server_configPtr = _lookup<
-          ffi.NativeFunction<ffi.Pointer<wire_cst_server_config> Function()>>(
-      'cst_new_box_autoadd_server_config');
-  late final _cst_new_box_autoadd_server_config =
-      _cst_new_box_autoadd_server_configPtr
-          .asFunction<ffi.Pointer<wire_cst_server_config> Function()>();
-
-  ffi.Pointer<wire_cst_list_device_info> cst_new_list_device_info(
+  ffi.Pointer<wire_cst_list_file_info> cst_new_list_file_info(
     int len,
   ) {
-    return _cst_new_list_device_info(
+    return _cst_new_list_file_info(
       len,
     );
   }
 
-  late final _cst_new_list_device_infoPtr = _lookup<
+  late final _cst_new_list_file_infoPtr = _lookup<
       ffi.NativeFunction<
-          ffi.Pointer<wire_cst_list_device_info> Function(
-              ffi.Int32)>>('cst_new_list_device_info');
-  late final _cst_new_list_device_info = _cst_new_list_device_infoPtr
-      .asFunction<ffi.Pointer<wire_cst_list_device_info> Function(int)>();
+          ffi.Pointer<wire_cst_list_file_info> Function(
+              ffi.Int32)>>('cst_new_list_file_info');
+  late final _cst_new_list_file_info = _cst_new_list_file_infoPtr
+      .asFunction<ffi.Pointer<wire_cst_list_file_info> Function(int)>();
+
+  ffi.Pointer<wire_cst_list_node> cst_new_list_node(
+    int len,
+  ) {
+    return _cst_new_list_node(
+      len,
+    );
+  }
+
+  late final _cst_new_list_nodePtr = _lookup<
+          ffi
+          .NativeFunction<ffi.Pointer<wire_cst_list_node> Function(ffi.Int32)>>(
+      'cst_new_list_node');
+  late final _cst_new_list_node = _cst_new_list_nodePtr
+      .asFunction<ffi.Pointer<wire_cst_list_node> Function(int)>();
 
   ffi.Pointer<wire_cst_list_prim_u_8> cst_new_list_prim_u_8(
     int len,
@@ -623,27 +489,6 @@ class RustLibWire implements BaseWire {
               ffi.Int32)>>('cst_new_list_prim_u_8');
   late final _cst_new_list_prim_u_8 = _cst_new_list_prim_u_8Ptr
       .asFunction<ffi.Pointer<wire_cst_list_prim_u_8> Function(int)>();
-
-  ffi.Pointer<DiscoverStateKind> cst_inflate_DiscoverState_Discovering() {
-    return _cst_inflate_DiscoverState_Discovering();
-  }
-
-  late final _cst_inflate_DiscoverState_DiscoveringPtr =
-      _lookup<ffi.NativeFunction<ffi.Pointer<DiscoverStateKind> Function()>>(
-          'cst_inflate_DiscoverState_Discovering');
-  late final _cst_inflate_DiscoverState_Discovering =
-      _cst_inflate_DiscoverState_DiscoveringPtr
-          .asFunction<ffi.Pointer<DiscoverStateKind> Function()>();
-
-  ffi.Pointer<ProgressKind> cst_inflate_Progress_Progress() {
-    return _cst_inflate_Progress_Progress();
-  }
-
-  late final _cst_inflate_Progress_ProgressPtr =
-      _lookup<ffi.NativeFunction<ffi.Pointer<ProgressKind> Function()>>(
-          'cst_inflate_Progress_Progress');
-  late final _cst_inflate_Progress_Progress = _cst_inflate_Progress_ProgressPtr
-      .asFunction<ffi.Pointer<ProgressKind> Function()>();
 
   int dummy_method_to_enforce_bundling() {
     return _dummy_method_to_enforce_bundling();
@@ -663,37 +508,29 @@ final class wire_cst_list_prim_u_8 extends ffi.Struct {
   external int len;
 }
 
-final class wire_cst_device_config extends ffi.Struct {
-  external ffi.Pointer<wire_cst_list_prim_u_8> alias;
+final class wire_cst_file_info extends ffi.Struct {
+  external ffi.Pointer<wire_cst_list_prim_u_8> id;
 
-  external ffi.Pointer<wire_cst_list_prim_u_8> fingerprint;
+  external ffi.Pointer<wire_cst_list_prim_u_8> file_name;
 
-  external ffi.Pointer<wire_cst_list_prim_u_8> device_model;
+  @ffi.Int64()
+  external int size;
 
-  external ffi.Pointer<wire_cst_list_prim_u_8> device_type;
+  external ffi.Pointer<wire_cst_list_prim_u_8> file_type;
 
-  external ffi.Pointer<wire_cst_list_prim_u_8> store_path;
+  external ffi.Pointer<wire_cst_list_prim_u_8> sha256;
+
+  external ffi.Pointer<wire_cst_list_prim_u_8> preview;
 }
 
-final class wire_cst_server_config extends ffi.Struct {
-  external ffi.Pointer<wire_cst_list_prim_u_8> multicast_addr;
+final class wire_cst_list_file_info extends ffi.Struct {
+  external ffi.Pointer<wire_cst_file_info> ptr;
 
-  @ffi.Uint16()
-  external int port;
-
-  external ffi.Pointer<wire_cst_list_prim_u_8> protocol;
-
-  @ffi.Bool()
-  external bool download;
-
-  @ffi.Bool()
-  external bool announcement;
-
-  @ffi.Bool()
-  external bool announce;
+  @ffi.Int32()
+  external int len;
 }
 
-final class wire_cst_device_info extends ffi.Struct {
+final class wire_cst_node extends ffi.Struct {
   external ffi.Pointer<wire_cst_list_prim_u_8> alias;
 
   external ffi.Pointer<wire_cst_list_prim_u_8> version;
@@ -721,54 +558,11 @@ final class wire_cst_device_info extends ffi.Struct {
   external bool announce;
 }
 
-final class wire_cst_list_device_info extends ffi.Struct {
-  external ffi.Pointer<wire_cst_device_info> ptr;
+final class wire_cst_list_node extends ffi.Struct {
+  external ffi.Pointer<wire_cst_node> ptr;
 
   @ffi.Int32()
   external int len;
-}
-
-final class wire_cst_DiscoverState_Discovering extends ffi.Struct {
-  external ffi.Pointer<wire_cst_list_device_info> field0;
-}
-
-final class wire_cst_DiscoverState_Done extends ffi.Opaque {}
-
-final class DiscoverStateKind extends ffi.Union {
-  external ffi.Pointer<wire_cst_DiscoverState_Discovering> Discovering;
-
-  external ffi.Pointer<wire_cst_DiscoverState_Done> Done;
-}
-
-final class wire_cst_Progress_Prepare extends ffi.Opaque {}
-
-final class wire_cst_Progress_Idle extends ffi.Opaque {}
-
-final class wire_cst_Progress_Progress extends ffi.Struct {
-  @ffi.UintPtr()
-  external int field0;
-
-  @ffi.UintPtr()
-  external int field1;
-}
-
-final class wire_cst_Progress_Done extends ffi.Opaque {}
-
-final class ProgressKind extends ffi.Union {
-  external ffi.Pointer<wire_cst_Progress_Prepare> Prepare;
-
-  external ffi.Pointer<wire_cst_Progress_Idle> Idle;
-
-  external ffi.Pointer<wire_cst_Progress_Progress> Progress;
-
-  external ffi.Pointer<wire_cst_Progress_Done> Done;
-}
-
-final class wire_cst_discover_state extends ffi.Struct {
-  @ffi.Int32()
-  external int tag;
-
-  external ffi.Pointer<DiscoverStateKind> kind;
 }
 
 final class wire_cst_log_entry extends ffi.Struct {
@@ -783,9 +577,8 @@ final class wire_cst_log_entry extends ffi.Struct {
   external ffi.Pointer<wire_cst_list_prim_u_8> msg;
 }
 
-final class wire_cst_progress extends ffi.Struct {
-  @ffi.Int32()
-  external int tag;
+final class wire_cst_mission_item extends ffi.Struct {
+  external ffi.Pointer<wire_cst_list_prim_u_8> id;
 
-  external ffi.Pointer<ProgressKind> kind;
+  external ffi.Pointer<wire_cst_list_file_info> file_info;
 }

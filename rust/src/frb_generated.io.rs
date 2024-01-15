@@ -16,61 +16,29 @@ impl CstDecode<String> for *mut wire_cst_list_prim_u_8 {
         String::from_utf8(vec).unwrap()
     }
 }
-impl CstDecode<crate::api::simple::DeviceConfig> for *mut wire_cst_device_config {
-    fn cst_decode(self) -> crate::api::simple::DeviceConfig {
-        let wrap = unsafe { flutter_rust_bridge::for_generated::box_from_leak_ptr(self) };
-        CstDecode::<crate::api::simple::DeviceConfig>::cst_decode(*wrap).into()
-    }
-}
-impl CstDecode<crate::api::simple::ServerConfig> for *mut wire_cst_server_config {
-    fn cst_decode(self) -> crate::api::simple::ServerConfig {
-        let wrap = unsafe { flutter_rust_bridge::for_generated::box_from_leak_ptr(self) };
-        CstDecode::<crate::api::simple::ServerConfig>::cst_decode(*wrap).into()
-    }
-}
-impl CstDecode<crate::api::simple::DeviceConfig> for wire_cst_device_config {
-    fn cst_decode(self) -> crate::api::simple::DeviceConfig {
-        crate::api::simple::DeviceConfig {
-            alias: self.alias.cst_decode(),
-            fingerprint: self.fingerprint.cst_decode(),
-            device_model: self.device_model.cst_decode(),
-            device_type: self.device_type.cst_decode(),
-            store_path: self.store_path.cst_decode(),
+impl CstDecode<crate::api::model::FileInfo> for wire_cst_file_info {
+    fn cst_decode(self) -> crate::api::model::FileInfo {
+        crate::api::model::FileInfo {
+            id: self.id.cst_decode(),
+            file_name: self.file_name.cst_decode(),
+            size: self.size.cst_decode(),
+            file_type: self.file_type.cst_decode(),
+            sha256: self.sha256.cst_decode(),
+            preview: self.preview.cst_decode(),
         }
     }
 }
-impl CstDecode<crate::core::model::DeviceInfo> for wire_cst_device_info {
-    fn cst_decode(self) -> crate::core::model::DeviceInfo {
-        crate::core::model::DeviceInfo {
-            alias: self.alias.cst_decode(),
-            version: self.version.cst_decode(),
-            device_model: self.device_model.cst_decode(),
-            device_type: self.device_type.cst_decode(),
-            fingerprint: self.fingerprint.cst_decode(),
-            address: self.address.cst_decode(),
-            port: self.port.cst_decode(),
-            protocol: self.protocol.cst_decode(),
-            download: self.download.cst_decode(),
-            announcement: self.announcement.cst_decode(),
-            announce: self.announce.cst_decode(),
-        }
+impl CstDecode<Vec<crate::api::model::FileInfo>> for *mut wire_cst_list_file_info {
+    fn cst_decode(self) -> Vec<crate::api::model::FileInfo> {
+        let vec = unsafe {
+            let wrap = flutter_rust_bridge::for_generated::box_from_leak_ptr(self);
+            flutter_rust_bridge::for_generated::vec_from_leak_ptr(wrap.ptr, wrap.len)
+        };
+        vec.into_iter().map(CstDecode::cst_decode).collect()
     }
 }
-impl CstDecode<crate::api::simple::DiscoverState> for wire_cst_discover_state {
-    fn cst_decode(self) -> crate::api::simple::DiscoverState {
-        match self.tag {
-            0 => unsafe {
-                let ans = flutter_rust_bridge::for_generated::box_from_leak_ptr(self.kind);
-                let ans = flutter_rust_bridge::for_generated::box_from_leak_ptr(ans.Discovering);
-                crate::api::simple::DiscoverState::Discovering(ans.field0.cst_decode())
-            },
-            1 => crate::api::simple::DiscoverState::Done,
-            _ => unreachable!(),
-        }
-    }
-}
-impl CstDecode<Vec<crate::core::model::DeviceInfo>> for *mut wire_cst_list_device_info {
-    fn cst_decode(self) -> Vec<crate::core::model::DeviceInfo> {
+impl CstDecode<Vec<crate::discovery::model::Node>> for *mut wire_cst_list_node {
+    fn cst_decode(self) -> Vec<crate::discovery::model::Node> {
         let vec = unsafe {
             let wrap = flutter_rust_bridge::for_generated::box_from_leak_ptr(self);
             flutter_rust_bridge::for_generated::vec_from_leak_ptr(wrap.ptr, wrap.len)
@@ -86,9 +54,9 @@ impl CstDecode<Vec<u8>> for *mut wire_cst_list_prim_u_8 {
         }
     }
 }
-impl CstDecode<crate::api::simple::LogEntry> for wire_cst_log_entry {
-    fn cst_decode(self) -> crate::api::simple::LogEntry {
-        crate::api::simple::LogEntry {
+impl CstDecode<crate::logger::LogEntry> for wire_cst_log_entry {
+    fn cst_decode(self) -> crate::logger::LogEntry {
+        crate::logger::LogEntry {
             time_millis: self.time_millis.cst_decode(),
             level: self.level.cst_decode(),
             tag: self.tag.cst_decode(),
@@ -96,28 +64,23 @@ impl CstDecode<crate::api::simple::LogEntry> for wire_cst_log_entry {
         }
     }
 }
-impl CstDecode<crate::core::model::Progress> for wire_cst_progress {
-    fn cst_decode(self) -> crate::core::model::Progress {
-        match self.tag {
-            0 => crate::core::model::Progress::Prepare,
-            1 => crate::core::model::Progress::Idle,
-            2 => unsafe {
-                let ans = flutter_rust_bridge::for_generated::box_from_leak_ptr(self.kind);
-                let ans = flutter_rust_bridge::for_generated::box_from_leak_ptr(ans.Progress);
-                crate::core::model::Progress::Progress(
-                    ans.field0.cst_decode(),
-                    ans.field1.cst_decode(),
-                )
-            },
-            3 => crate::core::model::Progress::Done,
-            _ => unreachable!(),
+impl CstDecode<crate::bridge::bridge::MissionItem> for wire_cst_mission_item {
+    fn cst_decode(self) -> crate::bridge::bridge::MissionItem {
+        crate::bridge::bridge::MissionItem {
+            id: self.id.cst_decode(),
+            file_info: self.file_info.cst_decode(),
         }
     }
 }
-impl CstDecode<crate::api::simple::ServerConfig> for wire_cst_server_config {
-    fn cst_decode(self) -> crate::api::simple::ServerConfig {
-        crate::api::simple::ServerConfig {
-            multicast_addr: self.multicast_addr.cst_decode(),
+impl CstDecode<crate::discovery::model::Node> for wire_cst_node {
+    fn cst_decode(self) -> crate::discovery::model::Node {
+        crate::discovery::model::Node {
+            alias: self.alias.cst_decode(),
+            version: self.version.cst_decode(),
+            device_model: self.device_model.cst_decode(),
+            device_type: self.device_type.cst_decode(),
+            fingerprint: self.fingerprint.cst_decode(),
+            address: self.address.cst_decode(),
             port: self.port.cst_decode(),
             protocol: self.protocol.cst_decode(),
             download: self.download.cst_decode(),
@@ -135,53 +98,19 @@ impl<T> NewWithNullPtr for *mut T {
         std::ptr::null_mut()
     }
 }
-impl NewWithNullPtr for wire_cst_device_config {
+impl NewWithNullPtr for wire_cst_file_info {
     fn new_with_null_ptr() -> Self {
         Self {
-            alias: core::ptr::null_mut(),
-            fingerprint: core::ptr::null_mut(),
-            device_model: core::ptr::null_mut(),
-            device_type: core::ptr::null_mut(),
-            store_path: core::ptr::null_mut(),
+            id: core::ptr::null_mut(),
+            file_name: core::ptr::null_mut(),
+            size: Default::default(),
+            file_type: core::ptr::null_mut(),
+            sha256: core::ptr::null_mut(),
+            preview: core::ptr::null_mut(),
         }
     }
 }
-impl Default for wire_cst_device_config {
-    fn default() -> Self {
-        Self::new_with_null_ptr()
-    }
-}
-impl NewWithNullPtr for wire_cst_device_info {
-    fn new_with_null_ptr() -> Self {
-        Self {
-            alias: core::ptr::null_mut(),
-            version: core::ptr::null_mut(),
-            device_model: core::ptr::null_mut(),
-            device_type: core::ptr::null_mut(),
-            fingerprint: core::ptr::null_mut(),
-            address: core::ptr::null_mut(),
-            port: Default::default(),
-            protocol: core::ptr::null_mut(),
-            download: Default::default(),
-            announcement: Default::default(),
-            announce: Default::default(),
-        }
-    }
-}
-impl Default for wire_cst_device_info {
-    fn default() -> Self {
-        Self::new_with_null_ptr()
-    }
-}
-impl NewWithNullPtr for wire_cst_discover_state {
-    fn new_with_null_ptr() -> Self {
-        Self {
-            tag: -1,
-            kind: core::ptr::null_mut(),
-        }
-    }
-}
-impl Default for wire_cst_discover_state {
+impl Default for wire_cst_file_info {
     fn default() -> Self {
         Self::new_with_null_ptr()
     }
@@ -201,23 +130,28 @@ impl Default for wire_cst_log_entry {
         Self::new_with_null_ptr()
     }
 }
-impl NewWithNullPtr for wire_cst_progress {
+impl NewWithNullPtr for wire_cst_mission_item {
     fn new_with_null_ptr() -> Self {
         Self {
-            tag: -1,
-            kind: core::ptr::null_mut(),
+            id: core::ptr::null_mut(),
+            file_info: core::ptr::null_mut(),
         }
     }
 }
-impl Default for wire_cst_progress {
+impl Default for wire_cst_mission_item {
     fn default() -> Self {
         Self::new_with_null_ptr()
     }
 }
-impl NewWithNullPtr for wire_cst_server_config {
+impl NewWithNullPtr for wire_cst_node {
     fn new_with_null_ptr() -> Self {
         Self {
-            multicast_addr: core::ptr::null_mut(),
+            alias: core::ptr::null_mut(),
+            version: core::ptr::null_mut(),
+            device_model: core::ptr::null_mut(),
+            device_type: core::ptr::null_mut(),
+            fingerprint: core::ptr::null_mut(),
+            address: core::ptr::null_mut(),
             port: Default::default(),
             protocol: core::ptr::null_mut(),
             download: Default::default(),
@@ -226,7 +160,7 @@ impl NewWithNullPtr for wire_cst_server_config {
         }
     }
 }
-impl Default for wire_cst_server_config {
+impl Default for wire_cst_node {
     fn default() -> Self {
         Self::new_with_null_ptr()
     }
@@ -250,8 +184,12 @@ pub extern "C" fn dart_fn_deliver_output(
 }
 
 #[no_mangle]
-pub extern "C" fn wire_accept(port_: i64, is_accept: bool) {
-    wire_accept_impl(port_, is_accept)
+pub extern "C" fn wire_accept_mission(
+    port_: i64,
+    mission_id: *mut wire_cst_list_prim_u_8,
+    accept: bool,
+) {
+    wire_accept_mission_impl(port_, mission_id, accept)
 }
 
 #[no_mangle]
@@ -265,55 +203,52 @@ pub extern "C" fn wire_discover(port_: i64) {
 }
 
 #[no_mangle]
-pub extern "C" fn wire_init_server(port_: i64, device: *mut wire_cst_device_config) {
-    wire_init_server_impl(port_, device)
+pub extern "C" fn wire_mission_channel(port_: i64) {
+    wire_mission_channel_impl(port_)
 }
 
 #[no_mangle]
-pub extern "C" fn wire_listen_discover(port_: i64) {
-    wire_listen_discover_impl(port_)
+pub extern "C" fn wire_node_channel(port_: i64) {
+    wire_node_channel_impl(port_)
 }
 
 #[no_mangle]
-pub extern "C" fn wire_listen_progress(port_: i64) {
-    wire_listen_progress_impl(port_)
+pub extern "C" fn wire_rust_set_up(port_: i64, is_debug: bool) {
+    wire_rust_set_up_impl(port_, is_debug)
 }
 
 #[no_mangle]
-pub extern "C" fn wire_rust_set_up(port_: i64, isDebug: bool) {
-    wire_rust_set_up_impl(port_, isDebug)
+pub extern "C" fn wire_setup(port_: i64) {
+    wire_setup_impl(port_)
 }
 
 #[no_mangle]
-pub extern "C" fn wire_server_status(port_: i64) {
-    wire_server_status_impl(port_)
+pub extern "C" fn wire_start(port_: i64) {
+    wire_start_impl(port_)
 }
 
 #[no_mangle]
-pub extern "C" fn wire_start_server(port_: i64, config: *mut wire_cst_server_config) {
-    wire_start_server_impl(port_, config)
+pub extern "C" fn wire_stop(port_: i64) {
+    wire_stop_impl(port_)
 }
 
 #[no_mangle]
-pub extern "C" fn wire_stop_server(port_: i64) {
-    wire_stop_server_impl(port_)
-}
-
-#[no_mangle]
-pub extern "C" fn cst_new_box_autoadd_device_config() -> *mut wire_cst_device_config {
-    flutter_rust_bridge::for_generated::new_leak_box_ptr(wire_cst_device_config::new_with_null_ptr())
-}
-
-#[no_mangle]
-pub extern "C" fn cst_new_box_autoadd_server_config() -> *mut wire_cst_server_config {
-    flutter_rust_bridge::for_generated::new_leak_box_ptr(wire_cst_server_config::new_with_null_ptr())
-}
-
-#[no_mangle]
-pub extern "C" fn cst_new_list_device_info(len: i32) -> *mut wire_cst_list_device_info {
-    let wrap = wire_cst_list_device_info {
+pub extern "C" fn cst_new_list_file_info(len: i32) -> *mut wire_cst_list_file_info {
+    let wrap = wire_cst_list_file_info {
         ptr: flutter_rust_bridge::for_generated::new_leak_vec_ptr(
-            <wire_cst_device_info>::new_with_null_ptr(),
+            <wire_cst_file_info>::new_with_null_ptr(),
+            len,
+        ),
+        len,
+    };
+    flutter_rust_bridge::for_generated::new_leak_box_ptr(wrap)
+}
+
+#[no_mangle]
+pub extern "C" fn cst_new_list_node(len: i32) -> *mut wire_cst_list_node {
+    let wrap = wire_cst_list_node {
+        ptr: flutter_rust_bridge::for_generated::new_leak_vec_ptr(
+            <wire_cst_node>::new_with_null_ptr(),
             len,
         ),
         len,
@@ -330,76 +265,26 @@ pub extern "C" fn cst_new_list_prim_u_8(len: i32) -> *mut wire_cst_list_prim_u_8
     flutter_rust_bridge::for_generated::new_leak_box_ptr(ans)
 }
 
-#[no_mangle]
-pub extern "C" fn cst_inflate_DiscoverState_Discovering() -> *mut DiscoverStateKind {
-    flutter_rust_bridge::for_generated::new_leak_box_ptr(DiscoverStateKind {
-        Discovering: flutter_rust_bridge::for_generated::new_leak_box_ptr(
-            wire_cst_DiscoverState_Discovering {
-                field0: core::ptr::null_mut(),
-            },
-        ),
-    })
-}
-
-#[no_mangle]
-pub extern "C" fn cst_inflate_Progress_Progress() -> *mut ProgressKind {
-    flutter_rust_bridge::for_generated::new_leak_box_ptr(ProgressKind {
-        Progress: flutter_rust_bridge::for_generated::new_leak_box_ptr(
-            wire_cst_Progress_Progress {
-                field0: Default::default(),
-                field1: Default::default(),
-            },
-        ),
-    })
-}
-
 #[repr(C)]
 #[derive(Clone)]
-pub struct wire_cst_device_config {
-    alias: *mut wire_cst_list_prim_u_8,
-    fingerprint: *mut wire_cst_list_prim_u_8,
-    device_model: *mut wire_cst_list_prim_u_8,
-    device_type: *mut wire_cst_list_prim_u_8,
-    store_path: *mut wire_cst_list_prim_u_8,
+pub struct wire_cst_file_info {
+    id: *mut wire_cst_list_prim_u_8,
+    file_name: *mut wire_cst_list_prim_u_8,
+    size: i64,
+    file_type: *mut wire_cst_list_prim_u_8,
+    sha256: *mut wire_cst_list_prim_u_8,
+    preview: *mut wire_cst_list_prim_u_8,
 }
 #[repr(C)]
 #[derive(Clone)]
-pub struct wire_cst_device_info {
-    alias: *mut wire_cst_list_prim_u_8,
-    version: *mut wire_cst_list_prim_u_8,
-    device_model: *mut wire_cst_list_prim_u_8,
-    device_type: *mut wire_cst_list_prim_u_8,
-    fingerprint: *mut wire_cst_list_prim_u_8,
-    address: *mut wire_cst_list_prim_u_8,
-    port: u16,
-    protocol: *mut wire_cst_list_prim_u_8,
-    download: bool,
-    announcement: bool,
-    announce: bool,
+pub struct wire_cst_list_file_info {
+    ptr: *mut wire_cst_file_info,
+    len: i32,
 }
 #[repr(C)]
 #[derive(Clone)]
-pub struct wire_cst_discover_state {
-    tag: i32,
-    kind: *mut DiscoverStateKind,
-}
-#[repr(C)]
-pub union DiscoverStateKind {
-    Discovering: *mut wire_cst_DiscoverState_Discovering,
-    Done: *mut wire_cst_DiscoverState_Done,
-}
-#[repr(C)]
-#[derive(Clone)]
-pub struct wire_cst_DiscoverState_Discovering {
-    field0: *mut wire_cst_list_device_info,
-}
-#[repr(C)]
-#[derive(Clone)]
-pub struct wire_cst_DiscoverState_Done {}
-#[repr(C)]
-#[derive(Clone)]
-pub struct wire_cst_list_device_info {
-    ptr: *mut wire_cst_device_info,
+pub struct wire_cst_list_node {
+    ptr: *mut wire_cst_node,
     len: i32,
 }
 #[repr(C)]
@@ -418,36 +303,19 @@ pub struct wire_cst_log_entry {
 }
 #[repr(C)]
 #[derive(Clone)]
-pub struct wire_cst_progress {
-    tag: i32,
-    kind: *mut ProgressKind,
-}
-#[repr(C)]
-pub union ProgressKind {
-    Prepare: *mut wire_cst_Progress_Prepare,
-    Idle: *mut wire_cst_Progress_Idle,
-    Progress: *mut wire_cst_Progress_Progress,
-    Done: *mut wire_cst_Progress_Done,
+pub struct wire_cst_mission_item {
+    id: *mut wire_cst_list_prim_u_8,
+    file_info: *mut wire_cst_list_file_info,
 }
 #[repr(C)]
 #[derive(Clone)]
-pub struct wire_cst_Progress_Prepare {}
-#[repr(C)]
-#[derive(Clone)]
-pub struct wire_cst_Progress_Idle {}
-#[repr(C)]
-#[derive(Clone)]
-pub struct wire_cst_Progress_Progress {
-    field0: usize,
-    field1: usize,
-}
-#[repr(C)]
-#[derive(Clone)]
-pub struct wire_cst_Progress_Done {}
-#[repr(C)]
-#[derive(Clone)]
-pub struct wire_cst_server_config {
-    multicast_addr: *mut wire_cst_list_prim_u_8,
+pub struct wire_cst_node {
+    alias: *mut wire_cst_list_prim_u_8,
+    version: *mut wire_cst_list_prim_u_8,
+    device_model: *mut wire_cst_list_prim_u_8,
+    device_type: *mut wire_cst_list_prim_u_8,
+    fingerprint: *mut wire_cst_list_prim_u_8,
+    address: *mut wire_cst_list_prim_u_8,
     port: u16,
     protocol: *mut wire_cst_list_prim_u_8,
     download: bool,

@@ -32,21 +32,26 @@ flutter_rust_bridge::frb_generated_default_handler!();
 
 // Section: wire_funcs
 
-fn wire_accept_impl(
+fn wire_accept_mission_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
-    is_accept: impl CstDecode<bool> + core::panic::UnwindSafe,
+    mission_id: impl CstDecode<String> + core::panic::UnwindSafe,
+    accept: impl CstDecode<bool> + core::panic::UnwindSafe,
 ) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::DcoCodec, _, _>(
         flutter_rust_bridge::for_generated::TaskInfo {
-            debug_name: "accept",
+            debug_name: "accept_mission",
             port: Some(port_),
             mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
         },
         move || {
-            let api_is_accept = is_accept.cst_decode();
+            let api_mission_id = mission_id.cst_decode();
+            let api_accept = accept.cst_decode();
             move |context| {
                 transform_result_dco((move || {
-                    Result::<_, ()>::Ok(crate::api::simple::accept(api_is_accept))
+                    Result::<_, ()>::Ok(crate::bridge::bridge::accept_mission(
+                        api_mission_id,
+                        api_accept,
+                    ))
                 })())
             }
         },
@@ -62,10 +67,10 @@ fn wire_create_log_stream_impl(port_: flutter_rust_bridge::for_generated::Messag
         move || {
             move |context| {
                 transform_result_dco((move || {
-                    crate::api::simple::create_log_stream(StreamSink::new(
+                    crate::bridge::bridge::create_log_stream(StreamSink::new(
                         context
                             .rust2dart_context()
-                            .stream_sink::<_, crate::api::simple::LogEntry>(),
+                            .stream_sink::<_, crate::logger::LogEntry>(),
                     ))
                 })())
             }
@@ -81,67 +86,47 @@ fn wire_discover_impl(port_: flutter_rust_bridge::for_generated::MessagePort) {
         },
         move || {
             move |context| {
-                transform_result_dco(
-                    (move || Result::<_, ()>::Ok(crate::api::simple::discover()))(),
-                )
-            }
-        },
-    )
-}
-fn wire_init_server_impl(
-    port_: flutter_rust_bridge::for_generated::MessagePort,
-    device: impl CstDecode<crate::api::simple::DeviceConfig> + core::panic::UnwindSafe,
-) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::DcoCodec, _, _>(
-        flutter_rust_bridge::for_generated::TaskInfo {
-            debug_name: "init_server",
-            port: Some(port_),
-            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
-        },
-        move || {
-            let api_device = device.cst_decode();
-            move |context| {
                 transform_result_dco((move || {
-                    Result::<_, ()>::Ok(crate::api::simple::init_server(api_device))
+                    Result::<_, ()>::Ok(crate::bridge::bridge::discover())
                 })())
             }
         },
     )
 }
-fn wire_listen_discover_impl(port_: flutter_rust_bridge::for_generated::MessagePort) {
+fn wire_mission_channel_impl(port_: flutter_rust_bridge::for_generated::MessagePort) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::DcoCodec, _, _>(
         flutter_rust_bridge::for_generated::TaskInfo {
-            debug_name: "listen_discover",
+            debug_name: "mission_channel",
             port: Some(port_),
             mode: flutter_rust_bridge::for_generated::FfiCallMode::Stream,
         },
         move || {
             move |context| {
                 transform_result_dco((move || {
-                    Result::<_, ()>::Ok(crate::api::simple::listen_discover(StreamSink::new(
+                    Result::<_, ()>::Ok(crate::bridge::bridge::mission_channel(StreamSink::new(
                         context
                             .rust2dart_context()
-                            .stream_sink::<_, crate::api::simple::DiscoverState>(),
+                            .stream_sink::<_, crate::bridge::bridge::MissionItem>(),
                     )))
                 })())
             }
         },
     )
 }
-fn wire_listen_progress_impl(port_: flutter_rust_bridge::for_generated::MessagePort) {
+fn wire_node_channel_impl(port_: flutter_rust_bridge::for_generated::MessagePort) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::DcoCodec, _, _>(
         flutter_rust_bridge::for_generated::TaskInfo {
-            debug_name: "listen_progress",
+            debug_name: "node_channel",
             port: Some(port_),
             mode: flutter_rust_bridge::for_generated::FfiCallMode::Stream,
         },
         move || {
             move |context| {
                 transform_result_dco((move || {
-                    Result::<_, ()>::Ok(crate::api::simple::listen_progress(StreamSink::new(
+                    Result::<_, ()>::Ok(crate::bridge::bridge::node_channel(StreamSink::new(
                         context
                             .rust2dart_context()
-                            .stream_sink::<_, crate::core::model::Progress>(),
+                            .stream_sink::<_, Vec<crate::discovery::model::Node>>(),
                     )))
                 })())
             }
@@ -150,7 +135,7 @@ fn wire_listen_progress_impl(port_: flutter_rust_bridge::for_generated::MessageP
 }
 fn wire_rust_set_up_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
-    isDebug: impl CstDecode<bool> + core::panic::UnwindSafe,
+    is_debug: impl CstDecode<bool> + core::panic::UnwindSafe,
 ) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::DcoCodec, _, _>(
         flutter_rust_bridge::for_generated::TaskInfo {
@@ -159,67 +144,57 @@ fn wire_rust_set_up_impl(
             mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
         },
         move || {
-            let api_isDebug = isDebug.cst_decode();
+            let api_is_debug = is_debug.cst_decode();
             move |context| {
                 transform_result_dco((move || {
-                    Result::<_, ()>::Ok(crate::api::simple::rust_set_up(api_isDebug))
+                    Result::<_, ()>::Ok(crate::bridge::bridge::rust_set_up(api_is_debug))
                 })())
             }
         },
     )
 }
-fn wire_server_status_impl(port_: flutter_rust_bridge::for_generated::MessagePort) {
+fn wire_setup_impl(port_: flutter_rust_bridge::for_generated::MessagePort) {
     FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::DcoCodec, _, _>(
         flutter_rust_bridge::for_generated::TaskInfo {
-            debug_name: "server_status",
-            port: Some(port_),
-            mode: flutter_rust_bridge::for_generated::FfiCallMode::Stream,
-        },
-        move || {
-            move |context| {
-                transform_result_dco((move || {
-                    Result::<_, ()>::Ok(crate::api::simple::server_status(StreamSink::new(
-                        context
-                            .rust2dart_context()
-                            .stream_sink::<_, crate::api::simple::ServerStatus>(),
-                    )))
-                })())
-            }
-        },
-    )
-}
-fn wire_start_server_impl(
-    port_: flutter_rust_bridge::for_generated::MessagePort,
-    config: impl CstDecode<crate::api::simple::ServerConfig> + core::panic::UnwindSafe,
-) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::DcoCodec, _, _>(
-        flutter_rust_bridge::for_generated::TaskInfo {
-            debug_name: "start_server",
-            port: Some(port_),
-            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
-        },
-        move || {
-            let api_config = config.cst_decode();
-            move |context| {
-                transform_result_dco((move || {
-                    Result::<_, ()>::Ok(crate::api::simple::start_server(api_config))
-                })())
-            }
-        },
-    )
-}
-fn wire_stop_server_impl(port_: flutter_rust_bridge::for_generated::MessagePort) {
-    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::DcoCodec, _, _>(
-        flutter_rust_bridge::for_generated::TaskInfo {
-            debug_name: "stop_server",
+            debug_name: "setup",
             port: Some(port_),
             mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
         },
         move || {
             move |context| {
-                transform_result_dco((move || {
-                    Result::<_, ()>::Ok(crate::api::simple::stop_server())
-                })())
+                transform_result_dco(
+                    (move || Result::<_, ()>::Ok(crate::bridge::bridge::setup()))(),
+                )
+            }
+        },
+    )
+}
+fn wire_start_impl(port_: flutter_rust_bridge::for_generated::MessagePort) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::DcoCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "start",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            move |context| {
+                transform_result_dco(
+                    (move || Result::<_, ()>::Ok(crate::bridge::bridge::start()))(),
+                )
+            }
+        },
+    )
+}
+fn wire_stop_impl(port_: flutter_rust_bridge::for_generated::MessagePort) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::DcoCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "stop",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            move |context| {
+                transform_result_dco((move || Result::<_, ()>::Ok(crate::bridge::bridge::stop()))())
             }
         },
     )
@@ -242,17 +217,6 @@ impl CstDecode<i64> for i64 {
         self
     }
 }
-impl CstDecode<crate::api::simple::ServerStatus> for i32 {
-    fn cst_decode(self) -> crate::api::simple::ServerStatus {
-        match self {
-            0 => crate::api::simple::ServerStatus::Starting,
-            1 => crate::api::simple::ServerStatus::Started,
-            2 => crate::api::simple::ServerStatus::Stopping,
-            3 => crate::api::simple::ServerStatus::Stopped,
-            _ => unreachable!("Invalid variant for ServerStatus: {}", self),
-        }
-    }
-}
 impl CstDecode<u16> for u16 {
     fn cst_decode(self) -> u16 {
         self
@@ -260,11 +224,6 @@ impl CstDecode<u16> for u16 {
 }
 impl CstDecode<u8> for u8 {
     fn cst_decode(self) -> u8 {
-        self
-    }
-}
-impl CstDecode<usize> for usize {
-    fn cst_decode(self) -> usize {
         self
     }
 }
@@ -281,68 +240,22 @@ impl SseDecode for bool {
     }
 }
 
-impl SseDecode for crate::api::simple::DeviceConfig {
+impl SseDecode for crate::api::model::FileInfo {
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
-        let mut var_alias = <String>::sse_decode(deserializer);
-        let mut var_fingerprint = <String>::sse_decode(deserializer);
-        let mut var_deviceModel = <String>::sse_decode(deserializer);
-        let mut var_deviceType = <String>::sse_decode(deserializer);
-        let mut var_storePath = <String>::sse_decode(deserializer);
-        return crate::api::simple::DeviceConfig {
-            alias: var_alias,
-            fingerprint: var_fingerprint,
-            device_model: var_deviceModel,
-            device_type: var_deviceType,
-            store_path: var_storePath,
+        let mut var_id = <String>::sse_decode(deserializer);
+        let mut var_fileName = <String>::sse_decode(deserializer);
+        let mut var_size = <i64>::sse_decode(deserializer);
+        let mut var_fileType = <String>::sse_decode(deserializer);
+        let mut var_sha256 = <Option<String>>::sse_decode(deserializer);
+        let mut var_preview = <Option<Vec<u8>>>::sse_decode(deserializer);
+        return crate::api::model::FileInfo {
+            id: var_id,
+            file_name: var_fileName,
+            size: var_size,
+            file_type: var_fileType,
+            sha256: var_sha256,
+            preview: var_preview,
         };
-    }
-}
-
-impl SseDecode for crate::core::model::DeviceInfo {
-    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
-        let mut var_alias = <String>::sse_decode(deserializer);
-        let mut var_version = <String>::sse_decode(deserializer);
-        let mut var_deviceModel = <String>::sse_decode(deserializer);
-        let mut var_deviceType = <String>::sse_decode(deserializer);
-        let mut var_fingerprint = <String>::sse_decode(deserializer);
-        let mut var_address = <Option<String>>::sse_decode(deserializer);
-        let mut var_port = <u16>::sse_decode(deserializer);
-        let mut var_protocol = <String>::sse_decode(deserializer);
-        let mut var_download = <bool>::sse_decode(deserializer);
-        let mut var_announcement = <bool>::sse_decode(deserializer);
-        let mut var_announce = <bool>::sse_decode(deserializer);
-        return crate::core::model::DeviceInfo {
-            alias: var_alias,
-            version: var_version,
-            device_model: var_deviceModel,
-            device_type: var_deviceType,
-            fingerprint: var_fingerprint,
-            address: var_address,
-            port: var_port,
-            protocol: var_protocol,
-            download: var_download,
-            announcement: var_announcement,
-            announce: var_announce,
-        };
-    }
-}
-
-impl SseDecode for crate::api::simple::DiscoverState {
-    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
-        let mut tag_ = <i32>::sse_decode(deserializer);
-        match tag_ {
-            0 => {
-                let mut var_field0 =
-                    <Vec<crate::core::model::DeviceInfo>>::sse_decode(deserializer);
-                return crate::api::simple::DiscoverState::Discovering(var_field0);
-            }
-            1 => {
-                return crate::api::simple::DiscoverState::Done;
-            }
-            _ => {
-                unimplemented!("");
-            }
-        }
     }
 }
 
@@ -358,12 +271,23 @@ impl SseDecode for i64 {
     }
 }
 
-impl SseDecode for Vec<crate::core::model::DeviceInfo> {
+impl SseDecode for Vec<crate::api::model::FileInfo> {
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut len_ = <i32>::sse_decode(deserializer);
         let mut ans_ = vec![];
         for idx_ in 0..len_ {
-            ans_.push(<crate::core::model::DeviceInfo>::sse_decode(deserializer));
+            ans_.push(<crate::api::model::FileInfo>::sse_decode(deserializer));
+        }
+        return ans_;
+    }
+}
+
+impl SseDecode for Vec<crate::discovery::model::Node> {
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = vec![];
+        for idx_ in 0..len_ {
+            ans_.push(<crate::discovery::model::Node>::sse_decode(deserializer));
         }
         return ans_;
     }
@@ -380,17 +304,57 @@ impl SseDecode for Vec<u8> {
     }
 }
 
-impl SseDecode for crate::api::simple::LogEntry {
+impl SseDecode for crate::logger::LogEntry {
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_timeMillis = <i64>::sse_decode(deserializer);
         let mut var_level = <i32>::sse_decode(deserializer);
         let mut var_tag = <String>::sse_decode(deserializer);
         let mut var_msg = <String>::sse_decode(deserializer);
-        return crate::api::simple::LogEntry {
+        return crate::logger::LogEntry {
             time_millis: var_timeMillis,
             level: var_level,
             tag: var_tag,
             msg: var_msg,
+        };
+    }
+}
+
+impl SseDecode for crate::bridge::bridge::MissionItem {
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_id = <String>::sse_decode(deserializer);
+        let mut var_fileInfo = <Vec<crate::api::model::FileInfo>>::sse_decode(deserializer);
+        return crate::bridge::bridge::MissionItem {
+            id: var_id,
+            file_info: var_fileInfo,
+        };
+    }
+}
+
+impl SseDecode for crate::discovery::model::Node {
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_alias = <String>::sse_decode(deserializer);
+        let mut var_version = <String>::sse_decode(deserializer);
+        let mut var_deviceModel = <String>::sse_decode(deserializer);
+        let mut var_deviceType = <String>::sse_decode(deserializer);
+        let mut var_fingerprint = <String>::sse_decode(deserializer);
+        let mut var_address = <String>::sse_decode(deserializer);
+        let mut var_port = <u16>::sse_decode(deserializer);
+        let mut var_protocol = <String>::sse_decode(deserializer);
+        let mut var_download = <bool>::sse_decode(deserializer);
+        let mut var_announcement = <bool>::sse_decode(deserializer);
+        let mut var_announce = <bool>::sse_decode(deserializer);
+        return crate::discovery::model::Node {
+            alias: var_alias,
+            version: var_version,
+            device_model: var_deviceModel,
+            device_type: var_deviceType,
+            fingerprint: var_fingerprint,
+            address: var_address,
+            port: var_port,
+            protocol: var_protocol,
+            download: var_download,
+            announcement: var_announcement,
+            announce: var_announce,
         };
     }
 }
@@ -405,60 +369,13 @@ impl SseDecode for Option<String> {
     }
 }
 
-impl SseDecode for crate::core::model::Progress {
+impl SseDecode for Option<Vec<u8>> {
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
-        let mut tag_ = <i32>::sse_decode(deserializer);
-        match tag_ {
-            0 => {
-                return crate::core::model::Progress::Prepare;
-            }
-            1 => {
-                return crate::core::model::Progress::Idle;
-            }
-            2 => {
-                let mut var_field0 = <usize>::sse_decode(deserializer);
-                let mut var_field1 = <usize>::sse_decode(deserializer);
-                return crate::core::model::Progress::Progress(var_field0, var_field1);
-            }
-            3 => {
-                return crate::core::model::Progress::Done;
-            }
-            _ => {
-                unimplemented!("");
-            }
+        if (<bool>::sse_decode(deserializer)) {
+            return Some(<Vec<u8>>::sse_decode(deserializer));
+        } else {
+            return None;
         }
-    }
-}
-
-impl SseDecode for crate::api::simple::ServerConfig {
-    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
-        let mut var_multicastAddr = <String>::sse_decode(deserializer);
-        let mut var_port = <u16>::sse_decode(deserializer);
-        let mut var_protocol = <String>::sse_decode(deserializer);
-        let mut var_download = <bool>::sse_decode(deserializer);
-        let mut var_announcement = <bool>::sse_decode(deserializer);
-        let mut var_announce = <bool>::sse_decode(deserializer);
-        return crate::api::simple::ServerConfig {
-            multicast_addr: var_multicastAddr,
-            port: var_port,
-            protocol: var_protocol,
-            download: var_download,
-            announcement: var_announcement,
-            announce: var_announce,
-        };
-    }
-}
-
-impl SseDecode for crate::api::simple::ServerStatus {
-    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
-        let mut inner = <i32>::sse_decode(deserializer);
-        return match inner {
-            0 => crate::api::simple::ServerStatus::Starting,
-            1 => crate::api::simple::ServerStatus::Started,
-            2 => crate::api::simple::ServerStatus::Stopping,
-            3 => crate::api::simple::ServerStatus::Stopped,
-            _ => unreachable!("Invalid variant for ServerStatus: {}", inner),
-        };
     }
 }
 
@@ -478,38 +395,67 @@ impl SseDecode for () {
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {}
 }
 
-impl SseDecode for usize {
-    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
-        deserializer.cursor.read_u64::<NativeEndian>().unwrap() as _
-    }
-}
-
 // Section: rust2dart
 
-impl flutter_rust_bridge::IntoDart for crate::api::simple::DeviceConfig {
+impl flutter_rust_bridge::IntoDart for crate::api::model::FileInfo {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         vec![
-            self.alias.into_into_dart().into_dart(),
-            self.fingerprint.into_into_dart().into_dart(),
-            self.device_model.into_into_dart().into_dart(),
-            self.device_type.into_into_dart().into_dart(),
-            self.store_path.into_into_dart().into_dart(),
+            self.id.into_into_dart().into_dart(),
+            self.file_name.into_into_dart().into_dart(),
+            self.size.into_into_dart().into_dart(),
+            self.file_type.into_into_dart().into_dart(),
+            self.sha256.into_into_dart().into_dart(),
+            self.preview.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::api::model::FileInfo {}
+impl flutter_rust_bridge::IntoIntoDart<crate::api::model::FileInfo>
+    for crate::api::model::FileInfo
+{
+    fn into_into_dart(self) -> crate::api::model::FileInfo {
+        self
+    }
+}
+impl flutter_rust_bridge::IntoDart for crate::logger::LogEntry {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        vec![
+            self.time_millis.into_into_dart().into_dart(),
+            self.level.into_into_dart().into_dart(),
+            self.tag.into_into_dart().into_dart(),
+            self.msg.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::logger::LogEntry {}
+impl flutter_rust_bridge::IntoIntoDart<crate::logger::LogEntry> for crate::logger::LogEntry {
+    fn into_into_dart(self) -> crate::logger::LogEntry {
+        self
+    }
+}
+impl flutter_rust_bridge::IntoDart for crate::bridge::bridge::MissionItem {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        vec![
+            self.id.into_into_dart().into_dart(),
+            self.file_info.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
 }
 impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for crate::api::simple::DeviceConfig
+    for crate::bridge::bridge::MissionItem
 {
 }
-impl flutter_rust_bridge::IntoIntoDart<crate::api::simple::DeviceConfig>
-    for crate::api::simple::DeviceConfig
+impl flutter_rust_bridge::IntoIntoDart<crate::bridge::bridge::MissionItem>
+    for crate::bridge::bridge::MissionItem
 {
-    fn into_into_dart(self) -> crate::api::simple::DeviceConfig {
+    fn into_into_dart(self) -> crate::bridge::bridge::MissionItem {
         self
     }
 }
-impl flutter_rust_bridge::IntoDart for crate::core::model::DeviceInfo {
+impl flutter_rust_bridge::IntoDart for crate::discovery::model::Node {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         vec![
             self.alias.into_into_dart().into_dart(),
@@ -527,134 +473,11 @@ impl flutter_rust_bridge::IntoDart for crate::core::model::DeviceInfo {
         .into_dart()
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for crate::core::model::DeviceInfo
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::discovery::model::Node {}
+impl flutter_rust_bridge::IntoIntoDart<crate::discovery::model::Node>
+    for crate::discovery::model::Node
 {
-}
-impl flutter_rust_bridge::IntoIntoDart<crate::core::model::DeviceInfo>
-    for crate::core::model::DeviceInfo
-{
-    fn into_into_dart(self) -> crate::core::model::DeviceInfo {
-        self
-    }
-}
-impl flutter_rust_bridge::IntoDart for crate::api::simple::DiscoverState {
-    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
-        match self {
-            crate::api::simple::DiscoverState::Discovering(field0) => {
-                vec![0.into_dart(), field0.into_into_dart().into_dart()]
-            }
-            crate::api::simple::DiscoverState::Done => {
-                vec![1.into_dart()]
-            }
-        }
-        .into_dart()
-    }
-}
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for crate::api::simple::DiscoverState
-{
-}
-impl flutter_rust_bridge::IntoIntoDart<crate::api::simple::DiscoverState>
-    for crate::api::simple::DiscoverState
-{
-    fn into_into_dart(self) -> crate::api::simple::DiscoverState {
-        self
-    }
-}
-impl flutter_rust_bridge::IntoDart for crate::api::simple::LogEntry {
-    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
-        vec![
-            self.time_millis.into_into_dart().into_dart(),
-            self.level.into_into_dart().into_dart(),
-            self.tag.into_into_dart().into_dart(),
-            self.msg.into_into_dart().into_dart(),
-        ]
-        .into_dart()
-    }
-}
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::api::simple::LogEntry {}
-impl flutter_rust_bridge::IntoIntoDart<crate::api::simple::LogEntry>
-    for crate::api::simple::LogEntry
-{
-    fn into_into_dart(self) -> crate::api::simple::LogEntry {
-        self
-    }
-}
-impl flutter_rust_bridge::IntoDart for crate::core::model::Progress {
-    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
-        match self {
-            crate::core::model::Progress::Prepare => {
-                vec![0.into_dart()]
-            }
-            crate::core::model::Progress::Idle => {
-                vec![1.into_dart()]
-            }
-            crate::core::model::Progress::Progress(field0, field1) => {
-                vec![
-                    2.into_dart(),
-                    field0.into_into_dart().into_dart(),
-                    field1.into_into_dart().into_dart(),
-                ]
-            }
-            crate::core::model::Progress::Done => {
-                vec![3.into_dart()]
-            }
-        }
-        .into_dart()
-    }
-}
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::core::model::Progress {}
-impl flutter_rust_bridge::IntoIntoDart<crate::core::model::Progress>
-    for crate::core::model::Progress
-{
-    fn into_into_dart(self) -> crate::core::model::Progress {
-        self
-    }
-}
-impl flutter_rust_bridge::IntoDart for crate::api::simple::ServerConfig {
-    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
-        vec![
-            self.multicast_addr.into_into_dart().into_dart(),
-            self.port.into_into_dart().into_dart(),
-            self.protocol.into_into_dart().into_dart(),
-            self.download.into_into_dart().into_dart(),
-            self.announcement.into_into_dart().into_dart(),
-            self.announce.into_into_dart().into_dart(),
-        ]
-        .into_dart()
-    }
-}
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for crate::api::simple::ServerConfig
-{
-}
-impl flutter_rust_bridge::IntoIntoDart<crate::api::simple::ServerConfig>
-    for crate::api::simple::ServerConfig
-{
-    fn into_into_dart(self) -> crate::api::simple::ServerConfig {
-        self
-    }
-}
-impl flutter_rust_bridge::IntoDart for crate::api::simple::ServerStatus {
-    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
-        match self {
-            Self::Starting => 0,
-            Self::Started => 1,
-            Self::Stopping => 2,
-            Self::Stopped => 3,
-        }
-        .into_dart()
-    }
-}
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
-    for crate::api::simple::ServerStatus
-{
-}
-impl flutter_rust_bridge::IntoIntoDart<crate::api::simple::ServerStatus>
-    for crate::api::simple::ServerStatus
-{
-    fn into_into_dart(self) -> crate::api::simple::ServerStatus {
+    fn into_into_dart(self) -> crate::discovery::model::Node {
         self
     }
 }
@@ -671,43 +494,14 @@ impl SseEncode for bool {
     }
 }
 
-impl SseEncode for crate::api::simple::DeviceConfig {
+impl SseEncode for crate::api::model::FileInfo {
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
-        <String>::sse_encode(self.alias, serializer);
-        <String>::sse_encode(self.fingerprint, serializer);
-        <String>::sse_encode(self.device_model, serializer);
-        <String>::sse_encode(self.device_type, serializer);
-        <String>::sse_encode(self.store_path, serializer);
-    }
-}
-
-impl SseEncode for crate::core::model::DeviceInfo {
-    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
-        <String>::sse_encode(self.alias, serializer);
-        <String>::sse_encode(self.version, serializer);
-        <String>::sse_encode(self.device_model, serializer);
-        <String>::sse_encode(self.device_type, serializer);
-        <String>::sse_encode(self.fingerprint, serializer);
-        <Option<String>>::sse_encode(self.address, serializer);
-        <u16>::sse_encode(self.port, serializer);
-        <String>::sse_encode(self.protocol, serializer);
-        <bool>::sse_encode(self.download, serializer);
-        <bool>::sse_encode(self.announcement, serializer);
-        <bool>::sse_encode(self.announce, serializer);
-    }
-}
-
-impl SseEncode for crate::api::simple::DiscoverState {
-    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
-        match self {
-            crate::api::simple::DiscoverState::Discovering(field0) => {
-                <i32>::sse_encode(0, serializer);
-                <Vec<crate::core::model::DeviceInfo>>::sse_encode(field0, serializer);
-            }
-            crate::api::simple::DiscoverState::Done => {
-                <i32>::sse_encode(1, serializer);
-            }
-        }
+        <String>::sse_encode(self.id, serializer);
+        <String>::sse_encode(self.file_name, serializer);
+        <i64>::sse_encode(self.size, serializer);
+        <String>::sse_encode(self.file_type, serializer);
+        <Option<String>>::sse_encode(self.sha256, serializer);
+        <Option<Vec<u8>>>::sse_encode(self.preview, serializer);
     }
 }
 
@@ -723,11 +517,20 @@ impl SseEncode for i64 {
     }
 }
 
-impl SseEncode for Vec<crate::core::model::DeviceInfo> {
+impl SseEncode for Vec<crate::api::model::FileInfo> {
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <i32>::sse_encode(self.len() as _, serializer);
         for item in self {
-            <crate::core::model::DeviceInfo>::sse_encode(item, serializer);
+            <crate::api::model::FileInfo>::sse_encode(item, serializer);
+        }
+    }
+}
+
+impl SseEncode for Vec<crate::discovery::model::Node> {
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::discovery::model::Node>::sse_encode(item, serializer);
         }
     }
 }
@@ -741,12 +544,35 @@ impl SseEncode for Vec<u8> {
     }
 }
 
-impl SseEncode for crate::api::simple::LogEntry {
+impl SseEncode for crate::logger::LogEntry {
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <i64>::sse_encode(self.time_millis, serializer);
         <i32>::sse_encode(self.level, serializer);
         <String>::sse_encode(self.tag, serializer);
         <String>::sse_encode(self.msg, serializer);
+    }
+}
+
+impl SseEncode for crate::bridge::bridge::MissionItem {
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.id, serializer);
+        <Vec<crate::api::model::FileInfo>>::sse_encode(self.file_info, serializer);
+    }
+}
+
+impl SseEncode for crate::discovery::model::Node {
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.alias, serializer);
+        <String>::sse_encode(self.version, serializer);
+        <String>::sse_encode(self.device_model, serializer);
+        <String>::sse_encode(self.device_type, serializer);
+        <String>::sse_encode(self.fingerprint, serializer);
+        <String>::sse_encode(self.address, serializer);
+        <u16>::sse_encode(self.port, serializer);
+        <String>::sse_encode(self.protocol, serializer);
+        <bool>::sse_encode(self.download, serializer);
+        <bool>::sse_encode(self.announcement, serializer);
+        <bool>::sse_encode(self.announce, serializer);
     }
 }
 
@@ -759,41 +585,12 @@ impl SseEncode for Option<String> {
     }
 }
 
-impl SseEncode for crate::core::model::Progress {
+impl SseEncode for Option<Vec<u8>> {
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
-        match self {
-            crate::core::model::Progress::Prepare => {
-                <i32>::sse_encode(0, serializer);
-            }
-            crate::core::model::Progress::Idle => {
-                <i32>::sse_encode(1, serializer);
-            }
-            crate::core::model::Progress::Progress(field0, field1) => {
-                <i32>::sse_encode(2, serializer);
-                <usize>::sse_encode(field0, serializer);
-                <usize>::sse_encode(field1, serializer);
-            }
-            crate::core::model::Progress::Done => {
-                <i32>::sse_encode(3, serializer);
-            }
+        <bool>::sse_encode(self.is_some(), serializer);
+        if let Some(value) = self {
+            <Vec<u8>>::sse_encode(value, serializer);
         }
-    }
-}
-
-impl SseEncode for crate::api::simple::ServerConfig {
-    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
-        <String>::sse_encode(self.multicast_addr, serializer);
-        <u16>::sse_encode(self.port, serializer);
-        <String>::sse_encode(self.protocol, serializer);
-        <bool>::sse_encode(self.download, serializer);
-        <bool>::sse_encode(self.announcement, serializer);
-        <bool>::sse_encode(self.announce, serializer);
-    }
-}
-
-impl SseEncode for crate::api::simple::ServerStatus {
-    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
-        <i32>::sse_encode(self as _, serializer);
     }
 }
 
@@ -811,15 +608,6 @@ impl SseEncode for u8 {
 
 impl SseEncode for () {
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {}
-}
-
-impl SseEncode for usize {
-    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
-        serializer
-            .cursor
-            .write_u64::<NativeEndian>(self as _)
-            .unwrap();
-    }
 }
 
 #[cfg(not(target_family = "wasm"))]

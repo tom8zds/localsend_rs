@@ -1,24 +1,6 @@
 use std::collections::HashMap;
 
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
-
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct DeviceInfo {
-    pub alias: String,
-    pub version: String,
-    pub device_model: String,
-    pub device_type: String,
-    pub fingerprint: String,
-    pub address: Option<String>,
-    pub port: u16,
-    pub protocol: String,
-    pub download: bool,
-    pub announcement: bool,
-    pub announce: bool,
-}
-
+use serde_derive::{Serialize, Deserialize};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -57,7 +39,7 @@ pub struct FileResponse {
     pub files: HashMap<String, String>,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize,Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UploadTask {
     pub session_id: String,
@@ -65,9 +47,21 @@ pub struct UploadTask {
     pub token: String,
 }
 
-pub enum Progress {
-    Prepare,
-    Idle,
-    Progress(usize, usize),
-    Done,
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+
+pub enum State {
+    Accepting,
+    Accepted,
+    Rejected,
+    Receiving,
+    Finished,
+    Failed,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Mission {
+    pub id: String,
+    pub state: State,
+    pub token_map: HashMap<String, String>,
+    pub info_map: HashMap<String, FileInfo>,
 }

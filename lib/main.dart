@@ -3,11 +3,11 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:localsend_rs/src/rust/api/simple.dart';
-import 'package:localsend_rs/src/rust/core/model.dart';
 import 'package:localsend_rs/src/rust/frb_generated.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
+
+import 'src/rust/bridge/bridge.dart';
+import 'src/rust/discovery/model.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,16 +18,17 @@ Future<void> main() async {
   } else {
     storePath = (await getDownloadsDirectory())!.absolute.path;
   }
-  initServer(
-    device: DeviceConfig(
-      alias: "test",
-      fingerprint: "fingerprint",
-      deviceModel: "rust",
-      deviceType: "mobile",
-      storePath: storePath,
-    ),
-  );
+  // initServer(
+  //   device: DeviceConfig(
+  //     alias: "test",
+  //     fingerprint: "fingerprint",
+  //     deviceModel: "rust",
+  //     deviceType: "mobile",
+  //     storePath: storePath,
+  //   ),
+  // );
   await rustSetUp(isDebug: kDebugMode);
+  await setup();
   // createLogStream().listen((event) {
   //   print(
   //       'rust log [${event.level}] - ${event.tag} ${event.msg}(rust_time=${event.timeMillis})');
@@ -43,77 +44,47 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(title: const Text('flutter_rust_bridge quickstart')),
-        body: CustomScrollView(
-          slivers: [
-            SliverToBoxAdapter(
-              child: Column(
-                children: [
-                  const ServerStatusWidget(),
-                  ElevatedButton(
-                    onPressed: () {
-                      startServer(
-                        config: const ServerConfig(
-                          multicastAddr: "224.0.0.167",
-                          port: 53317,
-                          protocol: "http",
-                          download: false,
-                          announcement: true,
-                          announce: true,
-                        ),
-                      );
-                    },
-                    child: const Text("start server"),
-                  ),
-                  FutureBuilder(
-                    future: getDownloadsDirectory(),
-                    builder: (context, snapshot) {
-                      if (snapshot.hasData) {
-                        return Text("external storage: ${snapshot.data}");
-                      } else {
-                        return const Text("external storage: unknown");
-                      }
-                    },
-                  ),
-                  ElevatedButton(
-                    onPressed: () async {
-                      await stopServer();
-                    },
-                    child: const Text("stop server"),
-                  ),
-                  ElevatedButton(
-                    onPressed: () async {
-                      await discover();
-                    },
-                    child: const Text("discover"),
-                  ),
-                  Container(
-                    child: Row(
-                      children: [
-                        const Text("send request"),
-                        ElevatedButton(
-                            onPressed: () async {
-                              if (await Permission.manageExternalStorage
-                                  .request()
-                                  .isGranted) {
-                                accept(isAccept: true);
-                              }
-                            },
-                            child: Text("accept")),
-                        ElevatedButton(
-                            onPressed: () {
-                              accept(isAccept: false);
-                            },
-                            child: Text("reject")),
-                      ],
-                    ),
-                  ),
-                  const ProgressWidget(),
-                ],
-              ),
+        body: Column(
+          children: [
+            ElevatedButton(
+              onPressed: () {
+                start(
+                    // config: const ServerConfig(
+                    //   multicastAddr: "224.0.0.167",
+                    //   port: 53317,
+                    //   protocol: "http",
+                    //   download: false,
+                    //   announcement: true,
+                    //   announce: true,
+                    // ),
+                    );
+              },
+              child: const Text("start server"),
             ),
-            SliverFillRemaining(
-              child: const DiscoverWidget(),
-            )
+            FutureBuilder(
+              future: getDownloadsDirectory(),
+              builder: (context, snapshot) {
+                if (snapshot.hasData) {
+                  return Text("external storage: ${snapshot.data}");
+                } else {
+                  return const Text("external storage: unknown");
+                }
+              },
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                await stop();
+              },
+              child: const Text("stop server"),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                await discover();
+              },
+              child: const Text("discover"),
+            ),
+            MissionList(),
+            Expanded(child: NodeList()),
           ],
         ),
       ),
@@ -121,155 +92,158 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class ServerStatusWidget extends StatefulWidget {
-  const ServerStatusWidget({super.key});
+class NodeCard extends StatelessWidget {
+  const NodeCard({required this.node, super.key});
 
-  @override
-  State<ServerStatusWidget> createState() => _ServerStatusWidgetState();
-}
-
-class _ServerStatusWidgetState extends State<ServerStatusWidget> {
-  late Stream<ServerStatus> statusStream;
-
-  @override
-  void initState() {
-    super.initState();
-    statusStream = serverStatus();
-  }
+  final Node node;
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder(
-      stream: statusStream,
-      builder: (context, snapshot) {
-        print("snap shot income");
-        if (snapshot.hasData) {
-          return Text("server status: ${snapshot.data}");
-        } else {
-          return const Text("server status: unknown");
-        }
-      },
+    return Container(
+      width: 200,
+      height: 100,
+      child: Card(
+        child: Row(
+          children: [
+            Icon(Icons.phone_android),
+            Column(
+              children: [
+                Text(node.alias),
+                Text(node.address),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
 
-class DiscoverWidget extends StatefulWidget {
-  const DiscoverWidget({super.key});
+class MissionWidget extends StatelessWidget {
+  const MissionWidget({required this.mission, super.key});
+
+  final MissionItem mission;
 
   @override
-  State<DiscoverWidget> createState() => _DiscoverWidgetState();
+  Widget build(BuildContext context) {
+    return Container(
+      width: 300,
+      height: 100,
+      child: Center(
+        child: Card(
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              children: [
+                Expanded(
+                  child: Center(
+                    child: Text("missions"),
+                  ),
+                ),
+                Row(
+                  mainAxisSize: MainAxisSize.max,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    FilledButton(
+                      onPressed: () {
+                        acceptMission(missionId: mission.id, accept: true);
+                      },
+                      child: Text("接收"),
+                    ),
+                    SizedBox(width: 16),
+                    FilledButton(
+                      onPressed: () {
+                        acceptMission(missionId: mission.id, accept: false);
+                      },
+                      child: Text("拒绝"),
+                    ),
+                  ],
+                )
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
-class _DiscoverWidgetState extends State<DiscoverWidget> {
-  late Stream<DiscoverState> discoverStream;
+class MissionList extends StatefulWidget {
+  const MissionList({super.key});
+
+  @override
+  State<MissionList> createState() => _MissionListState();
+}
+
+class _MissionListState extends State<MissionList> {
+  late Stream<MissionItem> _missionStream;
 
   @override
   void initState() {
     super.initState();
-    discoverStream = listenDiscover();
+    _missionStream = missionChannel();
   }
 
   @override
   Widget build(BuildContext context) {
     return StreamBuilder(
-        stream: discoverStream,
-        builder: (context, snapshot) {
-          if (snapshot.hasData) {
-            print("discover state income");
-            var state = snapshot.data;
-            return state?.when(
-                  discovering: (devices) {
-                    return ListView(
-                      children: devices
-                          .map((e) => ListTile(
-                                title: Text(e.alias),
-                                subtitle: Text(e.address ?? "unknown"),
-                              ))
-                          .toList(),
-                    );
-                  },
-                  done: () {
-                    return const Text("discover state: done");
-                  },
-                ) ??
-                const Text("discover state: unknown");
-          } else {
-            return const Text("discover state: unknown");
+        stream: _missionStream,
+        builder: (context, snapShot) {
+          if (snapShot.hasData) {
+            final mission = snapShot.data as MissionItem;
+            return MissionWidget(mission: mission);
           }
+          return Container();
         });
   }
 }
 
-class ProgressWidget extends StatefulWidget {
-  const ProgressWidget({super.key});
+class NodeList extends StatefulWidget {
+  const NodeList({super.key});
 
   @override
-  State<ProgressWidget> createState() => _ProgressWidgetState();
+  State<NodeList> createState() => _NodeListState();
 }
 
-class _ProgressWidgetState extends State<ProgressWidget> {
-  late Stream<Progress> progressStream;
+class _NodeListState extends State<NodeList> {
+  late Stream<List<Node>> _nodeStream;
 
   @override
   void initState() {
     super.initState();
-    progressStream = listenProgress();
+    _nodeStream = nodeChannel();
   }
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder(
-        stream: progressStream,
-        builder: (context, snapshot) {
-          if (snapshot.hasData) {
-            print("progress state income");
-            var state = snapshot.data;
-            return state?.when(
-                  idle: () {
-                    return Container();
-                  },
-                  progress: (progress, total) {
-                    return Container(
-                      margin: EdgeInsets.all(16),
-                      height: kToolbarHeight,
-                      child: Center(
-                        child: LinearProgressIndicator(
-                          value: (progress / total),
+    return Column(
+      children: [
+        Row(
+          children: [Text("nodes")],
+        ),
+        StreamBuilder(
+            stream: _nodeStream,
+            builder: (context, snapshot) {
+              if (snapshot.hasData) {
+                final nodes = snapshot.data as List<Node>;
+                return Expanded(
+                  child: ListView.builder(
+                    itemCount: nodes.length,
+                    itemBuilder: (context, index) {
+                      final node = nodes[index];
+                      return Card(
+                        child: ListTile(
+                          title: Text(node.alias),
+                          subtitle: Text(node.address),
                         ),
-                      ),
-                    );
-                  },
-                  done: () {
-                    return Container();
-                  },
-                  prepare: () {
-                    return Container(
-                      child: Row(
-                        children: [
-                          const Text("send request"),
-                          ElevatedButton(
-                              onPressed: () async {
-                                if (await Permission.manageExternalStorage
-                                    .request()
-                                    .isGranted) {
-                                  accept(isAccept: true);
-                                }
-                              },
-                              child: Text("accept")),
-                          ElevatedButton(
-                              onPressed: () {
-                                accept(isAccept: false);
-                              },
-                              child: Text("reject")),
-                        ],
-                      ),
-                    );
-                  },
-                ) ??
-                Container();
-          } else {
-            return Container();
-          }
-        });
+                      );
+                    },
+                  ),
+                );
+              }
+              return Container();
+            }),
+      ],
+    );
   }
 }
