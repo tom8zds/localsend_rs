@@ -1,0 +1,22 @@
+{
+    "appTitle": "锈船",
+    "home": {
+        "title": "主页"
+    },
+    "setting": {
+        "title": "设置",
+        "brightness": {
+            "title": "明暗",
+            "subTitle": "当前模式: $mode",
+            "themeMode": {
+                "system": "跟随系统",
+                "light": "浅色模式",
+                "dark": "深色模式"
+            }
+        },
+        "language": {
+            "title": "语言",
+            "subTitle": "当前语言: $language"
+        }
+    }
+}

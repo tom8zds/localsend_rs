@@ -1,0 +1,7 @@
+targets:
+  $default:
+    builders:
+      slang_build_runner:
+        options:
+          input_directory: assets/i18n
+          output_directory: lib/i18n # defaulting to lib/gen if input is outside of lib/

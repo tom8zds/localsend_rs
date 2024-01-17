@@ -1,0 +1,22 @@
+{
+    "appTitle": "RustSend",
+    "home": {
+        "title": "Home Page"
+    },
+    "setting": {
+        "title": "Settings",
+        "brightness": {
+            "title": "Brightness",
+            "subTitle": "Current mode: $mode",
+            "themeMode": {
+                "system": "Follow system",
+                "light": "Light mode",
+                "dark": "Dark mode"
+            }
+        },
+        "language": {
+            "title": "Language",
+            "subTitle": "Current language: $language"
+        }
+    }
+}
