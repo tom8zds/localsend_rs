@@ -5,6 +5,7 @@
     },
     "setting": {
         "title": "Settings",
+        "common": "Common",
         "brightness": {
             "title": "Brightness",
             "subTitle": "Current mode: $mode",

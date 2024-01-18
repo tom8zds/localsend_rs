@@ -23,11 +23,44 @@ class SettingPage extends StatelessWidget {
           ),
           SliverList(
               delegate: SliverChildListDelegate([
-            const ThemeTile(),
-            // color tile
-            // language tile
-            LocaleTile(),
+            SettingTileGroup(title: t.setting.common, children: [
+              const ThemeTile(),
+              // color tile
+              // language tile
+              LocaleTile(),
+            ]),
           ]))
+        ],
+      ),
+    );
+  }
+}
+
+class SettingTileGroup extends StatelessWidget {
+  final String title;
+  final List<Widget> children;
+
+  const SettingTileGroup(
+      {super.key, required this.title, required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.secondaryContainer,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
+            child: Text(
+              title,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+          ),
+          ...children,
         ],
       ),
     );

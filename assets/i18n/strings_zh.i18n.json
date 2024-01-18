@@ -5,6 +5,7 @@
     },
     "setting": {
         "title": "设置",
+        "common": "通用",
         "brightness": {
             "title": "明暗",
             "subTitle": "当前模式: $mode",

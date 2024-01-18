@@ -4,9 +4,9 @@
 /// To regenerate, run: `dart run slang`
 ///
 /// Locales: 2
-/// Strings: 20 (10 per locale)
+/// Strings: 22 (11 per locale)
 ///
-/// Built on 2024-01-17 at 15:30 UTC
+/// Built on 2024-01-18 at 14:08 UTC
 
 // coverage:ignore-file
 // ignore_for_file: type=lint
@@ -171,6 +171,7 @@ class _StringsSettingEn {
 
 	// Translations
 	String get title => 'Settings';
+	String get common => 'Common';
 	late final _StringsSettingBrightnessEn brightness = _StringsSettingBrightnessEn._(_root);
 	late final _StringsSettingLanguageEn language = _StringsSettingLanguageEn._(_root);
 }
@@ -257,6 +258,7 @@ class _StringsSettingZh implements _StringsSettingEn {
 
 	// Translations
 	@override String get title => '设置';
+	@override String get common => '通用';
 	@override late final _StringsSettingBrightnessZh brightness = _StringsSettingBrightnessZh._(_root);
 	@override late final _StringsSettingLanguageZh language = _StringsSettingLanguageZh._(_root);
 }
@@ -305,6 +307,7 @@ extension on Translations {
 			case 'appTitle': return 'RustSend';
 			case 'home.title': return 'Home Page';
 			case 'setting.title': return 'Settings';
+			case 'setting.common': return 'Common';
 			case 'setting.brightness.title': return 'Brightness';
 			case 'setting.brightness.subTitle': return ({required Object mode}) => 'Current mode: ${mode}';
 			case 'setting.brightness.themeMode.system': return 'Follow system';
@@ -323,6 +326,7 @@ extension on _StringsZh {
 			case 'appTitle': return '锈船';
 			case 'home.title': return '主页';
 			case 'setting.title': return '设置';
+			case 'setting.common': return '通用';
 			case 'setting.brightness.title': return '明暗';
 			case 'setting.brightness.subTitle': return ({required Object mode}) => '当前模式: ${mode}';
 			case 'setting.brightness.themeMode.system': return '跟随系统';
