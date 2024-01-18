@@ -8,17 +8,17 @@ import '../common/constants.dart';
 import '../providers/locale_provider.dart';
 import '../providers/theme_provider.dart';
 
-class SettingPage extends ConsumerWidget {
-  const SettingPage({Key? key}) : super(key: key);
+class SettingPage extends StatelessWidget {
+  const SettingPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     return Scaffold(
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
             centerTitle: true,
-            title: Text(t.setting.title),
+            title: Text(context.t.setting.title),
             pinned: true,
           ),
           SliverList(

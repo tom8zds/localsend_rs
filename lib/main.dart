@@ -17,7 +17,6 @@ import 'rust/frb_generated.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  LocaleSettings.useDeviceLocale();
   await RustLib.init();
   String storePath;
   if (Platform.isAndroid) {
@@ -41,7 +40,7 @@ Future<void> main() async {
   //   print(
   //       'rust log [${event.level}] - ${event.tag} ${event.msg}(rust_time=${event.timeMillis})');
   // });
-  runApp(const ProviderScope(child: MyApp()));
+  runApp(ProviderScope(child: TranslationProvider(child: const MyApp())));
 }
 
 class MyApp extends ConsumerWidget {
@@ -59,7 +58,7 @@ class MyApp extends ConsumerWidget {
       theme: ThemeData(useMaterial3: true),
       darkTheme: ThemeData.dark(useMaterial3: true),
       themeMode: themeMode,
-      home: FramePage(),
+      home: const FramePage(),
     );
   }
 }

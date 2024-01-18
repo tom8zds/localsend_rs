@@ -35,11 +35,11 @@ class _FramePageState extends State<FramePage> {
         items: [
           BottomNavigationBarItem(
             icon: const Icon(Icons.home),
-            label: t.home.title,
+            label: context.t.home.title,
           ),
           BottomNavigationBarItem(
             icon: const Icon(Icons.settings),
-            label: t.setting.title,
+            label: context.t.setting.title,
           ),
         ],
       ),
