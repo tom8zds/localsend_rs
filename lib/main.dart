@@ -36,6 +36,13 @@ Future<void> main() async {
   await rustSetUp(isDebug: kDebugMode);
   await setup();
   await ConfigStore.ensureInitialized();
+  final locale = ConfigStore().locale();
+  print(LocaleSettings.currentLocale.countryCode);
+  final countryCode = LocaleSettings.currentLocale.countryCode;
+  if (countryCode == null || countryCode != locale) {
+    print("test");
+    LocaleSettings.setLocaleRaw(locale);
+  }
   // createLogStream().listen((event) {
   //   print(
   //       'rust log [${event.level}] - ${event.tag} ${event.msg}(rust_time=${event.timeMillis})');
@@ -55,8 +62,15 @@ class MyApp extends ConsumerWidget {
       locale: locale, // use provider
       supportedLocales: AppLocaleUtils.supportedLocales,
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      theme: ThemeData(useMaterial3: true),
-      darkTheme: ThemeData.dark(useMaterial3: true),
+      theme: ThemeData(
+        useMaterial3: true,
+        colorSchemeSeed: Color(0xfff74c00),
+      ),
+      darkTheme: ThemeData(
+        useMaterial3: true,
+        colorSchemeSeed: Color(0xfff74c00),
+        brightness: Brightness.dark,
+      ),
       themeMode: themeMode,
       home: const FramePage(),
     );
