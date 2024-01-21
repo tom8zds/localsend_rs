@@ -3,8 +3,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:localsend_rs/i18n/strings.g.dart';
+import 'package:localsend_rs/rust/bridge/bridge.dart';
 
 import '../common/constants.dart';
+import '../common/widgets.dart';
 import '../providers/locale_provider.dart';
 import '../providers/theme_provider.dart';
 
@@ -22,14 +24,76 @@ class SettingPage extends StatelessWidget {
             pinned: true,
           ),
           SliverList(
-              delegate: SliverChildListDelegate([
-            SettingTileGroup(title: t.setting.common, children: [
-              const ThemeTile(),
-              // color tile
-              // language tile
-              LocaleTile(),
-            ]),
-          ]))
+            delegate: SliverChildListDelegate(
+              [
+                SettingTileGroup(
+                  title: t.setting.common,
+                  children: [
+                    const ThemeTile(),
+                    // color tile
+                    // language tile
+                    LocaleTile(),
+                  ],
+                ),
+                SizedBox(
+                  height: 16,
+                ),
+                SettingTileGroup(
+                  title: "core",
+                  children: [
+                    // core status
+                    ListTile(
+                      title: Text("core"),
+                      trailing: OverflowBar(
+                        children: [
+                          IconButton(
+                            onPressed: () {
+                              // start();
+                            },
+                            icon: Icon(Icons.refresh),
+                          ),
+                          IconButton(
+                            onPressed: () {
+                              // stop();
+                            },
+                            icon: Icon(Icons.stop),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // core log
+                  ],
+                ),
+                SizedBox(
+                  height: 16,
+                ),
+                SettingTileGroup(
+                  title: "behavior",
+                  children: [
+                    // receive without accept
+                    // save dir
+                  ],
+                ),
+                SizedBox(
+                  height: 16,
+                ),
+                SizedBox(
+                  height: 200,
+                  child: Image.asset("assets/icon/logo_512.png"),
+                ),
+                Column(
+                  children: [
+                    AppTitle(),
+                    SizedBox(
+                      height: 8,
+                    ),
+                    Text("Version: 1.0.0"),
+                    Text("by tom8zds @ github")
+                  ],
+                ),
+              ],
+            ),
+          )
         ],
       ),
     );

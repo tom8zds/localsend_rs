@@ -3,6 +3,8 @@ import 'package:localsend_rs/i18n/strings.g.dart';
 import 'package:localsend_rs/pages/home_page.dart';
 import 'package:localsend_rs/pages/setting_page.dart';
 
+import '../common/widgets.dart';
+
 enum FrameType {
   compact,
   normal,
@@ -103,27 +105,30 @@ class _FramePageState extends State<FramePage> {
         return Row(
           children: [
             NavigationDrawer(
+              onDestinationSelected: (index) {
+                setState(() {
+                  this.index = index;
+                });
+              },
+              selectedIndex: index,
               children: [
-                ListTile(
-                  leading: const Icon(Icons.home),
-                  title: Text(context.t.home.title),
-                  onTap: () {
-                    setState(() {
-                      index = 0;
-                    });
-                  },
+                SizedBox(
+                  height: 112,
+                  child: Center(
+                    child: AppTitle(),
+                  ),
                 ),
-                ListTile(
-                  leading: const Icon(Icons.settings),
-                  title: Text(context.t.setting.title),
-                  onTap: () {
-                    setState(() {
-                      index = 1;
-                    });
-                  },
+                NavigationDrawerDestination(
+                  icon: const Icon(Icons.home_outlined),
+                  selectedIcon: const Icon(Icons.home),
+                  label: Text(context.t.home.title),
+                ),
+                NavigationDrawerDestination(
+                  icon: const Icon(Icons.settings_outlined),
+                  selectedIcon: const Icon(Icons.settings),
+                  label: Text(context.t.setting.title),
                 ),
               ],
-              selectedIndex: index,
             ),
             Expanded(
               child: Center(
