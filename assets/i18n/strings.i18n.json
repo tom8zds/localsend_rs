@@ -18,6 +18,12 @@
         "language": {
             "title": "Language",
             "subTitle": "Current language: $language"
+        },
+        "core": {
+            "title": "core setting",
+            "server": {
+                "title": "server"
+            }
         }
     }
 }

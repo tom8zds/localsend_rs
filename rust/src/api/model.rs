@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use serde_derive::{Serialize, Deserialize};
+use serde_derive::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -39,7 +39,7 @@ pub struct FileResponse {
     pub files: HashMap<String, String>,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize,Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UploadTask {
     pub session_id: String,
@@ -47,14 +47,14 @@ pub struct UploadTask {
     pub token: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub enum State {
     Accepting,
     Accepted,
     Rejected,
     Receiving,
     Finished,
+    #[default]
     Failed,
 }
 

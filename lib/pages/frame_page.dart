@@ -133,7 +133,7 @@ class _FramePageState extends State<FramePage> {
             Expanded(
               child: Center(
                 child: SizedBox(
-                  width: 600,
+                  // width: 600,
                   child: IndexedStack(
                     index: index,
                     children: pages,

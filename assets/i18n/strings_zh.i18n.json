@@ -18,6 +18,12 @@
         "language": {
             "title": "语言",
             "subTitle": "当前语言: $language"
+        },
+        "core": {
+            "title": "核心设置",
+            "server": {
+                "title": "服务器"
+            }
         }
     }
 }

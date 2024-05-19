@@ -35,8 +35,10 @@ Future<void> main() async {
   // );
   await rustSetUp(isDebug: kDebugMode);
   await setup();
+  start();
   await ConfigStore.ensureInitialized();
   final locale = ConfigStore().locale();
+  print(locale);
   print(LocaleSettings.currentLocale.countryCode);
   final countryCode = LocaleSettings.currentLocale.countryCode;
   if (countryCode == null || countryCode != locale) {

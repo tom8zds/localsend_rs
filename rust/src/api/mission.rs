@@ -1,7 +1,6 @@
 use std::{collections::HashMap, sync::Arc};
 
 use log::debug;
-use serde_derive::{Deserialize, Serialize};
 use tokio::sync::{watch, Mutex};
 
 use super::model::{FileInfo, Mission, State};
@@ -29,6 +28,12 @@ lazy_static::lazy_static! {
 
 pub fn get_mission_listener() -> watch::Receiver<HashMap<String, Mission>> {
     MISSON_CHANNEL.1.clone()
+}
+
+pub async fn clear_missions() {
+    let mut mission_map = MISSION_MAP.lock().await;
+    mission_map.clear();
+    let _ = MISSON_CHANNEL.0.send(mission_map.clone());
 }
 
 pub async fn create_mission(

@@ -7,7 +7,8 @@ use log::{debug, info};
 use tokio::sync::{mpsc, Mutex};
 
 use crate::{
-    discovery::{handler, model::Node}, api::model::{Mission, State, FileInfo},
+    api::model::{FileInfo, Mission, State},
+    discovery::{handler, model::Node},
 };
 use crate::{
     api::{self, mission},
@@ -66,6 +67,11 @@ pub async fn stop() {
 }
 
 #[tokio::main]
+pub async fn state() -> ServerState {
+    SERVER_CONTEXT.lock().await.state.clone()
+}
+
+#[tokio::main]
 pub async fn discover() {
     handler::discover().await;
 }
@@ -80,6 +86,11 @@ pub async fn accept_mission(mission_id: String, accept: bool) {
 }
 
 #[tokio::main]
+pub async fn clear_missions() {
+    mission::clear_missions().await;
+}
+
+#[tokio::main]
 pub async fn node_channel(stream: StreamSink<Vec<Node>>) {
     let mut listener = handler::get_node_listener();
     loop {
@@ -91,8 +102,9 @@ pub async fn node_channel(stream: StreamSink<Vec<Node>>) {
 
 #[derive(Default, Debug, Clone, PartialEq)]
 pub struct MissionItem {
-   pub id: String,
-   pub file_info: Vec<FileInfo>,
+    pub id: String,
+    pub state: State,
+    pub file_info: Vec<FileInfo>,
 }
 
 #[tokio::main]
@@ -103,12 +115,11 @@ pub async fn mission_channel(stream: StreamSink<MissionItem>) {
         let missions = listener.borrow().clone();
         for mission in missions.values() {
             if mission.state == State::Accepting {
-                stream.add(
-                    MissionItem {
-                        id: mission.id.clone(),
-                        file_info: mission.info_map.values().map(|item| item.clone()).collect(),
-                    }
-                );
+                stream.add(MissionItem {
+                    id: mission.id.clone(),
+                    state: mission.state.clone(),
+                    file_info: mission.info_map.values().map(|item| item.clone()).collect(),
+                });
             }
         }
     }
@@ -151,7 +162,7 @@ async fn start_server() {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-enum ServerState {
+pub enum ServerState {
     Stopped,
     Running,
     Stopping,

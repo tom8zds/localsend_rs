@@ -4,9 +4,9 @@
 /// To regenerate, run: `dart run slang`
 ///
 /// Locales: 2
-/// Strings: 22 (11 per locale)
+/// Strings: 26 (13 per locale)
 ///
-/// Built on 2024-01-18 at 14:08 UTC
+/// Built on 2024-05-19 at 06:03 UTC
 
 // coverage:ignore-file
 // ignore_for_file: type=lint
@@ -174,6 +174,7 @@ class _StringsSettingEn {
 	String get common => 'Common';
 	late final _StringsSettingBrightnessEn brightness = _StringsSettingBrightnessEn._(_root);
 	late final _StringsSettingLanguageEn language = _StringsSettingLanguageEn._(_root);
+	late final _StringsSettingCoreEn core = _StringsSettingCoreEn._(_root);
 }
 
 // Path: setting.brightness
@@ -199,6 +200,17 @@ class _StringsSettingLanguageEn {
 	String subTitle({required Object language}) => 'Current language: ${language}';
 }
 
+// Path: setting.core
+class _StringsSettingCoreEn {
+	_StringsSettingCoreEn._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+	String get title => 'core setting';
+	late final _StringsSettingCoreServerEn server = _StringsSettingCoreServerEn._(_root);
+}
+
 // Path: setting.brightness.themeMode
 class _StringsSettingBrightnessThemeModeEn {
 	_StringsSettingBrightnessThemeModeEn._(this._root);
@@ -209,6 +221,16 @@ class _StringsSettingBrightnessThemeModeEn {
 	String get system => 'Follow system';
 	String get light => 'Light mode';
 	String get dark => 'Dark mode';
+}
+
+// Path: setting.core.server
+class _StringsSettingCoreServerEn {
+	_StringsSettingCoreServerEn._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+	String get title => 'server';
 }
 
 // Path: <root>
@@ -261,6 +283,7 @@ class _StringsSettingZh implements _StringsSettingEn {
 	@override String get common => '通用';
 	@override late final _StringsSettingBrightnessZh brightness = _StringsSettingBrightnessZh._(_root);
 	@override late final _StringsSettingLanguageZh language = _StringsSettingLanguageZh._(_root);
+	@override late final _StringsSettingCoreZh core = _StringsSettingCoreZh._(_root);
 }
 
 // Path: setting.brightness
@@ -286,6 +309,17 @@ class _StringsSettingLanguageZh implements _StringsSettingLanguageEn {
 	@override String subTitle({required Object language}) => '当前语言: ${language}';
 }
 
+// Path: setting.core
+class _StringsSettingCoreZh implements _StringsSettingCoreEn {
+	_StringsSettingCoreZh._(this._root);
+
+	@override final _StringsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '核心设置';
+	@override late final _StringsSettingCoreServerZh server = _StringsSettingCoreServerZh._(_root);
+}
+
 // Path: setting.brightness.themeMode
 class _StringsSettingBrightnessThemeModeZh implements _StringsSettingBrightnessThemeModeEn {
 	_StringsSettingBrightnessThemeModeZh._(this._root);
@@ -296,6 +330,16 @@ class _StringsSettingBrightnessThemeModeZh implements _StringsSettingBrightnessT
 	@override String get system => '跟随系统';
 	@override String get light => '浅色模式';
 	@override String get dark => '深色模式';
+}
+
+// Path: setting.core.server
+class _StringsSettingCoreServerZh implements _StringsSettingCoreServerEn {
+	_StringsSettingCoreServerZh._(this._root);
+
+	@override final _StringsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '服务器';
 }
 
 /// Flat map(s) containing all translations.
@@ -315,6 +359,8 @@ extension on Translations {
 			case 'setting.brightness.themeMode.dark': return 'Dark mode';
 			case 'setting.language.title': return 'Language';
 			case 'setting.language.subTitle': return ({required Object language}) => 'Current language: ${language}';
+			case 'setting.core.title': return 'core setting';
+			case 'setting.core.server.title': return 'server';
 			default: return null;
 		}
 	}
@@ -334,6 +380,8 @@ extension on _StringsZh {
 			case 'setting.brightness.themeMode.dark': return '深色模式';
 			case 'setting.language.title': return '语言';
 			case 'setting.language.subTitle': return ({required Object language}) => '当前语言: ${language}';
+			case 'setting.core.title': return '核心设置';
+			case 'setting.core.server.title': return '服务器';
 			default: return null;
 		}
 	}

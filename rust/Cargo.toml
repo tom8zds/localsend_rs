@@ -7,8 +7,7 @@ edition = "2018"
 crate-type = ["cdylib", "staticlib"]
 
 [dependencies]
-# localsendrs_core = { path = "crates/localsendrs_core" } 
-flutter_rust_bridge = "=2.0.0-dev.5"
+flutter_rust_bridge = "=2.0.0-dev.33"
 axum = { version = "0.7.3"}
 rand = "0.8.5"
 #reqwest = "0.11.23"
@@ -25,3 +24,4 @@ simplelog = "0.12.1"
 parking_lot = "0.12.1"
 uuid = { version = "1.6.1", features = ["v4"] }
 ureq = "2.9.1"
+socket2 = "0.5.7"

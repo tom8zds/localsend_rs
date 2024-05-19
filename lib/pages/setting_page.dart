@@ -23,75 +23,81 @@ class SettingPage extends StatelessWidget {
             title: Text(context.t.setting.title),
             pinned: true,
           ),
-          SliverList(
-            delegate: SliverChildListDelegate(
-              [
-                SettingTileGroup(
-                  title: t.setting.common,
-                  children: [
-                    const ThemeTile(),
-                    // color tile
-                    // language tile
-                    LocaleTile(),
-                  ],
-                ),
-                SizedBox(
-                  height: 16,
-                ),
-                SettingTileGroup(
-                  title: "core",
-                  children: [
-                    // core status
-                    ListTile(
-                      title: Text("core"),
-                      trailing: OverflowBar(
-                        children: [
-                          IconButton(
-                            onPressed: () {
-                              // start();
-                            },
-                            icon: Icon(Icons.refresh),
-                          ),
-                          IconButton(
-                            onPressed: () {
-                              // stop();
-                            },
-                            icon: Icon(Icons.stop),
-                          ),
-                        ],
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate(
+                [
+                  SettingTileGroup(
+                    title: t.setting.common,
+                    children: [
+                      const ThemeTile(),
+                      // color tile
+                      // language tile
+                      const LocaleTile(),
+                    ],
+                  ),
+                  const SizedBox(
+                    height: 16,
+                  ),
+                  SettingTileGroup(
+                    title: t.setting.core.title,
+                    children: [
+                      // core status
+                      ListTile(
+                        title: Text(t.setting.core.server.title),
+                        trailing: OverflowBar(
+                          children: [
+                            IconButton(
+                              onPressed: () {
+                                start();
+                              },
+                              icon: const Icon(Icons.play_arrow),
+                            ),
+                            IconButton(
+                              onPressed: () {
+                                stop();
+                              },
+                              icon: const Icon(Icons.stop),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    // core log
-                  ],
-                ),
-                SizedBox(
-                  height: 16,
-                ),
-                SettingTileGroup(
-                  title: "behavior",
-                  children: [
-                    // receive without accept
-                    // save dir
-                  ],
-                ),
-                SizedBox(
-                  height: 16,
-                ),
-                SizedBox(
-                  height: 200,
-                  child: Image.asset("assets/icon/logo_512.png"),
-                ),
-                Column(
-                  children: [
-                    AppTitle(),
-                    SizedBox(
-                      height: 8,
-                    ),
-                    Text("Version: 1.0.0"),
-                    Text("by tom8zds @ github")
-                  ],
-                ),
-              ],
+                      // core log
+                    ],
+                  ),
+                  const SizedBox(
+                    height: 16,
+                  ),
+                  const SettingTileGroup(
+                    title: "behavior",
+                    children: [
+                      // receive without accept
+                      // save dir
+                    ],
+                  ),
+                  const SizedBox(
+                    height: 16,
+                  ),
+                  SizedBox(
+                    height: 200,
+                    child: Image.asset("assets/icon/logo_512.png"),
+                  ),
+                  const Column(
+                    children: [
+                      AppTitle(),
+                      SizedBox(
+                        height: 8,
+                      ),
+                      Text("Version: 1.0.0"),
+                      Text("by tom8zds @ github")
+                    ],
+                  ),
+                  const SizedBox(
+                    height: 32,
+                  ),
+                ],
+              ),
             ),
           )
         ],

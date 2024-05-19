@@ -16,6 +16,7 @@ lazy_static::lazy_static! {
     static ref MULTICAST_ADDR: Arc<Mutex<Option<SocketAddr>>> = Arc::new(Mutex::new(None));
     static ref CURRENT_NODE: Arc<Mutex<Option<Node>>> = Arc::new(Mutex::new(None));
     static ref ANNOUCE_SOCKET: Arc<Mutex<Option<UdpSocket>>> = Arc::new(Mutex::new(None));
+    static ref ANNOUCE_SEND_SOCKET: Arc<Mutex<Option<UdpSocket>>> = Arc::new(Mutex::new(None));
     static ref NODE_MAP: Arc<Mutex<HashMap<String, Node>>> = Arc::new(Mutex::new(HashMap::new()));
     static ref NODE_CHANNEL: (watch::Sender<HashMap<String, Node>>, watch::Receiver<HashMap<String, Node>>) = watch::channel(HashMap::new());
 }
@@ -27,6 +28,12 @@ pub async fn stop() {
 pub async fn add_node(node: Node) {
     let mut node_map = NODE_MAP.lock().await;
     node_map.insert(node.fingerprint.clone(), node);
+    let _ = NODE_CHANNEL.0.send(node_map.clone());
+}
+
+pub async fn clear_nodes() {
+    let mut node_map = NODE_MAP.lock().await;
+    node_map.clear();
     let _ = NODE_CHANNEL.0.send(node_map.clone());
 }
 
@@ -51,17 +58,11 @@ pub fn get_node_listener() -> watch::Receiver<HashMap<String, Node>> {
 }
 
 pub async fn serve(interface_addr: Ipv4Addr, multicast_addr: Ipv4Addr, multicast_port: u16) {
+    NODE_MAP.lock().await.clear();
+
     debug!("discovery server listening on port {}", multicast_port);
 
-    let socket = UdpSocket::bind((interface_addr, multicast_port))
-        .await
-        .expect("couldn't bind to address");
-
-    socket
-        .join_multicast_v4(multicast_addr, interface_addr)
-        .expect("failed to join multicast");
-
-    let _ = ANNOUCE_SOCKET.lock().await.replace(socket);
+    init_socket(interface_addr, multicast_port, multicast_addr).await;
 
     if CURRENT_NODE.lock().await.is_none() {
         panic!("current node not initialized");
@@ -82,14 +83,22 @@ pub async fn serve(interface_addr: Ipv4Addr, multicast_addr: Ipv4Addr, multicast
 
     let mut buf = [0; 1024];
 
-    while let Ok((size, addr)) = ANNOUCE_SOCKET
-        .lock()
-        .await
-        .as_ref()
-        .unwrap()
-        .recv_from(&mut buf)
-        .await
-    {
+    loop {
+        let result = ANNOUCE_SOCKET
+            .lock()
+            .await
+            .as_ref()
+            .unwrap()
+            .recv_from(&mut buf)
+            .await;
+
+        if result.is_err() {
+            debug!("server fail, stop");
+            break;
+        }
+
+        let (size, addr) = result.unwrap();
+
         let message = String::from_utf8_lossy(&buf[..size]);
         let node_announce: NodeAnnounce = serde_json::from_str(&message).unwrap();
         let node = Node::from_announce(&node_announce, &addr.ip().to_string());
@@ -97,8 +106,8 @@ pub async fn serve(interface_addr: Ipv4Addr, multicast_addr: Ipv4Addr, multicast
         debug!("node {:?}", node);
 
         if node.fingerprint != fingerprint {
+            let registered = register(node.clone()).await;
             if !NODE_MAP.lock().await.contains_key(&node.fingerprint) {
-                let registered = register(node.clone()).await;
                 if registered {
                     add_node(node).await;
                 }
@@ -110,6 +119,27 @@ pub async fn serve(interface_addr: Ipv4Addr, multicast_addr: Ipv4Addr, multicast
             debug!("node is self")
         }
     }
+}
+
+async fn init_socket(interface_addr: Ipv4Addr, multicast_port: u16, multicast_addr: Ipv4Addr) {
+    let rec_socket = UdpSocket::bind((interface_addr, multicast_port))
+        .await
+        .expect("couldn't bind to address");
+
+    let send_socket: UdpSocket = UdpSocket::bind((interface_addr, multicast_port + 1))
+        .await
+        .expect("couldn't bind to address");
+
+    rec_socket
+        .join_multicast_v4(multicast_addr, interface_addr)
+        .expect("failed to join multicast");
+
+    send_socket
+        .join_multicast_v4(multicast_addr, interface_addr)
+        .expect("failed to join multicast");
+
+    let _ = ANNOUCE_SOCKET.lock().await.replace(rec_socket);
+    let _ = ANNOUCE_SEND_SOCKET.lock().await.replace(send_socket);
 }
 
 async fn register(target: Node) -> bool {
@@ -138,33 +168,37 @@ async fn register(target: Node) -> bool {
 }
 
 pub async fn discover() {
+    clear_nodes().await;
     announce(5).await;
 }
 
 async fn announce(repeat: u8) {
-    let socket = ANNOUCE_SOCKET.lock().await;
-    let socket = socket.as_ref().expect("failed to clone socket");
     let current_node = CURRENT_NODE.lock().await;
-    let target = MULTICAST_ADDR.lock().await.unwrap().clone();
-
     if current_node.is_none() {
         drop(current_node);
         panic!("current node not initialized");
     }
+    let announce = current_node.as_ref().unwrap().to_announce();
+    drop(current_node);
 
-    let current_node = current_node.as_ref().unwrap();
+    let target = MULTICAST_ADDR.lock().await.unwrap().clone();
 
-    let announce = current_node.to_announce();
+    debug!("start announce");
 
     let message = serde_json::to_string(&announce).unwrap();
 
     let buf = message.as_bytes();
 
-    for _ in 0..repeat {
-        let _ = socket
+    for i in 0..repeat {
+        let _ = ANNOUCE_SEND_SOCKET
+            .lock()
+            .await
+            .as_ref()
+            .unwrap()
             .send_to(buf, target)
             .await
             .expect("failed to send message");
+        debug!("announce sent to {}", i);
         tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
     }
 }
