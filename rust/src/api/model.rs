@@ -48,7 +48,7 @@ pub struct UploadTask {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
-pub enum State {
+pub enum MissionState {
     Accepting,
     Accepted,
     Rejected,
@@ -61,7 +61,7 @@ pub enum State {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Mission {
     pub id: String,
-    pub state: State,
+    pub state: MissionState,
     pub token_map: HashMap<String, String>,
     pub info_map: HashMap<String, FileInfo>,
 }

@@ -3,7 +3,7 @@ use std::{collections::HashMap, sync::Arc};
 use log::debug;
 use tokio::sync::{watch, Mutex};
 
-use super::model::{FileInfo, Mission, State};
+use super::model::{FileInfo, Mission, MissionState};
 
 impl Mission {
     pub fn get_file_info(&self, token: &str) -> Option<FileInfo> {
@@ -49,7 +49,7 @@ pub async fn create_mission(
     });
     let mission = Mission {
         id: id.clone(),
-        state: State::Accepting,
+        state: MissionState::Accepting,
         token_map: reverse_token_map,
         info_map: info_map.clone(),
     };
@@ -70,14 +70,14 @@ pub async fn remove_mission(id: &str) {
 }
 
 pub async fn accept_mission(id: &str) {
-    update_mission_state(id, State::Accepted).await;
+    update_mission_state(id, MissionState::Accepted).await;
 }
 
 pub async fn reject_mission(id: &str) {
-    update_mission_state(id, State::Rejected).await;
+    update_mission_state(id, MissionState::Rejected).await;
 }
 
-pub async fn update_mission_state(id: &str, state: State) {
+pub async fn update_mission_state(id: &str, state: MissionState) {
     let mut mission_map = MISSION_MAP.lock().await;
     if !mission_map.contains_key(id) {
         return;

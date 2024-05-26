@@ -14,7 +14,7 @@ use tokio::{fs::File, io::BufWriter};
 use tokio_util::io::StreamReader;
 
 use crate::{
-    api::{mission, model::State},
+    api::{mission, model::MissionState},
     discovery::{
         handler,
         model::{Node, NodeAnnounce},
@@ -60,7 +60,7 @@ async fn handle_upload(
     let task: UploadTask = task.0;
     debug!("handle_upload {:?}", task);
     let session = mission::get_mission(&task.session_id).await.unwrap();
-    if session.state != State::Accepted {
+    if session.state != MissionState::Accepted {
         panic!("mission not accepted");
     }
     let file_info = session.get_file_info(&task.token);
@@ -71,17 +71,17 @@ async fn handle_upload(
     // ...
     let body_stream = request.into_body().into_data_stream();
 
-    mission::update_mission_state(&task.session_id, State::Receiving).await;
+    mission::update_mission_state(&task.session_id, MissionState::Receiving).await;
 
     let res = stream_to_file(&file_name, body_stream).await;
 
     match res {
         Ok(_) => {
-            mission::update_mission_state(&task.session_id, State::Finished).await;
+            mission::update_mission_state(&task.session_id, MissionState::Finished).await;
             Ok(())
         }
         Err(e) => {
-            mission::update_mission_state(&task.session_id, State::Failed).await;
+            mission::update_mission_state(&task.session_id, MissionState::Failed).await;
             Err(e)
         }
     }
@@ -95,21 +95,21 @@ async fn prepare_upload(Json(payload): Json<FileRequest>) -> Json<FileResponse> 
     while let Ok(_) = watcher.changed().await {
         let missions = watcher.borrow();
         if missions.contains_key(&id) {
-            if missions.get(&id).unwrap().state == State::Accepted {
-               return Json(FileResponse {
+            if missions.get(&id).unwrap().state == MissionState::Accepted {
+                return Json(FileResponse {
                     session_id: id,
                     files,
-                })
+                });
             }
-            if missions.get(&id).unwrap().state == State::Rejected {
+            if missions.get(&id).unwrap().state == MissionState::Rejected {
                 panic!("mission rejected");
             }
-            if missions.get(&id).unwrap().state != State::Accepting {
+            if missions.get(&id).unwrap().state != MissionState::Accepting {
                 panic!("mission state changed before");
             }
         }
     }
-    mission::update_mission_state(&id, State::Failed).await;
+    mission::update_mission_state(&id, MissionState::Failed).await;
     panic!("mission failed");
 }
 

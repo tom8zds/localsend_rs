@@ -3,11 +3,12 @@ use std::{
     sync::Arc,
 };
 
+use flutter_rust_bridge::DartFnFuture;
 use log::{debug, info};
 use tokio::sync::{mpsc, Mutex};
 
 use crate::{
-    api::model::{FileInfo, Mission, State},
+    api::model::{FileInfo, Mission, MissionState},
     discovery::{handler, model::Node},
 };
 use crate::{
@@ -91,37 +92,36 @@ pub async fn clear_missions() {
 }
 
 #[tokio::main]
-pub async fn node_channel(stream: StreamSink<Vec<Node>>) {
+pub async fn node_channel(dart_callback: impl Fn(Vec<Node>) -> DartFnFuture<String>) {
     let mut listener = handler::get_node_listener();
     loop {
         let _ = listener.changed().await;
         let nodes = listener.borrow().clone();
-        stream.add(nodes.iter().map(|item| item.1.clone()).collect());
+
+        dart_callback(nodes.iter().map(|item| item.1.clone()).collect()).await;
     }
 }
 
 #[derive(Default, Debug, Clone, PartialEq)]
 pub struct MissionItem {
     pub id: String,
-    pub state: State,
+    pub state: MissionState,
     pub file_info: Vec<FileInfo>,
 }
 
 #[tokio::main]
-pub async fn mission_channel(stream: StreamSink<MissionItem>) {
+pub async fn mission_channel(dart_callback: impl Fn(Vec<MissionItem>) -> DartFnFuture<String>) {
     let mut listener = mission::get_mission_listener();
     loop {
         let _ = listener.changed().await;
         let missions = listener.borrow().clone();
-        for mission in missions.values() {
-            if mission.state == State::Accepting {
-                stream.add(MissionItem {
-                    id: mission.id.clone(),
-                    state: mission.state.clone(),
-                    file_info: mission.info_map.values().map(|item| item.clone()).collect(),
-                });
-            }
-        }
+        let mission_items = missions.iter().map(|(_, value)| MissionItem {
+            id: value.id.clone(),
+            state: value.state.clone(),
+            file_info: value.info_map.values().map(|item| item.clone()).collect(),
+        });
+
+        dart_callback(mission_items.collect()).await;
     }
 }
 

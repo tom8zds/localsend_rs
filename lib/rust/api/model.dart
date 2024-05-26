@@ -45,7 +45,7 @@ class FileInfo {
           preview == other.preview;
 }
 
-enum State {
+enum MissionState {
   accepting,
   accepted,
   rejected,

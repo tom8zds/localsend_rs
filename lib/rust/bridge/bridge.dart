@@ -40,15 +40,19 @@ Future<void> acceptMission(
 Future<void> clearMissions({dynamic hint}) =>
     RustLib.instance.api.clearMissions(hint: hint);
 
-Stream<List<Node>> nodeChannel({dynamic hint}) =>
-    RustLib.instance.api.nodeChannel(hint: hint);
+Future<void> nodeChannel(
+        {required FutureOr<String> Function(List<Node>) dartCallback,
+        dynamic hint}) =>
+    RustLib.instance.api.nodeChannel(dartCallback: dartCallback, hint: hint);
 
-Stream<MissionItem> missionChannel({dynamic hint}) =>
-    RustLib.instance.api.missionChannel(hint: hint);
+Future<void> missionChannel(
+        {required FutureOr<String> Function(List<MissionItem>) dartCallback,
+        dynamic hint}) =>
+    RustLib.instance.api.missionChannel(dartCallback: dartCallback, hint: hint);
 
 class MissionItem {
   final String id;
-  final State state;
+  final MissionState state;
   final List<FileInfo> fileInfo;
 
   const MissionItem({

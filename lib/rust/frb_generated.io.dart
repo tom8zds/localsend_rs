@@ -22,14 +22,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   });
 
   @protected
-  RustStreamSink<List<Node>> dco_decode_StreamSink_list_node_Sse(dynamic raw);
+  FutureOr<String> Function(List<MissionItem>)
+      dco_decode_DartFn_Inputs_list_mission_item_Output_String(dynamic raw);
+
+  @protected
+  FutureOr<String> Function(List<Node>)
+      dco_decode_DartFn_Inputs_list_node_Output_String(dynamic raw);
+
+  @protected
+  Object dco_decode_DartOpaque(dynamic raw);
 
   @protected
   RustStreamSink<LogEntry> dco_decode_StreamSink_log_entry_Sse(dynamic raw);
-
-  @protected
-  RustStreamSink<MissionItem> dco_decode_StreamSink_mission_item_Sse(
-      dynamic raw);
 
   @protected
   String dco_decode_String(dynamic raw);
@@ -50,6 +54,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<FileInfo> dco_decode_list_file_info(dynamic raw);
 
   @protected
+  List<MissionItem> dco_decode_list_mission_item(dynamic raw);
+
+  @protected
   List<Node> dco_decode_list_node(dynamic raw);
 
   @protected
@@ -60,6 +67,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   MissionItem dco_decode_mission_item(dynamic raw);
+
+  @protected
+  MissionState dco_decode_mission_state(dynamic raw);
 
   @protected
   Node dco_decode_node(dynamic raw);
@@ -74,9 +84,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   ServerState dco_decode_server_state(dynamic raw);
 
   @protected
-  State dco_decode_state(dynamic raw);
-
-  @protected
   int dco_decode_u_16(dynamic raw);
 
   @protected
@@ -86,15 +93,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void dco_decode_unit(dynamic raw);
 
   @protected
-  RustStreamSink<List<Node>> sse_decode_StreamSink_list_node_Sse(
-      SseDeserializer deserializer);
+  int dco_decode_usize(dynamic raw);
+
+  @protected
+  Object sse_decode_DartOpaque(SseDeserializer deserializer);
 
   @protected
   RustStreamSink<LogEntry> sse_decode_StreamSink_log_entry_Sse(
-      SseDeserializer deserializer);
-
-  @protected
-  RustStreamSink<MissionItem> sse_decode_StreamSink_mission_item_Sse(
       SseDeserializer deserializer);
 
   @protected
@@ -116,6 +121,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<FileInfo> sse_decode_list_file_info(SseDeserializer deserializer);
 
   @protected
+  List<MissionItem> sse_decode_list_mission_item(SseDeserializer deserializer);
+
+  @protected
   List<Node> sse_decode_list_node(SseDeserializer deserializer);
 
   @protected
@@ -126,6 +134,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   MissionItem sse_decode_mission_item(SseDeserializer deserializer);
+
+  @protected
+  MissionState sse_decode_mission_state(SseDeserializer deserializer);
 
   @protected
   Node sse_decode_node(SseDeserializer deserializer);
@@ -140,9 +151,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   ServerState sse_decode_server_state(SseDeserializer deserializer);
 
   @protected
-  State sse_decode_state(SseDeserializer deserializer);
-
-  @protected
   int sse_decode_u_16(SseDeserializer deserializer);
 
   @protected
@@ -152,16 +160,23 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_decode_unit(SseDeserializer deserializer);
 
   @protected
-  void sse_encode_StreamSink_list_node_Sse(
-      RustStreamSink<List<Node>> self, SseSerializer serializer);
+  int sse_decode_usize(SseDeserializer deserializer);
+
+  @protected
+  void sse_encode_DartFn_Inputs_list_mission_item_Output_String(
+      FutureOr<String> Function(List<MissionItem>) self,
+      SseSerializer serializer);
+
+  @protected
+  void sse_encode_DartFn_Inputs_list_node_Output_String(
+      FutureOr<String> Function(List<Node>) self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_DartOpaque(Object self, SseSerializer serializer);
 
   @protected
   void sse_encode_StreamSink_log_entry_Sse(
       RustStreamSink<LogEntry> self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_StreamSink_mission_item_Sse(
-      RustStreamSink<MissionItem> self, SseSerializer serializer);
 
   @protected
   void sse_encode_String(String self, SseSerializer serializer);
@@ -182,6 +197,10 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_list_file_info(List<FileInfo> self, SseSerializer serializer);
 
   @protected
+  void sse_encode_list_mission_item(
+      List<MissionItem> self, SseSerializer serializer);
+
+  @protected
   void sse_encode_list_node(List<Node> self, SseSerializer serializer);
 
   @protected
@@ -193,6 +212,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_mission_item(MissionItem self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_mission_state(MissionState self, SseSerializer serializer);
 
   @protected
   void sse_encode_node(Node self, SseSerializer serializer);
@@ -208,9 +230,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_server_state(ServerState self, SseSerializer serializer);
 
   @protected
-  void sse_encode_state(State self, SseSerializer serializer);
-
-  @protected
   void sse_encode_u_16(int self, SseSerializer serializer);
 
   @protected
@@ -218,6 +237,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_unit(void self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_usize(int self, SseSerializer serializer);
 }
 
 // Section: wire_class
