@@ -4,6 +4,8 @@ import '../rust/bridge/bridge.dart';
 import '../rust/discovery/model.dart';
 
 class NodeWidget extends StatefulWidget {
+  const NodeWidget({super.key});
+
   @override
   State<NodeWidget> createState() => _NodeWidgetState();
 }
@@ -50,7 +52,7 @@ class _NodeWidgetState extends State<NodeWidget> {
               );
             }
           }
-          return Center(
+          return const Center(
             child: Text("empty"),
           );
         },

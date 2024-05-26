@@ -22,7 +22,7 @@ class _FramePageState extends State<FramePage> {
   int index = 0;
 
   List<Widget> pages = [
-    HomePage(),
+    const HomePage(),
     const SettingPage(),
   ];
 
@@ -112,7 +112,7 @@ class _FramePageState extends State<FramePage> {
               },
               selectedIndex: index,
               children: [
-                SizedBox(
+                const SizedBox(
                   height: 112,
                   child: Center(
                     child: AppTitle(),

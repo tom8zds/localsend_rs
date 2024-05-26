@@ -12,7 +12,7 @@ class AppTitle extends StatelessWidget {
           TextSpan(
             text: '_RS',
             style: Theme.of(context).textTheme.displaySmall!.copyWith(
-                  color: Color(0xfff74c00),
+                  color: const Color(0xfff74c00),
                   fontWeight: FontWeight.bold,
                 ),
           ),

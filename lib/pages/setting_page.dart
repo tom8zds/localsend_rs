@@ -30,11 +30,11 @@ class SettingPage extends StatelessWidget {
                 [
                   SettingTileGroup(
                     title: t.setting.common,
-                    children: [
-                      const ThemeTile(),
+                    children: const [
+                      ThemeTile(),
                       // color tile
                       // language tile
-                      const LocaleTile(),
+                      LocaleTile(),
                     ],
                   ),
                   const SizedBox(

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../rust/bridge/bridge.dart';
 
 class MissionWidget extends StatefulWidget {
+  const MissionWidget({super.key});
+
   @override
   State<MissionWidget> createState() => _MissionWidgetState();
 }
@@ -24,8 +26,8 @@ class _MissionWidgetState extends State<MissionWidget> {
           if (snapshot.hasData) {
             final data = snapshot.data;
             if (data != null) {
-              if (data.fileInfo.length == 0) {
-                return Center(
+              if (data.fileInfo.isEmpty) {
+                return const Center(
                   child: Text("empty"),
                 );
               }
@@ -33,7 +35,7 @@ class _MissionWidgetState extends State<MissionWidget> {
                 children: [
                   Row(
                     children: [
-                      SizedBox(
+                      const SizedBox(
                         width: 20,
                       ),
                       Text("Mission: ${data.state.toString()}"),
@@ -50,12 +52,12 @@ class _MissionWidgetState extends State<MissionWidget> {
                         },
                         icon: const Icon(Icons.close),
                       ),
-                      Expanded(child: SizedBox()),
+                      const Expanded(child: SizedBox()),
                       IconButton(
                           onPressed: () async {
                             await clearMissions();
                           },
-                          icon: Icon(Icons.delete))
+                          icon: const Icon(Icons.delete))
                     ],
                   ),
                   SizedBox(
@@ -88,7 +90,7 @@ class _MissionWidgetState extends State<MissionWidget> {
               );
             }
           }
-          return Center(
+          return const Center(
             child: Text("empty"),
           );
         },

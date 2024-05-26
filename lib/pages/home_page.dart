@@ -6,6 +6,8 @@ import '../widget/mission_widget.dart';
 import '../widget/node_widget.dart';
 
 class HomePage extends StatelessWidget {
+  const HomePage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -13,10 +15,10 @@ class HomePage extends StatelessWidget {
         title: Text(context.t.home.title),
       ),
       body: ListView(
-        children: [MissionWidget(), NodeWidget()],
+        children: const [MissionWidget(), NodeWidget()],
       ),
       floatingActionButton: FloatingActionButton(
-        child: Icon(Icons.search),
+        child: const Icon(Icons.search),
         onPressed: () async {
           await discover();
         },

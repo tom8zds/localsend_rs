@@ -66,11 +66,11 @@ class MyApp extends ConsumerWidget {
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
       theme: ThemeData(
         useMaterial3: true,
-        colorSchemeSeed: Color(0xfff74c00),
+        colorSchemeSeed: const Color(0xfff74c00),
       ),
       darkTheme: ThemeData(
         useMaterial3: true,
-        colorSchemeSeed: Color(0xfff74c00),
+        colorSchemeSeed: const Color(0xfff74c00),
         brightness: Brightness.dark,
       ),
       themeMode: themeMode,
