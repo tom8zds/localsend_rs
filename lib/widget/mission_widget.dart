@@ -19,8 +19,8 @@ class MissionWidget extends ConsumerWidget {
       height: 144,
       child: Builder(
         builder: (context) {
-          if (core.missions.isNotEmpty) {
-            final data = core.missions.last;
+          final data = core.currentMission;
+          if (data != null) {
             if (data.state != MissionState.accepting) {
               return const Center(
                 child: Text("empty"),

@@ -87,7 +87,9 @@ async fn handle_upload(
     }
 }
 
-async fn prepare_upload(Json(payload): Json<FileRequest>) -> Json<FileResponse> {
+async fn prepare_upload(
+    Json(payload): Json<FileRequest>,
+) -> Result<Json<FileResponse>, (StatusCode, String)> {
     debug!("prepare_upload {:?}", payload);
     let (id, files) = mission::create_mission(payload.files).await;
 
@@ -96,13 +98,14 @@ async fn prepare_upload(Json(payload): Json<FileRequest>) -> Json<FileResponse> 
         let missions = watcher.borrow();
         if missions.contains_key(&id) {
             if missions.get(&id).unwrap().state == MissionState::Accepted {
-                return Json(FileResponse {
+                return Ok(Json(FileResponse {
                     session_id: id,
                     files,
-                });
+                }));
             }
             if missions.get(&id).unwrap().state == MissionState::Rejected {
-                panic!("mission rejected");
+                debug!("mission rejected");
+                return Err((StatusCode::FORBIDDEN, "mission rejected".to_string()));
             }
             if missions.get(&id).unwrap().state != MissionState::Accepting {
                 panic!("mission state changed before");
