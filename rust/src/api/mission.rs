@@ -52,6 +52,7 @@ pub async fn create_mission(
         state: MissionState::Accepting,
         token_map: reverse_token_map,
         info_map: info_map.clone(),
+        accepted: vec![],
     };
     add_mission(mission).await;
     (id, token_map)
@@ -75,6 +76,24 @@ pub async fn accept_mission(id: &str) {
 
 pub async fn reject_mission(id: &str) {
     update_mission_state(id, MissionState::Rejected).await;
+}
+
+pub async fn update_file_state(id: &str, file_name: String) {
+    let mut mission_map = MISSION_MAP.lock().await;
+    if !mission_map.contains_key(id) {
+        return;
+    }
+    let mission = mission_map.get_mut(id).unwrap();
+    if mission.accepted.contains(&file_name) {
+        panic!("file already accepted");
+    } else {
+        mission.accepted.push(file_name);
+    }
+
+    if mission.accepted.len() == mission.info_map.len() {
+        mission.state = MissionState::Finished;
+        let _ = MISSON_CHANNEL.0.send(mission_map.clone());
+    }
 }
 
 pub async fn update_mission_state(id: &str, state: MissionState) {

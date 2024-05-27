@@ -60,7 +60,7 @@ async fn handle_upload(
     let task: UploadTask = task.0;
     debug!("handle_upload {:?}", task);
     let session = mission::get_mission(&task.session_id).await.unwrap();
-    if session.state != MissionState::Accepted {
+    if ![MissionState::Accepted, MissionState::Receiving].contains(&session.state) {
         panic!("mission not accepted");
     }
     let file_info = session.get_file_info(&task.token);
@@ -77,7 +77,7 @@ async fn handle_upload(
 
     match res {
         Ok(_) => {
-            mission::update_mission_state(&task.session_id, MissionState::Finished).await;
+            mission::update_file_state(&task.session_id, file_name).await;
             Ok(())
         }
         Err(e) => {

@@ -64,4 +64,5 @@ pub struct Mission {
     pub state: MissionState,
     pub token_map: HashMap<String, String>,
     pub info_map: HashMap<String, FileInfo>,
+    pub accepted: Vec<String>,
 }

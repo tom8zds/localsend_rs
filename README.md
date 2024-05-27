@@ -25,16 +25,16 @@ Test condition :
     - [x] Register
     - [x] Prepare upload
     - [x] Upload
-    - [ ] Cancel
+    - [x] Cancel
     - [ ] Send
 - [ ] User interface
     - [ ] device page
     - [ ] discover page
     - [ ] send page
     - [ ] setting page
-- [ ] Platform
+- [x] Platform
   - [x] Windows
-  - [ ] Android
+  - [x] Android
 
 ## Getting Started
 
