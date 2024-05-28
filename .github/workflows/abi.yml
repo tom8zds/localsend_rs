@@ -19,8 +19,8 @@ jobs:
     - name: Set up environment
       uses: actions-rs/toolchain@v1
       with:
+        toolchain: stable
         target: ${{ github.event.inputs.target }}
-        components: cargo
 
     # Download Android NDK for cross-compiling
     - name: Download Android NDK
