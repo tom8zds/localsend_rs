@@ -19,10 +19,8 @@ jobs:
     - name: Set up environment
       uses: actions-rs/toolchain@v1
       with:
-        toolchain-version: stable
-        profile: minimal
         target: ${{ github.event.inputs.target }}
-        components: cargo, rustfmt, clippy
+        components: cargo
 
     # Download Android NDK for cross-compiling
     - name: Download Android NDK
