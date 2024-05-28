@@ -2,14 +2,14 @@ name: Build Abi for Android
 
 on:
   workflow_dispatch:
-    inputs:
-      target:
-        required: true
-        default: aarch64-linux-android
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./rust
 
     steps:
     - name: Checkout code
@@ -19,8 +19,7 @@ jobs:
     - name: Set up environment
       uses: actions-rs/toolchain@v1
       with:
-        target: ${{ github.event.inputs.target }}
-        components: cargo
+        toolchain: stable
 
     # Download Android NDK for cross-compiling
     - name: Download Android NDK
@@ -30,18 +29,22 @@ jobs:
         ndk-version: r26d
         local-cache: true
 
-    # Install Cargo target for Android
-    - name: Install cargo target for Android
+    - name: Setup cargo ndk
       run: |
-        cd ./rust 
+        cargo install cargo-ndk
+        rustup target add aarch64-linux-android armv7-linux-androideabi
+        rustup target list
+
+    # Install Cargo target for Android
+    - name: Build
+      run: |
         mkdir output 
-        cargo ndk -o ./output -t ${{ github.event.inputs.target }} --manifest-path ./Cargo.toml build --release
+        cargo ndk -o ./output -t arm64-v8a -t armeabi-v7a --manifest-path ./Cargo.toml build --release
         ls ./output
-        tar -czvf ${{ github.event.inputs.target }}.tar.gz ./output
 
     # Upload the built artifacts as an artifact
     - name: Upload Artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: android-release
-        path: rust/${{ github.event.inputs.target }}.tar.gz
+        name: android-abi-arm
+        path: rust/output
