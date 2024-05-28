@@ -34,12 +34,16 @@ jobs:
         ndk-version: r26d
         local-cache: true
 
+    - name: Setup cargo ndk
+      run: |
+        cargo install cargo-ndk
+        rustup target add aarch64-linux-android armv7-linux-androideabi
+        rustup target list
+
     # Install Cargo target for Android
     - name: Install cargo target for Android
       run: |
         mkdir output 
-        cargo install cargo-ndk
-        rustup target add aarch64-linux-android armv7-linux-androideabi
         cargo ndk -o ./output -t ${{ github.event.inputs.target }} --manifest-path ./Cargo.toml build --release
         ls ./output
         tar -czvf ${{ github.event.inputs.target }}.tar.gz ./output
