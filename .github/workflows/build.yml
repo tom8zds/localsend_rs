@@ -28,16 +28,17 @@ jobs:
     - name: Test Abi
       run: |
         echo "Testing abi"
-        ls .
+        ls ./android-abi-arm
+        mv  ./android-abi-arm ./android/app/src/main/jniLibs
 
-    # - name: Build APK
-    #   run: |
-    #     flutter build apk --release
-    #     ls -alh ./build/app/outputs/flutter-apk/*.apk
-    #     cp -r ./build/app/outputs/flutter-apk /tmp/flutter-apk
+    - name: Build APK
+      run: |
+        flutter build apk --release
+        ls -alh ./build/app/outputs/flutter-apk/*.apk
+        cp -r ./build/app/outputs/flutter-apk /tmp/flutter-apk
 
-    # - name: Upload artifact
-    #   uses: actions/upload-artifact@v2
-    #   with:
-    #     name: flutter-apk
-    #     path: /tmp/flutter-apk/*.apk
+    - name: Upload artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: flutter-apk
+        path: /tmp/flutter-apk/*.apk
