@@ -1,0 +1,41 @@
+name: Flutter Build & Upload Artifact
+
+on:
+  workflow_dispatch:
+
+
+jobs:
+  build-abi:
+    uses: ./.github/workflows/abi.yml
+
+  build-apk:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Flutter SDK
+      uses: subosito/flutter-action@v2.16.0
+
+    - name: Download rust abi from artifact
+      uses: actions/download-artifact@v4.1.7
+      with:
+        name: android-abi 
+
+    - name: Test Abi
+      run: |
+        echo "Testing abi"
+        ls .
+
+    # - name: Build APK
+    #   run: |
+    #     flutter build apk --release
+    #     ls -alh ./build/app/outputs/flutter-apk/*.apk
+    #     cp -r ./build/app/outputs/flutter-apk /tmp/flutter-apk
+
+    # - name: Upload artifact
+    #   uses: actions/upload-artifact@v2
+    #   with:
+    #     name: flutter-apk
+    #     path: /tmp/flutter-apk/*.apk
