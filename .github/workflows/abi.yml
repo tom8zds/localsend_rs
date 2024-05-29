@@ -44,7 +44,7 @@ jobs:
 
     # Upload the built artifacts as an artifact
     - name: Upload Artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4.3.3
       with:
         name: android-abi-arm
         path: rust/output
