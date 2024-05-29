@@ -9,6 +9,7 @@ jobs:
     uses: ./.github/workflows/abi.yml
 
   build-apk:
+    needs: build-abi
     runs-on: ubuntu-latest
 
     steps:
