@@ -5,11 +5,7 @@ on:
 
 
 jobs:
-  # build-abi:
-  #   uses: ./.github/workflows/abi.yml
-
   build-apk:
-    # needs: build-abi
     runs-on: ubuntu-latest
 
     steps:
@@ -21,23 +17,11 @@ jobs:
       with:
         channel: stable
         cache: true
-
-    # - name: Download rust abi from artifact
-    #   uses: actions/download-artifact@v4.1.7
-
-    # - name: Copy Abi
-    #   run: |
-    #     echo "Testing abi"
-    #     ls ./android-abi-arm
-    #     mv  ./android-abi-arm ./android/app/src/main/jniLibs
     
     - name: Set up rust
       uses: actions-rs/toolchain@v1
       with:
         toolchain: stable
-    
-    # - name: Set up flutter rust bridge
-    #   run: cargo install 'flutter_rust_bridge_codegen@^2.0.0-dev.0'
 
     - name: Build Prepare
       run: |
@@ -50,18 +34,46 @@ jobs:
         ls -alh ./build/app/outputs/flutter-apk/*.apk
         cp -r ./build/app/outputs/flutter-apk /tmp/flutter-apk
 
-    - name: Build Windows
-      run: |
-        flutter build windows --release
-        ls -alh ./build/windows/runner/Release/*.exe
-        cp -r ./build/windows/runner/Release /tmp/windows-exe
+    # - name: Build Linux
+    #   run: |
+    #     flutter build linux --release
+    #     ls -alh ./build/linux/x64/release/bundle/*
+    #     cp -r ./build/linux/x64/release/bundle /tmp/linux-bundle
 
     - name: Upload Android
       uses: actions/upload-artifact@v4.3.3
       with:
         name: android-release
         path: /tmp/flutter-apk/*.apk
+  
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Flutter SDK
+      uses: subosito/flutter-action@v2.16.0
+      with:
+        channel: stable
+        cache: true
     
+    - name: Set up rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+
+    - name: Build Prepare
+      run: |
+        flutter pub get
+
+    - name: Build Windows
+      run: |
+        flutter build windows --release
+        ls -alh ./build/windows/runner/Release/*.exe
+        cp -r ./build/windows/runner/Release /tmp/windows-exe
+
     - name: Upload Windows
       uses: actions/upload-artifact@v4.3.3
       with:
