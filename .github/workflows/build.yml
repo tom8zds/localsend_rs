@@ -22,14 +22,14 @@ jobs:
         channel: stable
         cache: true
 
-    - name: Download rust abi from artifact
-      uses: actions/download-artifact@v4.1.7
+    # - name: Download rust abi from artifact
+    #   uses: actions/download-artifact@v4.1.7
 
-    - name: Copy Abi
-      run: |
-        echo "Testing abi"
-        ls ./android-abi-arm
-        mv  ./android-abi-arm ./android/app/src/main/jniLibs
+    # - name: Copy Abi
+    #   run: |
+    #     echo "Testing abi"
+    #     ls ./android-abi-arm
+    #     mv  ./android-abi-arm ./android/app/src/main/jniLibs
     
     - name: Set up rust
       uses: actions-rs/toolchain@v1
