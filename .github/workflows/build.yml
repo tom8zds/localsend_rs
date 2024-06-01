@@ -30,7 +30,7 @@ jobs:
 
     - name: Build APK
       run: |
-        flutter build apk --verbose
+        flutter build apk
         ls -alh ./build/app/outputs/flutter-apk/*.apk
         cp -r ./build/app/outputs/flutter-apk /tmp/flutter-apk
 
