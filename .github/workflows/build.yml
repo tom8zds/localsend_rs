@@ -71,8 +71,15 @@ jobs:
     - name: Build Windows
       run: |
         flutter build windows --release
-        ls -alh ./build/windows/runner/Release/*.exe
-        cp -r ./build/windows/runner/Release /tmp/windows-exe
+
+    - name: Build iss script
+      run: dart build.dart
+    
+    - name: Compile .ISS to .EXE Installer
+      uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
+      with:
+        path: build/windows/setup.iss
+        options: /O+
 
     - name: Upload Windows
       uses: actions/upload-artifact@v4.3.3
