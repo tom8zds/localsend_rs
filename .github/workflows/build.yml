@@ -77,12 +77,6 @@ jobs:
       run: |
         dart setup.dart
         ls build\windows
-    
-    - name: Compile .ISS to .EXE Installer
-      uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
-      with:
-        path: ./build/windows/setup.iss
-        options: /O+
 
     - name: Upload Windows
       uses: actions/upload-artifact@v4.3.3
