@@ -81,5 +81,5 @@ jobs:
     - name: Upload Windows
       uses: actions/upload-artifact@v4.3.3
       with:
-        name: setup.exe
-        path: build\windows\LocalSend-RS-setup.exe
+        name: windows-release
+        path: build\windows\localsend_rs-setup.exe
