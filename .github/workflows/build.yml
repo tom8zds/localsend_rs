@@ -74,16 +74,18 @@ jobs:
         flutter build windows --release
 
     - name: Build iss script
-      run: dart setup.dart
+      run: |
+        dart setup.dart
+        ls build\windows
     
     - name: Compile .ISS to .EXE Installer
       uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
       with:
-        path: build/windows/setup.iss
+        path: ./build/windows/setup.iss
         options: /O+
 
     - name: Upload Windows
       uses: actions/upload-artifact@v4.3.3
       with:
-        name: windows-exe
-        path: /tmp/windows-exe/*.exe
+        name: setup.exe
+        path: build\windows\LocalSend-RS-setup.exe
