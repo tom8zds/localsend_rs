@@ -74,7 +74,7 @@ jobs:
         flutter build windows --release
 
     - name: Build iss script
-      run: dart build.dart
+      run: dart setup.dart
     
     - name: Compile .ISS to .EXE Installer
       uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
