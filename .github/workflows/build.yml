@@ -67,6 +67,7 @@ jobs:
     - name: Build Prepare
       run: |
         flutter pub get
+        flutter config --enable-native-assets
 
     - name: Build Windows
       run: |
