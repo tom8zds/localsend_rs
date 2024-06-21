@@ -5,11 +5,7 @@ on:
 
 
 jobs:
-  build-abi:
-    uses: ./.github/workflows/abi.yml
-
   build-apk:
-    needs: build-abi
     runs-on: ubuntu-latest
 
     steps:
@@ -18,25 +14,72 @@ jobs:
 
     - name: Set up Flutter SDK
       uses: subosito/flutter-action@v2.16.0
-
-    - name: Download rust abi from artifact
-      uses: actions/download-artifact@v4.1.7
       with:
-        name: android-abi 
+        channel: stable
+        cache: true
+    
+    - name: Set up rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
 
-    - name: Test Abi
+    - name: Build Prepare
       run: |
-        echo "Testing abi"
-        ls .
+        flutter pub get
+        chmod +x ./rust_builder
 
-    # - name: Build APK
+    - name: Build APK
+      run: |
+        flutter build apk
+        ls -alh ./build/app/outputs/flutter-apk/*.apk
+        cp -r ./build/app/outputs/flutter-apk /tmp/flutter-apk
+
+    # - name: Build Linux
     #   run: |
-    #     flutter build apk --release
-    #     ls -alh ./build/app/outputs/flutter-apk/*.apk
-    #     cp -r ./build/app/outputs/flutter-apk /tmp/flutter-apk
+    #     flutter build linux --release
+    #     ls -alh ./build/linux/x64/release/bundle/*
+    #     cp -r ./build/linux/x64/release/bundle /tmp/linux-bundle
 
-    # - name: Upload artifact
-    #   uses: actions/upload-artifact@v2
-    #   with:
-    #     name: flutter-apk
-    #     path: /tmp/flutter-apk/*.apk
+    - name: Upload Android
+      uses: actions/upload-artifact@v4.3.3
+      with:
+        name: android-release
+        path: /tmp/flutter-apk/*.apk
+  
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Flutter SDK
+      uses: subosito/flutter-action@v2.16.0
+      with:
+        channel: stable
+        cache: true
+    
+    - name: Set up rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+
+    - name: Build Prepare
+      run: |
+        flutter pub get
+        flutter config --enable-native-assets
+
+    - name: Build Windows
+      run: |
+        flutter build windows --release
+
+    - name: Build iss script
+      run: |
+        dart setup.dart
+        ls build\windows
+
+    - name: Upload Windows
+      uses: actions/upload-artifact@v4.3.3
+      with:
+        name: windows-release
+        path: build\windows\localsend_rs-setup.exe
