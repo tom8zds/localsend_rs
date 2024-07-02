@@ -5,7 +5,10 @@ use crate::frb_generated::StreamSink;
 use lazy_static::lazy_static;
 use log::{error, info, warn, Log, Metadata, Record};
 use parking_lot::RwLock;
+use serde_derive::{Deserialize, Serialize};
 use simplelog::*;
+
+static INIT_LOGGER_ONCE: Once = Once::new();
 
 pub struct LogEntry {
     pub time_millis: i64,
@@ -13,8 +16,6 @@ pub struct LogEntry {
     pub tag: String,
     pub msg: String,
 }
-
-static INIT_LOGGER_ONCE: Once = Once::new();
 
 pub fn init_logger(is_debug: bool) {
     // https://stackoverflow.com/questions/30177845/how-to-initialize-the-logger-for-integration-tests
@@ -37,8 +38,7 @@ pub fn init_logger(is_debug: bool) {
             // #[cfg(not(any(target_os = "android", target_os = "ios")))]
             TermLogger::new(
                 level,
-                ConfigBuilder::new()
-                    .build(),
+                ConfigBuilder::new().build(),
                 TerminalMode::Mixed,
                 ColorChoice::Auto,
             ),

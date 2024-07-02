@@ -3,9 +3,10 @@
 
 // ignore_for_file: invalid_use_of_internal_member, unused_import, unnecessary_import
 
-import '../actor/core.dart';
-import '../actor/model.dart';
-import '../frb_generated.dart';
+import 'actor/core.dart';
+import 'actor/model.dart';
+import 'frb_generated.dart';
+import 'logger.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 // The type `CORE` is not used by any `pub` functions, thus it is ignored.
@@ -20,6 +21,9 @@ Future<void> shutdownServer({dynamic hint}) =>
 
 Future<void> changeConfig({required CoreConfig config, dynamic hint}) =>
     RustLib.instance.api.changeConfig(config: config, hint: hint);
+
+Future<LogEntry> getLog({dynamic hint}) =>
+    RustLib.instance.api.getLog(hint: hint);
 
 Stream<List<NodeDevice>> listenDevice({dynamic hint}) =>
     RustLib.instance.api.listenDevice(hint: hint);

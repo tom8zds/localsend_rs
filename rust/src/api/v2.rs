@@ -1,29 +1,65 @@
-use core::panic;
-use std::net::SocketAddr;
+use std::{collections::HashMap, net::SocketAddr, sync::Arc};
 
+use super::model::{FileInfo, FileRequest, FileResponse, UploadTask};
 use axum::{
-    body::Bytes,
-    extract::{ConnectInfo, Query, Request},
+    body::{Bytes, HttpBody},
+    extract::{ConnectInfo, Path, Query, Request, State},
     http::StatusCode,
-    routing::post,
+    routing::{get, post},
     BoxError, Json, Router,
 };
 use futures::{Stream, TryStreamExt};
 use log::debug;
-use tokio::{fs::File, io::BufWriter};
+use serde_derive::Deserialize;
+use serde_json::{json, Value};
+use tokio::{
+    fs::File,
+    io::BufWriter,
+    sync::{mpsc, watch},
+};
 use tokio_util::io::StreamReader;
 
 use crate::{
-    api::{mission, model::MissionState},
-    discovery::{
-        handler,
-        model::{Node, NodeAnnounce},
+    actor::{
+        core::CoreActorHandle,
+        model::{Mission, MissionState, NodeAnnounce, NodeDevice},
     },
+    util::ProgressWriteAdapter,
 };
 
-use super::model::{FileRequest, FileResponse, UploadTask};
+async fn handle_register(
+    State(state): State<Arc<AppState>>,
+    ConnectInfo(addr): ConnectInfo<SocketAddr>,
+    Json(payload): Json<NodeAnnounce>,
+) -> Json<NodeAnnounce> {
+    let device = NodeDevice::from_announce(&payload, &addr.ip().to_string());
+    debug!("device {:?}", device);
+    state.core.device.add_node_device(device).await;
+    Json(payload)
+}
 
-async fn stream_to_file<S, E>(path: &str, stream: S) -> Result<(), (StatusCode, String)>
+async fn get_devices(State(state): State<Arc<AppState>>) -> Json<Value> {
+    let device_map = state.core.device.get_device_map().await;
+    Json(json!( { "code":200, "data": device_map }))
+}
+
+struct Guard {
+    tx: mpsc::Sender<bool>,
+}
+
+impl Drop for Guard {
+    fn drop(&mut self) {
+        let tx = self.tx.clone();
+        tokio::spawn(async move { tx.send(true).await });
+        debug!("request guard was dropped")
+    }
+}
+
+async fn stream_to_file<S, E>(
+    path: &str,
+    stream: S,
+    progress: watch::Sender<usize>,
+) -> Result<(), (StatusCode, String)>
 where
     S: Stream<Item = Result<Bytes, E>>,
     E: Into<BoxError>,
@@ -42,10 +78,11 @@ where
             tokio::fs::create_dir_all(dir).await?;
         }
 
-        let mut file = BufWriter::new(File::create(path).await?);
+        let file = BufWriter::new(File::create(path).await?);
+        let mut writer = ProgressWriteAdapter::new(file, progress);
 
         // Copy the body into the file.
-        tokio::io::copy(&mut body_reader, &mut file).await?;
+        tokio::io::copy(&mut body_reader, &mut writer).await?;
 
         Ok::<_, std::io::Error>(())
     }
@@ -54,83 +91,128 @@ where
 }
 
 async fn handle_upload(
+    State(state): State<Arc<AppState>>,
     task: Query<UploadTask>,
     request: Request,
 ) -> Result<(), (StatusCode, String)> {
     let task: UploadTask = task.0;
     debug!("handle_upload {:?}", task);
-    let session = mission::get_mission(&task.session_id).await.unwrap();
-    if ![MissionState::Accepted, MissionState::Receiving].contains(&session.state) {
-        panic!("mission not accepted");
-    }
-    let file_info = session.get_file_info(&task.token);
-    if file_info.is_none() {
-        panic!("file info not found");
-    }
-    let file_name = file_info.unwrap().file_name.clone();
-    // ...
-    let body_stream = request.into_body().into_data_stream();
 
-    mission::update_mission_state(&task.session_id, MissionState::Receiving).await;
+    let handle = state.core.mission.transfer.clone();
 
-    let res = stream_to_file(&file_name, body_stream).await;
+    let res = handle.start_task(task.session_id, task.token).await;
 
     match res {
-        Ok(_) => {
-            mission::update_file_state(&task.session_id, file_name).await;
-            Ok(())
+        Ok((tx, file)) => {
+            let file_name = file.file_name.clone();
+            // ...
+            let body_stream = request.into_body().into_data_stream();
+
+            let res = stream_to_file(&file_name, body_stream, tx).await;
+
+            match res {
+                Ok(_) => Ok(()),
+                Err(e) => Err(e),
+            }
         }
-        Err(e) => {
-            mission::update_mission_state(&task.session_id, MissionState::Failed).await;
-            Err(e)
-        }
+        Err(_) => todo!(),
     }
 }
 
 async fn prepare_upload(
+    State(state): State<Arc<AppState>>,
     Json(payload): Json<FileRequest>,
 ) -> Result<Json<FileResponse>, (StatusCode, String)> {
     debug!("prepare_upload {:?}", payload);
-    let (id, files) = mission::create_mission(payload.files).await;
 
-    let mut watcher = mission::get_mission_listener();
-    while let Ok(_) = watcher.changed().await {
-        let missions = watcher.borrow();
-        if missions.contains_key(&id) {
-            if missions.get(&id).unwrap().state == MissionState::Accepted {
-                return Ok(Json(FileResponse {
-                    session_id: id,
-                    files,
-                }));
-            }
-            if missions.get(&id).unwrap().state == MissionState::Rejected {
-                debug!("mission rejected");
-                return Err((StatusCode::FORBIDDEN, "mission rejected".to_string()));
-            }
-            if missions.get(&id).unwrap().state != MissionState::Accepting {
-                panic!("mission state changed before");
-            }
-        }
+    let exist = state
+        .core
+        .device
+        .check_device_exist(payload.info.fingerprint.clone())
+        .await;
+
+    if !exist {
+        debug!("mission rejected");
+        return Err((
+            StatusCode::FORBIDDEN,
+            "device not registerd, mission rejected".to_string(),
+        ));
     }
-    mission::update_mission_state(&id, MissionState::Failed).await;
-    panic!("mission failed");
+
+    let mission = Mission::new(payload.files);
+    let id = mission.id.clone();
+
+    let (tx, mut rx) = mpsc::channel(8);
+
+    let _guard = Guard { tx: tx.clone() };
+    let state_clone = state.clone();
+
+    tokio::spawn(async move {
+        while let Some(flag) = rx.recv().await {
+            if flag {
+                debug!("client side close");
+                state_clone.core.mission.pending.cancel(id).await;
+            } else {
+                debug!("normal complete");
+            }
+            break;
+        }
+    });
+
+    let result = pending_mission(state, mission).await;
+    let _ = tx.send(false).await;
+    result
 }
 
-async fn handle_register(
-    ConnectInfo(addr): ConnectInfo<SocketAddr>,
-    Json(payload): Json<NodeAnnounce>,
-) -> Json<NodeAnnounce> {
-    let node = Node::from_announce(&payload, &addr.ip().to_string());
-    debug!("node {:?}", node);
-    handler::add_node(node).await;
-    Json(payload)
+async fn pending_mission(
+    state: Arc<AppState>,
+    mission: Mission,
+) -> Result<Json<FileResponse>, (StatusCode, String)> {
+    let mut state_rx = state.core.mission.pending.add(mission.clone()).await;
+
+    let _ = state_rx.changed().await;
+
+    let result = match *state_rx.borrow_and_update() {
+        MissionState::Transfering => Ok(Json(FileResponse {
+            session_id: mission.id,
+            files: mission.reverse_token_map,
+        })),
+        MissionState::Busy => {
+            debug!("core is resolving another mission");
+            Err((StatusCode::CONFLICT, "mission rejected".to_string()))
+        }
+        _state => {
+            debug!("mission rejected {:?}", _state);
+            Err((StatusCode::FORBIDDEN, "mission rejected".to_string()))
+        }
+    };
+    result
 }
 
-pub fn app() -> Router {
+#[derive(Deserialize)]
+struct SessionId {
+    #[serde(alias = "sessionId")]
+    id: String,
+}
+
+async fn cancel(State(state): State<Arc<AppState>>, session_id: Query<SessionId>) {
+    let handle = state.core.mission.transfer.clone();
+    handle.cancel(session_id.id.clone()).await;
+}
+
+struct AppState {
+    core: CoreActorHandle,
+}
+
+pub fn app(core: CoreActorHandle) -> Router {
+    let shared_state = Arc::new(AppState { core });
     let api_v2 = Router::new()
+        .route("/devices", get(get_devices))
         .route("/register", post(handle_register))
         .route("/prepare-upload", post(prepare_upload))
-        .route("/upload", post(handle_upload));
+        .route("/upload", post(handle_upload))
+        .route("/cancel/:session_id", post(cancel))
+        .with_state(shared_state);
 
     let app = Router::new().nest("/v2", api_v2);
 

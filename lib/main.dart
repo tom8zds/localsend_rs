@@ -33,9 +33,7 @@ Future<void> main() async {
   //     storePath: storePath,
   //   ),
   // );
-  await rustSetUp(isDebug: kDebugMode);
   await setup();
-  start();
   await ConfigStore.ensureInitialized();
   final locale = ConfigStore().locale();
   print(locale);
