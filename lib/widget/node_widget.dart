@@ -23,9 +23,8 @@ class _NodeWidgetState extends State<NodeWidget> {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        color: Theme.of(context).colorScheme.secondaryContainer,
+        color: Theme.of(context).colorScheme.surface,
       ),
-      height: 100,
       child: StreamBuilder<List<NodeDevice>>(
         stream: deviceStream,
         builder: (context, snap) {
@@ -36,7 +35,6 @@ class _NodeWidgetState extends State<NodeWidget> {
           }
           final data = snap.data!;
           return ListView.builder(
-            scrollDirection: Axis.horizontal,
             itemBuilder: (context, index) {
               final item = data.elementAt(index);
               return Padding(
@@ -44,15 +42,33 @@ class _NodeWidgetState extends State<NodeWidget> {
                 child: Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
-                    color: Theme.of(context).colorScheme.secondary,
+                    color: Theme.of(context).colorScheme.secondaryContainer,
                   ),
                   height: 80,
-                  width: 80,
-                  child: Center(
-                      child: Text(
-                    item.alias,
-                    textAlign: TextAlign.center,
-                  )),
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        height: 80,
+                        width: 80,
+                        child: Icon(
+                          Icons.smartphone,
+                          size: 48,
+                        ),
+                      ),
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(item.alias),
+                          SizedBox(
+                            height: 4,
+                          ),
+                          Chip(
+                            label: Text(item.address),
+                          )
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               );
             },

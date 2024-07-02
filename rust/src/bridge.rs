@@ -7,6 +7,7 @@ use crate::{
     logger,
 };
 use lazy_static::lazy_static;
+use log::debug;
 lazy_static! {
     static ref CORE: CoreActorHandle = CoreActorHandle::new();
 }
@@ -37,11 +38,21 @@ pub fn get_log() -> logger::LogEntry {
     }
 }
 
+struct Guard;
+
+impl Drop for Guard {
+    fn drop(&mut self) {
+        debug!("request guard was dropped")
+    }
+}
+
 pub async fn listen_device(s: StreamSink<Vec<NodeDevice>>) {
     let mut rx = CORE.device.listen().await;
+    let _guard = Guard;
     loop {
         let _ = rx.changed().await;
         let data = rx.borrow().clone();
         let _ = s.add(data);
+        debug!("send to stream")
     }
 }
