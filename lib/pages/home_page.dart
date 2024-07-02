@@ -15,12 +15,15 @@ class HomePage extends StatelessWidget {
         title: Text(context.t.home.title),
       ),
       body: ListView(
-        children: const [MissionWidget(), NodeWidget()],
+        children: [
+          // MissionWidget(),
+          NodeWidget(),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         child: const Icon(Icons.search),
         onPressed: () async {
-          await discover();
+          // await discover();
         },
       ),
     );

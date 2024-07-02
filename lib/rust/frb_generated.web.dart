@@ -3,11 +3,11 @@
 
 // ignore_for_file: unused_import, unused_element, unnecessary_import, duplicate_ignore, invalid_use_of_internal_member, annotate_overrides, non_constant_identifier_names, curly_braces_in_flow_control_structures, prefer_const_literals_to_create_immutables, unused_field
 
-import 'api/model.dart';
-import 'bridge/bridge.dart';
+import 'actor/core.dart';
+import 'actor/model.dart';
+import 'bridge.dart';
 import 'dart:async';
 import 'dart:convert';
-import 'discovery/model.dart';
 import 'frb_generated.dart';
 import 'logger.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated_web.dart';
@@ -20,19 +20,22 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
     required super.portManager,
   });
 
-  @protected
-  FutureOr<String> Function(List<MissionItem>)
-      dco_decode_DartFn_Inputs_list_mission_item_Output_String(dynamic raw);
+  CrossPlatformFinalizerArg get rust_arc_decrement_strong_count_CoreConfigPtr =>
+      wire.rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCoreConfig;
 
   @protected
-  FutureOr<String> Function(List<Node>)
-      dco_decode_DartFn_Inputs_list_node_Output_String(dynamic raw);
+  CoreConfig
+      dco_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCoreConfig(
+          dynamic raw);
 
   @protected
-  Object dco_decode_DartOpaque(dynamic raw);
+  CoreConfig
+      dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCoreConfig(
+          dynamic raw);
 
   @protected
-  RustStreamSink<LogEntry> dco_decode_StreamSink_log_entry_Sse(dynamic raw);
+  RustStreamSink<List<NodeDevice>> dco_decode_StreamSink_list_node_device_Sse(
+      dynamic raw);
 
   @protected
   String dco_decode_String(dynamic raw);
@@ -41,22 +44,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   bool dco_decode_bool(dynamic raw);
 
   @protected
-  FileInfo dco_decode_file_info(dynamic raw);
-
-  @protected
   int dco_decode_i_32(dynamic raw);
 
   @protected
   int dco_decode_i_64(dynamic raw);
 
   @protected
-  List<FileInfo> dco_decode_list_file_info(dynamic raw);
-
-  @protected
-  List<MissionItem> dco_decode_list_mission_item(dynamic raw);
-
-  @protected
-  List<Node> dco_decode_list_node(dynamic raw);
+  List<NodeDevice> dco_decode_list_node_device(dynamic raw);
 
   @protected
   Uint8List dco_decode_list_prim_u_8_strict(dynamic raw);
@@ -65,22 +59,7 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   LogEntry dco_decode_log_entry(dynamic raw);
 
   @protected
-  MissionItem dco_decode_mission_item(dynamic raw);
-
-  @protected
-  MissionState dco_decode_mission_state(dynamic raw);
-
-  @protected
-  Node dco_decode_node(dynamic raw);
-
-  @protected
-  String? dco_decode_opt_String(dynamic raw);
-
-  @protected
-  Uint8List? dco_decode_opt_list_prim_u_8_strict(dynamic raw);
-
-  @protected
-  ServerState dco_decode_server_state(dynamic raw);
+  NodeDevice dco_decode_node_device(dynamic raw);
 
   @protected
   int dco_decode_u_16(dynamic raw);
@@ -95,10 +74,17 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   int dco_decode_usize(dynamic raw);
 
   @protected
-  Object sse_decode_DartOpaque(SseDeserializer deserializer);
+  CoreConfig
+      sse_decode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCoreConfig(
+          SseDeserializer deserializer);
 
   @protected
-  RustStreamSink<LogEntry> sse_decode_StreamSink_log_entry_Sse(
+  CoreConfig
+      sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCoreConfig(
+          SseDeserializer deserializer);
+
+  @protected
+  RustStreamSink<List<NodeDevice>> sse_decode_StreamSink_list_node_device_Sse(
       SseDeserializer deserializer);
 
   @protected
@@ -108,22 +94,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   bool sse_decode_bool(SseDeserializer deserializer);
 
   @protected
-  FileInfo sse_decode_file_info(SseDeserializer deserializer);
-
-  @protected
   int sse_decode_i_32(SseDeserializer deserializer);
 
   @protected
   int sse_decode_i_64(SseDeserializer deserializer);
 
   @protected
-  List<FileInfo> sse_decode_list_file_info(SseDeserializer deserializer);
-
-  @protected
-  List<MissionItem> sse_decode_list_mission_item(SseDeserializer deserializer);
-
-  @protected
-  List<Node> sse_decode_list_node(SseDeserializer deserializer);
+  List<NodeDevice> sse_decode_list_node_device(SseDeserializer deserializer);
 
   @protected
   Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer);
@@ -132,22 +109,7 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   LogEntry sse_decode_log_entry(SseDeserializer deserializer);
 
   @protected
-  MissionItem sse_decode_mission_item(SseDeserializer deserializer);
-
-  @protected
-  MissionState sse_decode_mission_state(SseDeserializer deserializer);
-
-  @protected
-  Node sse_decode_node(SseDeserializer deserializer);
-
-  @protected
-  String? sse_decode_opt_String(SseDeserializer deserializer);
-
-  @protected
-  Uint8List? sse_decode_opt_list_prim_u_8_strict(SseDeserializer deserializer);
-
-  @protected
-  ServerState sse_decode_server_state(SseDeserializer deserializer);
+  NodeDevice sse_decode_node_device(SseDeserializer deserializer);
 
   @protected
   int sse_decode_u_16(SseDeserializer deserializer);
@@ -162,20 +124,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   int sse_decode_usize(SseDeserializer deserializer);
 
   @protected
-  void sse_encode_DartFn_Inputs_list_mission_item_Output_String(
-      FutureOr<String> Function(List<MissionItem>) self,
-      SseSerializer serializer);
+  void
+      sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCoreConfig(
+          CoreConfig self, SseSerializer serializer);
 
   @protected
-  void sse_encode_DartFn_Inputs_list_node_Output_String(
-      FutureOr<String> Function(List<Node>) self, SseSerializer serializer);
+  void
+      sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCoreConfig(
+          CoreConfig self, SseSerializer serializer);
 
   @protected
-  void sse_encode_DartOpaque(Object self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_StreamSink_log_entry_Sse(
-      RustStreamSink<LogEntry> self, SseSerializer serializer);
+  void sse_encode_StreamSink_list_node_device_Sse(
+      RustStreamSink<List<NodeDevice>> self, SseSerializer serializer);
 
   @protected
   void sse_encode_String(String self, SseSerializer serializer);
@@ -184,23 +144,14 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_bool(bool self, SseSerializer serializer);
 
   @protected
-  void sse_encode_file_info(FileInfo self, SseSerializer serializer);
-
-  @protected
   void sse_encode_i_32(int self, SseSerializer serializer);
 
   @protected
   void sse_encode_i_64(int self, SseSerializer serializer);
 
   @protected
-  void sse_encode_list_file_info(List<FileInfo> self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_list_mission_item(
-      List<MissionItem> self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_list_node(List<Node> self, SseSerializer serializer);
+  void sse_encode_list_node_device(
+      List<NodeDevice> self, SseSerializer serializer);
 
   @protected
   void sse_encode_list_prim_u_8_strict(
@@ -210,23 +161,7 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_log_entry(LogEntry self, SseSerializer serializer);
 
   @protected
-  void sse_encode_mission_item(MissionItem self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_mission_state(MissionState self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_node(Node self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_opt_String(String? self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_opt_list_prim_u_8_strict(
-      Uint8List? self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_server_state(ServerState self, SseSerializer serializer);
+  void sse_encode_node_device(NodeDevice self, SseSerializer serializer);
 
   @protected
   void sse_encode_u_16(int self, SseSerializer serializer);
@@ -245,6 +180,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
 class RustLibWire implements BaseWire {
   RustLibWire.fromExternalLibrary(ExternalLibrary lib);
+
+  void rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCoreConfig(
+          dynamic ptr) =>
+      wasmModule
+          .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCoreConfig(
+              ptr);
+
+  void rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCoreConfig(
+          dynamic ptr) =>
+      wasmModule
+          .rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCoreConfig(
+              ptr);
 }
 
 @JS('wasm_bindgen')
@@ -258,4 +205,12 @@ class RustLibWasmModule implements WasmModule {
 
   @override
   external RustLibWasmModule bind(dynamic thisArg, String moduleName);
+
+  external void
+      rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCoreConfig(
+          dynamic ptr);
+
+  external void
+      rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCoreConfig(
+          dynamic ptr);
 }

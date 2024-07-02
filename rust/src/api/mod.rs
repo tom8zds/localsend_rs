@@ -1,4 +1,2 @@
-pub mod mission;
 pub mod model;
-pub mod server;
-mod v2;
+pub mod v2;

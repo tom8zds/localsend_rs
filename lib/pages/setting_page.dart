@@ -49,14 +49,14 @@ class SettingPage extends StatelessWidget {
                         trailing: OverflowBar(
                           children: [
                             IconButton(
-                              onPressed: () {
-                                start();
+                              onPressed: () async {
+                                await startServer();
                               },
                               icon: const Icon(Icons.play_arrow),
                             ),
                             IconButton(
-                              onPressed: () {
-                                stop();
+                              onPressed: () async {
+                                await shutdownServer();
                               },
                               icon: const Icon(Icons.stop),
                             ),
