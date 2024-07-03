@@ -25,6 +25,12 @@ pub async fn shutdown_server() {
     CORE.shutdown().await;
 }
 
+pub async fn change_address(addr: String) {
+    CORE.shutdown().await;
+    CORE.change_address(addr).await;
+    CORE.start().await;
+}
+
 pub async fn change_config(config: CoreConfig) {
     CORE.change_config(config).await;
 }

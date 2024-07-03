@@ -7,8 +7,8 @@ edition = "2018"
 crate-type = ["cdylib", "staticlib"]
 
 [dependencies]
-flutter_rust_bridge = "=2.0.0-dev.33"
-axum = { version = "0.7.3"}
+flutter_rust_bridge = "=2.0.0"
+axum = { version = "0.7.3" }
 rand = "0.8.5"
 serde = "1.0.193"
 serde_derive = "1.0.193"

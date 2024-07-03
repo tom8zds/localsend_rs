@@ -3,7 +3,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:localsend_rs/i18n/strings.g.dart';
-import 'package:localsend_rs/rust/bridge/bridge.dart';
+import 'package:localsend_rs/rust/bridge.dart';
+import 'package:localsend_rs/widget/network_widget.dart';
 
 import '../common/constants.dart';
 import '../common/widgets.dart';
@@ -64,6 +65,11 @@ class SettingPage extends StatelessWidget {
                         ),
                       ),
                       // core log
+                      NetworkWidget(
+                        onPressed: (addr) {
+                          changeAddress(addr: addr);
+                        },
+                      ),
                     ],
                   ),
                   const SizedBox(

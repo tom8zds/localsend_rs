@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../rust/bridge/bridge.dart';
-import '../rust/api/model.dart';
-
 class MissionWidget extends ConsumerWidget {
   const MissionWidget({super.key});
 

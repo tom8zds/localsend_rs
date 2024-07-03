@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:localsend_rs/rust/actor/model.dart';
-import 'package:localsend_rs/rust/bridge/bridge.dart';
+import 'package:localsend_rs/rust/bridge.dart';
 
 class NodeWidget extends StatefulWidget {
   NodeWidget({super.key});

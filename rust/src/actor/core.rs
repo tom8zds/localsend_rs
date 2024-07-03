@@ -1,4 +1,4 @@
-use std::{collections::HashMap, net::Ipv4Addr};
+use std::{collections::HashMap, net::Ipv4Addr, str::FromStr};
 
 use log::debug;
 use tokio::sync::{mpsc, oneshot};
@@ -168,6 +168,12 @@ impl CoreActorHandle {
     pub async fn change_port(&self, port: u16) {
         let mut value = self.get_config().await;
         value.port = port;
+        self.change_config(value).await;
+    }
+
+    pub async fn change_address(&self, addr: String) {
+        let mut value = self.get_config().await;
+        value.interface_addr = Ipv4Addr::from_str(&addr).unwrap();
         self.change_config(value).await;
     }
 

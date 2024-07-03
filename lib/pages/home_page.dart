@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:localsend_rs/i18n/strings.g.dart';
-import 'package:localsend_rs/rust/bridge/bridge.dart';
+import 'package:localsend_rs/widget/network_widget.dart';
 
 import '../widget/mission_widget.dart';
 import '../widget/node_widget.dart';

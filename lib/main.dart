@@ -7,12 +7,12 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:localsend_rs/config_store.dart';
 import 'package:localsend_rs/pages/frame_page.dart';
+import 'package:localsend_rs/rust/bridge.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'i18n/strings.g.dart';
 import 'providers/locale_provider.dart';
 import 'providers/theme_provider.dart';
-import 'rust/bridge/bridge.dart';
 import 'rust/frb_generated.dart';
 
 Future<void> main() async {
