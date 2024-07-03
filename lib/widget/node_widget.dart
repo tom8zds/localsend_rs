@@ -1,39 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:localsend_rs/providers/core_provider.dart';
 import 'package:localsend_rs/rust/actor/model.dart';
 import 'package:localsend_rs/rust/bridge.dart';
 
-class NodeWidget extends StatefulWidget {
-  NodeWidget({super.key});
-
+class NodeWidget extends ConsumerWidget {
   @override
-  State<NodeWidget> createState() => _NodeWidgetState();
-}
-
-class _NodeWidgetState extends State<NodeWidget> {
-  late Stream<List<NodeDevice>> deviceStream;
-
-  @override
-  void initState() {
-    super.initState();
-    deviceStream = listenDevice();
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final core = ref.watch(coreStateProvider);
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
         color: Theme.of(context).colorScheme.surface,
       ),
-      child: StreamBuilder<List<NodeDevice>>(
-        stream: deviceStream,
-        builder: (context, snap) {
-          if (!snap.hasData) {
+      child: Builder(
+        builder: (context) {
+          final data = core.devices;
+          if (data.isEmpty) {
             return const Center(
               child: Text("empty"),
             );
           }
-          final data = snap.data!;
+
           return ListView.builder(
             itemBuilder: (context, index) {
               final item = data.elementAt(index);

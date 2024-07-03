@@ -1,7 +1,7 @@
 use std::{collections::HashMap, net::Ipv4Addr, str::FromStr};
 
 use log::debug;
-use tokio::sync::{mpsc, oneshot};
+use tokio::sync::{mpsc, oneshot, watch};
 
 use super::{
     device::DeviceActorHandle,
@@ -37,6 +37,8 @@ struct CoreActor {
     receiver: mpsc::Receiver<CoreMessage>,
     context: AppContext,
     server: Option<HttpServerHandle>,
+    server_state_sender: watch::Sender<bool>,
+    server_state_listener: watch::Receiver<bool>,
 }
 enum CoreMessage {
     GetConfig {
@@ -53,16 +55,22 @@ enum CoreMessage {
     Shutdown {
         respond_to: oneshot::Sender<()>,
     },
+    Listen {
+        respond_to: oneshot::Sender<watch::Receiver<bool>>,
+    },
 }
 
 impl CoreActor {
     fn new(receiver: mpsc::Receiver<CoreMessage>) -> Self {
+        let (tx, rx) = watch::channel(false);
         CoreActor {
             receiver,
             context: AppContext {
                 config: CoreConfig::default(),
             },
             server: None,
+            server_state_sender: tx,
+            server_state_listener: rx,
         }
     }
     async fn handle_message(&mut self, msg: CoreMessage) {
@@ -86,6 +94,7 @@ impl CoreActor {
                 let handler = HttpServerHandle::new(core);
                 self.server.replace(handler);
                 _ = respond_to.send(());
+                let _ = self.server_state_sender.send(true);
             }
             CoreMessage::Shutdown { respond_to } => {
                 let handler = self.server.take();
@@ -95,6 +104,10 @@ impl CoreActor {
                     debug!("server not started")
                 }
                 _ = respond_to.send(());
+                let _ = self.server_state_sender.send(false);
+            }
+            CoreMessage::Listen { respond_to } => {
+                _ = respond_to.send(self.server_state_listener.clone())
             }
         }
     }
@@ -114,25 +127,12 @@ pub struct CoreActorHandle {
 }
 
 impl CoreActorHandle {
-    pub fn new() -> Self {
+    pub fn new(device: NodeDevice) -> Self {
         let (sender, receiver) = mpsc::channel(8);
         let actor = CoreActor::new(receiver);
         tokio::spawn(run_context_actor(actor));
 
-        let fingerprint: String = uuid::Uuid::new_v4().to_string();
-        let device = DeviceActorHandle::new(NodeDevice {
-            alias: String::from("test"),
-            version: String::from("2.0"),
-            device_model: String::from("rust"),
-            device_type: String::from("mobile"),
-            fingerprint: fingerprint.clone(),
-            address: String::from("192.168.3.2"),
-            port: 9000,
-            protocol: String::from("http"),
-            download: false,
-            announcement: true,
-            announce: true,
-        });
+        let device = DeviceActorHandle::new(device);
         let mission = MissionHandle::new();
 
         Self {
@@ -140,6 +140,12 @@ impl CoreActorHandle {
             device,
             mission,
         }
+    }
+    pub async fn listen(&self) -> watch::Receiver<bool> {
+        let (send, recv) = oneshot::channel();
+        let msg = CoreMessage::Listen { respond_to: send };
+        let _ = self.sender.send(msg).await;
+        recv.await.expect("Actor task has been killed")
     }
 
     pub async fn start(&self) {
@@ -149,13 +155,15 @@ impl CoreActorHandle {
             respond_to: send,
         };
         let _ = self.sender.send(msg).await;
-        recv.await.expect("Actor task has been killed")
+        recv.await.expect("Actor task has been killed");
+        self.device.clear_devices().await;
     }
     pub async fn shutdown(&self) {
         let (send, recv) = oneshot::channel();
         let msg = CoreMessage::Shutdown { respond_to: send };
         let _ = self.sender.send(msg).await;
-        recv.await.expect("Actor task has been killed")
+        recv.await.expect("Actor task has been killed");
+        self.device.clear_devices().await;
     }
 
     pub async fn get_config(&self) -> CoreConfig {

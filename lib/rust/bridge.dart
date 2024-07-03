@@ -9,10 +9,15 @@ import 'frb_generated.dart';
 import 'logger.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
+// These functions are ignored because they are not marked as `pub`: `_get_core`
 // These types are ignored because they are not used by any `pub` functions: `CORE`
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `deref`, `drop`, `initialize`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `deref`, `initialize`
 
-Future<void> setup() => RustLib.instance.api.crateBridgeSetup();
+Future<void> setup({required NodeDevice device}) =>
+    RustLib.instance.api.crateBridgeSetup(device: device);
+
+Stream<bool> listenServerState() =>
+    RustLib.instance.api.crateBridgeListenServerState();
 
 Future<void> startServer() => RustLib.instance.api.crateBridgeStartServer();
 
@@ -25,7 +30,9 @@ Future<void> changeAddress({required String addr}) =>
 Future<void> changeConfig({required CoreConfig config}) =>
     RustLib.instance.api.crateBridgeChangeConfig(config: config);
 
-Future<LogEntry> getLog() => RustLib.instance.api.crateBridgeGetLog();
-
 Stream<List<NodeDevice>> listenDevice() =>
     RustLib.instance.api.crateBridgeListenDevice();
+
+Future<LogEntry> getLog() => RustLib.instance.api.crateBridgeGetLog();
+
+Future<void> announce() => RustLib.instance.api.crateBridgeAnnounce();

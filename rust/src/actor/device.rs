@@ -24,6 +24,9 @@ enum DeviceMessage {
     Get {
         respond_to: oneshot::Sender<HashMap<String, NodeDevice>>,
     },
+    Clear {
+        respond_to: oneshot::Sender<()>,
+    },
     CheckDeviceExist {
         fingerprint: String,
         respond_to: oneshot::Sender<bool>,
@@ -90,6 +93,11 @@ impl DeviceActor {
             DeviceMessage::Listen { respond_to } => {
                 let _ = respond_to.send(self.listener.clone());
             }
+            DeviceMessage::Clear { respond_to } => {
+                self.device_map.clear();
+                self.notify_change().await;
+                let _ = respond_to.send(());
+            }
         }
     }
 }
@@ -117,6 +125,14 @@ impl DeviceActorHandle {
     pub async fn listen(&self) -> watch::Receiver<Vec<NodeDevice>> {
         let (send, recv) = oneshot::channel();
         let msg = DeviceMessage::Listen { respond_to: send };
+
+        let _ = self.sender.send(msg).await;
+        recv.await.expect("Actor task has been killed")
+    }
+
+    pub async fn clear_devices(&self) {
+        let (send, recv) = oneshot::channel();
+        let msg = DeviceMessage::Clear { respond_to: send };
 
         let _ = self.sender.send(msg).await;
         recv.await.expect("Actor task has been killed")

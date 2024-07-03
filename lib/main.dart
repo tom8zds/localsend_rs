@@ -5,8 +5,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:localsend_rs/common/device_info_utils.dart';
 import 'package:localsend_rs/config_store.dart';
 import 'package:localsend_rs/pages/frame_page.dart';
+import 'package:localsend_rs/rust/actor/model.dart';
 import 'package:localsend_rs/rust/bridge.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -33,7 +35,6 @@ Future<void> main() async {
   //     storePath: storePath,
   //   ),
   // );
-  await setup();
   await ConfigStore.ensureInitialized();
   final locale = ConfigStore().locale();
   print(locale);
@@ -43,10 +44,8 @@ Future<void> main() async {
     print("test");
     LocaleSettings.setLocaleRaw(locale);
   }
-  // createLogStream().listen((event) {
-  //   print(
-  //       'rust log [${event.level}] - ${event.tag} ${event.msg}(rust_time=${event.timeMillis})');
-  // });
+  final device = await newDevice();
+  await setup(device: device);
   runApp(ProviderScope(child: TranslationProvider(child: const MyApp())));
 }
 

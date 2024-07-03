@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:localsend_rs/i18n/strings.g.dart';
+import 'package:localsend_rs/providers/core_provider.dart';
 import 'package:localsend_rs/rust/bridge.dart';
 import 'package:localsend_rs/widget/network_widget.dart';
 
@@ -45,25 +46,7 @@ class SettingPage extends StatelessWidget {
                     title: t.setting.core.title,
                     children: [
                       // core status
-                      ListTile(
-                        title: Text(t.setting.core.server.title),
-                        trailing: OverflowBar(
-                          children: [
-                            IconButton(
-                              onPressed: () async {
-                                await startServer();
-                              },
-                              icon: const Icon(Icons.play_arrow),
-                            ),
-                            IconButton(
-                              onPressed: () async {
-                                await shutdownServer();
-                              },
-                              icon: const Icon(Icons.stop),
-                            ),
-                          ],
-                        ),
-                      ),
+                      ServerTile(),
                       // core log
                       NetworkWidget(
                         onPressed: (addr) {
@@ -254,6 +237,36 @@ class LocaleTile extends ConsumerWidget {
               });
         },
         child: Text(currentLocaleName),
+      ),
+    );
+  }
+}
+
+class ServerTile extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final core = ref.watch(coreStateProvider);
+    return ListTile(
+      title: Text(t.setting.core.server.title),
+      trailing: OverflowBar(
+        children: [
+          IconButton(
+            onPressed: core.serverState
+                ? null
+                : () async {
+                    await startServer();
+                  },
+            icon: const Icon(Icons.play_arrow),
+          ),
+          IconButton(
+            onPressed: core.serverState
+                ? () async {
+                    await shutdownServer();
+                  }
+                : null,
+            icon: const Icon(Icons.stop),
+          ),
+        ],
       ),
     );
   }

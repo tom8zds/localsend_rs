@@ -5,3 +5,7 @@ targets:
         options:
           input_directory: assets/i18n
           output_directory: lib/i18n # defaulting to lib/gen if input is outside of lib/
+    sources:
+      exclude:
+        # Example that excludes intellij's swap files
+        - lib/rust/**

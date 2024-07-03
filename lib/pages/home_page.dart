@@ -1,12 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:localsend_rs/i18n/strings.g.dart';
+import 'package:localsend_rs/rust/bridge.dart';
 import 'package:localsend_rs/widget/network_widget.dart';
 
 import '../widget/mission_widget.dart';
 import '../widget/node_widget.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  bool refreshing = false;
+
+  Future<void> refresh() async {
+    setState(() {
+      refreshing = true;
+    });
+    await announce();
+    await Future.delayed(Duration(seconds: 4));
+    setState(() {
+      refreshing = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -43,13 +62,20 @@ class HomePage extends StatelessWidget {
                           minimumSize: WidgetStatePropertyAll(Size(16, 16)),
                           maximumSize: WidgetStatePropertyAll(Size(36, 36)),
                         ),
-                        onPressed: () {},
+                        onPressed: () {
+                          refresh();
+                        },
                         icon: Icon(
                           Icons.sync,
                         ))
                   ],
                 ),
               ),
+              if (refreshing)
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: LinearProgressIndicator(),
+                ),
               Expanded(child: NodeWidget()),
             ],
           ),
