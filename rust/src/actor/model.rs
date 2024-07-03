@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use serde_derive::{Deserialize, Serialize};
-use tokio::sync::watch;
 
 use crate::api::model::FileInfo;
 
@@ -82,7 +81,7 @@ impl Mission {
         let id = uuid::Uuid::new_v4().to_string();
         let mut token_map = HashMap::new();
         let mut reverse_token_map = HashMap::new();
-        info_map.iter().for_each(|(key, value)| {
+        info_map.iter().for_each(|(key, _value)| {
             let token = uuid::Uuid::new_v4().to_string();
             reverse_token_map.insert(key.clone(), token.clone());
             token_map.insert(token.clone(), key.clone());

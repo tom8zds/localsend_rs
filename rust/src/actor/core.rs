@@ -1,13 +1,10 @@
-use std::{collections::HashMap, net::Ipv4Addr, str::FromStr};
+use std::{net::Ipv4Addr, str::FromStr};
 
 use log::debug;
 use tokio::sync::{mpsc, oneshot, watch};
 
 use super::{
-    device::DeviceActorHandle,
-    http::HttpServerHandle,
-    mission::MissionHandle,
-    model::{Mission, NodeDevice},
+    device::DeviceActorHandle, http::HttpServerHandle, mission::MissionHandle, model::NodeDevice,
 };
 
 #[derive(Clone)]

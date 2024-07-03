@@ -1,9 +1,9 @@
-use std::{collections::HashMap, net::SocketAddr, sync::Arc};
+use std::{net::SocketAddr, sync::Arc};
 
-use super::model::{FileInfo, FileRequest, FileResponse, UploadTask};
+use super::model::{FileRequest, FileResponse, UploadTask};
 use axum::{
-    body::{Bytes, HttpBody},
-    extract::{ConnectInfo, Path, Query, Request, State},
+    body::Bytes,
+    extract::{ConnectInfo, Query, Request, State},
     http::StatusCode,
     routing::{get, post},
     BoxError, Json, Router,

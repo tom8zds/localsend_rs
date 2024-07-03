@@ -4,7 +4,7 @@ use std::task::{Context, Poll};
 use std::time::Duration;
 
 use pin_project_lite::pin_project;
-use tokio::io::{AsyncRead, AsyncWrite, ReadBuf};
+use tokio::io::AsyncWrite;
 use tokio::sync::watch::Sender;
 use tokio::time::{interval, Interval};
 

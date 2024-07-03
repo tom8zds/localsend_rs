@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::Mutex};
+use std::collections::HashMap;
 
 use log::debug;
 use tokio::sync::{mpsc, oneshot, watch};
@@ -143,7 +143,7 @@ impl Actor {
                     files.insert(k, info);
                 }
 
-                let (tx, rx) = watch::channel(TransferMissionDto {
+                let (_tx, _rx) = watch::channel(TransferMissionDto {
                     state: MissionState::Transfering,
                     files: files.values().map(|x| x.clone()).collect::<Vec<_>>(),
                 });
@@ -158,7 +158,7 @@ impl Actor {
                 let _ = respond_to.send(Ok(()));
             }
             Message::Listen { respond_to } => match &self.store.mission {
-                Some(mission) => {
+                Some(_mission) => {
                     let rx = self.listener.clone();
                     let _ = respond_to.send(Ok(rx));
                 }
@@ -214,8 +214,8 @@ impl Actor {
             }
             Message::StateTask {
                 id,
-                token,
-                state,
+                token: _,
+                state: _,
                 respond_to,
             } => {
                 match &self.store.mission {

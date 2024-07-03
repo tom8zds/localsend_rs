@@ -5,7 +5,7 @@ use crate::frb_generated::StreamSink;
 use lazy_static::lazy_static;
 use log::{error, info, warn, Log, Metadata, Record};
 use parking_lot::RwLock;
-use serde_derive::{Deserialize, Serialize};
+
 use simplelog::*;
 
 static INIT_LOGGER_ONCE: Once = Once::new();
