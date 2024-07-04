@@ -1,88 +1,88 @@
 name: Flutter Build & Upload Artifact
 
 on:
-  workflow_dispatch:
-  push:
-    branches:
-      - main
-
+    workflow_dispatch:
+    push:
+        branches:
+            - main
 
 jobs:
-  build-apk:
-    runs-on: ubuntu-latest
+    build-apk:
+        runs-on: ubuntu-latest
 
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
 
-    - name: Set up Flutter SDK
-      uses: subosito/flutter-action@v2.16.0
-      with:
-        channel: stable
-        cache: false
-    
-    - name: Set up rust
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
+            - name: Set up Flutter SDK
+              uses: subosito/flutter-action@v2.16.0
+              with:
+                  channel: stable
+                  cache: false
 
-    - name: Build Prepare
-      run: |
-        flutter pub get
-        chmod +x ./rust_builder
+            - name: Set up rust
+              uses: actions-rs/toolchain@v1
+              with:
+                  toolchain: stable
 
-    - name: Build APK
-      run: |
-        flutter build apk
-        ls -alh ./build/app/outputs/flutter-apk/*.apk
-        cp -r ./build/app/outputs/flutter-apk /tmp/flutter-apk
+            - name: Build Prepare
+              run: |
+                  flutter pub get
+                  chmod +x ./rust_builder
+                  flutter docter -v
 
-    # - name: Build Linux
-    #   run: |
-    #     flutter build linux --release
-    #     ls -alh ./build/linux/x64/release/bundle/*
-    #     cp -r ./build/linux/x64/release/bundle /tmp/linux-bundle
+            - name: Build APK
+              run: |
+                  flutter build apk
+                  ls -alh ./build/app/outputs/flutter-apk/*.apk
+                  cp -r ./build/app/outputs/flutter-apk /tmp/flutter-apk
 
-    - name: Upload Android
-      uses: actions/upload-artifact@v4.3.3
-      with:
-        name: android-release
-        path: /tmp/flutter-apk/*.apk
-  
-  build-windows:
-    runs-on: windows-latest
+            # - name: Build Linux
+            #   run: |
+            #     flutter build linux --release
+            #     ls -alh ./build/linux/x64/release/bundle/*
+            #     cp -r ./build/linux/x64/release/bundle /tmp/linux-bundle
 
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+            - name: Upload Android
+              uses: actions/upload-artifact@v4.3.3
+              with:
+                  name: android-release
+                  path: /tmp/flutter-apk/*.apk
 
-    - name: Set up Flutter SDK
-      uses: subosito/flutter-action@v2.16.0
-      with:
-        channel: stable
-        cache: true
-    
-    - name: Set up rust
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
+    build-windows:
+        runs-on: windows-latest
 
-    - name: Build Prepare
-      run: |
-        flutter pub get
-        flutter config --enable-native-assets
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
 
-    - name: Build Windows
-      run: |
-        flutter build windows --release
+            - name: Set up Flutter SDK
+              uses: subosito/flutter-action@v2.16.0
+              with:
+                  channel: stable
+                  cache: true
 
-    - name: Build iss script
-      run: |
-        dart setup.dart
-        ls build\windows
+            - name: Set up rust
+              uses: actions-rs/toolchain@v1
+              with:
+                  toolchain: stable
 
-    - name: Upload Windows
-      uses: actions/upload-artifact@v4.3.3
-      with:
-        name: windows-release
-        path: build\windows\localsend_rs-setup.exe
+            - name: Build Prepare
+              run: |
+                  flutter pub get
+                  flutter config --enable-native-assets
+
+            - name: Build Windows
+              run: |
+                  flutter build windows --release
+
+            - name: Build iss script
+              run: |
+                  dart setup.dart
+                  ls build\windows
+
+            - name: Upload Windows
+              uses: actions/upload-artifact@v4.3.3
+              with:
+                  name: windows-release
+                  path: build\windows\localsend_rs-setup.exe
