@@ -5,6 +5,7 @@ on:
     push:
         branches:
             - main
+            - 5-build-fail-by-device-info-plugin
 
 jobs:
     build-apk:
@@ -24,6 +25,11 @@ jobs:
               uses: actions-rs/toolchain@v1
               with:
                   toolchain: stable
+
+            - uses: actions/setup-java@v4
+              with:
+                  distribution: "zulu" # See 'Supported distributions' for available options
+                  java-version: "17"
 
             - name: Build Prepare
               run: |
