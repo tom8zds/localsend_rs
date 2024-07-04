@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:localsend_rs/common/device_info_utils.dart';
@@ -22,6 +23,9 @@ Future<void> main() async {
   await RustLib.init();
   String storePath;
   if (Platform.isAndroid) {
+    SystemUiOverlayStyle systemUiOverlayStyle =
+        const SystemUiOverlayStyle(statusBarColor: Colors.transparent);
+    SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
     storePath = "/storage/emulated/0/Download";
   } else {
     storePath = (await getDownloadsDirectory())!.absolute.path;

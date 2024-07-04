@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:localsend_rs/common/utils.dart';
 import 'package:localsend_rs/i18n/strings.g.dart';
 import 'package:localsend_rs/pages/home_page.dart';
 import 'package:localsend_rs/pages/setting_page.dart';
@@ -40,11 +41,17 @@ class _FramePageState extends State<FramePage> {
   }
 
   @override
+  void initState() {
+    updateSystemOverlayStyle(context);
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
     final frameType = getFrameType(width);
     return Scaffold(
-      body: getView(frameType),
+      body: SafeArea(child: getView(frameType)),
       bottomNavigationBar: frameType == FrameType.compact
           ? BottomNavigationBar(
               currentIndex: index,

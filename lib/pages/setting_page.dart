@@ -1,7 +1,9 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:localsend_rs/common/utils.dart';
 import 'package:localsend_rs/i18n/strings.g.dart';
 import 'package:localsend_rs/providers/core_provider.dart';
 import 'package:localsend_rs/rust/bridge.dart';
@@ -142,6 +144,13 @@ class ThemeTile extends ConsumerWidget {
     }
   }
 
+  Future<void> setTheme(
+      WidgetRef ref, BuildContext context, ThemeMode theme) async {
+    ref.read(themeStateProvider.notifier).setTheme(ThemeMode.system);
+    await sleepAsync(500);
+    await updateSystemOverlayStyle(context);
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeStateProvider);
@@ -158,7 +167,7 @@ class ThemeTile extends ConsumerWidget {
               color: Theme.of(context).colorScheme.secondary,
             ),
             onPressed: () {
-              ref.read(themeStateProvider.notifier).setTheme(ThemeMode.system);
+              setTheme(ref, context, ThemeMode.system);
             },
             icon: const Icon(Icons.brightness_auto_outlined),
           ),
@@ -169,7 +178,7 @@ class ThemeTile extends ConsumerWidget {
               color: Theme.of(context).colorScheme.secondary,
             ),
             onPressed: () {
-              ref.read(themeStateProvider.notifier).setTheme(ThemeMode.light);
+              setTheme(ref, context, ThemeMode.light);
             },
             icon: const Icon(Icons.brightness_5_outlined),
           ),
@@ -180,7 +189,7 @@ class ThemeTile extends ConsumerWidget {
               color: Theme.of(context).colorScheme.secondary,
             ),
             onPressed: () {
-              ref.read(themeStateProvider.notifier).setTheme(ThemeMode.dark);
+              setTheme(ref, context, ThemeMode.dark);
             },
             icon: const Icon(Icons.brightness_2_outlined),
           ),
