@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'common/device_info_utils.dart';
@@ -28,23 +29,13 @@ Future<void> main() async {
   } else {
     storePath = (await getDownloadsDirectory())!.absolute.path;
   }
-  // initServer(
-  //   device: DeviceConfig(
-  //     alias: "test",
-  //     fingerprint: "fingerprint",
-  //     deviceModel: "rust",
-  //     deviceType: "mobile",
-  //     storePath: storePath,
-  //   ),
-  // );
+
   await ConfigStore.ensureInitialized();
   final locale = ConfigStore().locale();
-  print(locale);
-  print(LocaleSettings.currentLocale.countryCode);
+  final String defaultLocale = Platform.localeName;
   final countryCode = LocaleSettings.currentLocale.countryCode;
   if (countryCode == null || countryCode != locale) {
-    print("test");
-    LocaleSettings.setLocaleRaw(locale);
+    LocaleSettings.setLocaleRaw(defaultLocale);
   }
   final device = await newDevice();
   await setup(device: device);
@@ -54,25 +45,29 @@ Future<void> main() async {
 class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
+  ThemeData _buildTheme(Brightness brightness) {
+    var baseTheme = ThemeData(
+        useMaterial3: true,
+        colorSchemeSeed: const Color(0xfff74c00),
+        brightness: brightness);
+
+    return baseTheme.copyWith(
+      textTheme: GoogleFonts.notoSansTextTheme(baseTheme.textTheme),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeStateProvider);
-    final locale = ref.watch(localeStateProvider);
+    final localeConfig = ref.watch(localeStateProvider);
     return MaterialApp(
       title: t.appTitle,
-      locale: locale,
+      locale: localeConfig.getLocale(),
       // use provider
       supportedLocales: AppLocaleUtils.supportedLocales,
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      theme: ThemeData(
-        useMaterial3: true,
-        colorSchemeSeed: const Color(0xfff74c00),
-      ),
-      darkTheme: ThemeData(
-        useMaterial3: true,
-        colorSchemeSeed: const Color(0xfff74c00),
-        brightness: Brightness.dark,
-      ),
+      theme: _buildTheme(Brightness.light),
+      darkTheme: _buildTheme(Brightness.dark),
       themeMode: themeMode,
       home: const FramePage(),
     );

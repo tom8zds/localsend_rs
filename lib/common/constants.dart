@@ -12,6 +12,11 @@ const Map<String, Language> supportLanguages = {
   "en": Language("English", "en"),
 };
 
+enum LocaleMode {
+  system,
+  custom,
+}
+
 enum DeviceType {
   mobile,
   desktop,

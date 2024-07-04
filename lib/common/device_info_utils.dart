@@ -47,12 +47,12 @@ Future<NodeDevice> newDevice() async {
   final addressList = await getInterface();
   return NodeDevice(
     alias: "test",
-    version: "2,0",
+    version: "2.0",
     deviceModel: deviceInfo.deviceModel ?? "unknown",
     deviceType: deviceInfo.deviceType.name,
     fingerprint: const Uuid().v4(),
     address: addressList[0],
-    port: 30030,
+    port: 9999,
     protocol: "http",
     download: true,
     announcement: true,

@@ -1,3 +1,4 @@
+// ignore: depend_on_referenced_packages
 import 'package:collection/collection.dart';
 import 'package:slang/builder/model/enums.dart';
 
@@ -27,7 +28,6 @@ extension StringExtensions on String {
       case null:
         return this;
       default:
-        print('Unknown case: $style');
         return this;
     }
   }

@@ -7,8 +7,7 @@ Future<void> sleepAsync(int millis) {
   return Future.delayed(Duration(milliseconds: millis), () {});
 }
 
-Future<void> updateSystemOverlayStyle(BuildContext context) async {
-  final brightness = Theme.of(context).brightness;
+Future<void> updateSystemOverlayStyle(Brightness brightness) async {
   await updateSystemOverlayStyleWithBrightness(brightness);
 }
 
@@ -36,4 +35,28 @@ Future<void> updateSystemOverlayStyleWithBrightness(
       statusBarColor: Colors.transparent, // Not relevant to this issue
     ));
   }
+}
+
+Locale stringToLocale(String value){
+  if (value.isEmpty) {
+    value = Platform.localeName;
+  }
+  final localeArgs = value.split("_");
+  if (localeArgs.length == 1) {
+    return Locale.fromSubtags(languageCode: localeArgs[0]);
+  }
+  if (localeArgs.length == 2) {
+    return Locale.fromSubtags(
+      languageCode: localeArgs[0],
+      scriptCode: localeArgs[1],
+    );
+  }
+  if (localeArgs.length >= 3) {
+    return Locale.fromSubtags(
+      languageCode: localeArgs[0],
+      scriptCode: localeArgs[1],
+      countryCode: localeArgs[2],
+    );
+  }
+  return const Locale("en");
 }

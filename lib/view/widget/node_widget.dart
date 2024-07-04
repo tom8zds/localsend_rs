@@ -44,13 +44,29 @@ class NodeWidget extends ConsumerWidget {
                       ),
                       Column(
                         mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(item.alias),
+                          Text(
+                            item.alias,
+                            style: TextStyle(
+                              fontSize: 20,
+                            ),
+                          ),
                           SizedBox(
                             height: 4,
                           ),
-                          Chip(
-                            label: Text(item.address),
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(4),
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .surfaceContainerLow,
+                            ),
+                            child: Text(
+                              item.address,
+                            ),
                           )
                         ],
                       ),

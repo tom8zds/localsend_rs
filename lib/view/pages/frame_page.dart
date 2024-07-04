@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../common/utils.dart';
 import '../../common/widgets.dart';
 import '../../i18n/strings.g.dart';
 import 'home_page.dart';
@@ -39,14 +40,21 @@ class _FramePageState extends State<FramePage> {
     }
   }
 
-  @override
-  void initState() {
-    // updateSystemOverlayStyle(context);
-    super.initState();
+  bool init =false;
+
+  void initOverlay(Brightness brightness){
+    setState(() {
+      init = true;
+    });
+    updateSystemOverlayStyle(brightness);
   }
 
   @override
   Widget build(BuildContext context) {
+    if(!init){
+      final brightness = Theme.of(context).brightness;
+      initOverlay(brightness);
+    }
     final width = MediaQuery.of(context).size.width;
     final frameType = getFrameType(width);
     return Scaffold(

@@ -10,6 +10,7 @@ use tokio::net::UdpSocket;
 use crate::actor::model::NodeDevice;
 
 use super::core::CoreActorHandle;
+use super::core::CoreConfig;
 
 enum DiscoverMessage {
     Shutdown,
@@ -45,6 +46,30 @@ async fn register(current: NodeDevice, target: NodeDevice) -> bool {
     }
 }
 
+async fn announce(config: CoreConfig, current: String) {
+    let interface_addr = config.interface_addr;
+    let multicast_addr = config.multicast_addr;
+    let multicast_port = config.multicast_port;
+
+    let send_socket: UdpSocket = UdpSocket::bind((interface_addr, multicast_port + 2))
+        .await
+        .expect("couldn't bind to address");
+
+    send_socket
+        .join_multicast_v4(multicast_addr, interface_addr)
+        .expect("failed to join multicast");
+
+    let buf = current.as_bytes();
+    for _ in 1..3 {
+        let _ = send_socket
+            .send_to(
+                buf,
+                SocketAddr::new(IpAddr::from(multicast_addr), multicast_port),
+            )
+            .await;
+    }
+}
+
 async fn run_udp_actor(mut actor: DiscoverActor, shutdown_callback: watch::Sender<bool>) {
     let config = actor.core.get_config().await;
     let interface_addr = config.interface_addr;
@@ -76,6 +101,7 @@ async fn run_udp_actor(mut actor: DiscoverActor, shutdown_callback: watch::Sende
     loop {
         let current = device_handle.get_current_device().await;
         let s_message = serde_json::to_string(&current).unwrap();
+        let core_config = config.clone();
 
         tokio::select! {
             Ok((size, addr)) = rec_socket.recv_from(&mut buf) => {
@@ -96,19 +122,24 @@ async fn run_udp_actor(mut actor: DiscoverActor, shutdown_callback: watch::Sende
                         if current.fingerprint == device.fingerprint {
                             debug!("self loop");
                         } else if exist {
-                            register(current, device).await;
+                            tokio::spawn(
+                                async {
+                                    register(current, device).await;
+                                }
+                            );
                         } else {
                             debug!("node {:?}", device);
 
                             device_handle.add_node_device(device.clone()).await;
 
-                            let buf = s_message.as_bytes();
-                            for _ in 1..3 {
-                                let _ = send_socket.send_to(buf, SocketAddr::new(
-                                    IpAddr::from(multicast_addr),
-                                    multicast_port,
-                                )).await;
-                            }
+                            let current_s = s_message.clone();
+                            let config = core_config.clone();
+
+                            tokio::spawn(
+                                async {
+                                   announce(config, current_s).await;
+                                }
+                            );
                         }
 
                     },
