@@ -46,8 +46,8 @@ dependencies:
     flutter_riverpod: ^2.4.9
     riverpod_annotation: ^2.3.3
     shared_preferences: ^2.2.2
-    slang: ^3.28.0
-    slang_flutter: ^3.28.0
+    slang: ^3.31.0
+    slang_flutter: ^3.31.0
     device_info_plus: ^10.1.0
     uuid: ^4.4.0
     equatable: ^2.0.5
@@ -70,7 +70,7 @@ dev_dependencies:
     riverpod_generator: ^2.3.9
     custom_lint: ^0.6.4
     riverpod_lint: ^2.3.7
-    slang_build_runner: ^3.28.0
+    slang_build_runner: ^3.31.0
     flutter_launcher_icons: "^0.13.1"
     innosetup: ^0.1.3
 
