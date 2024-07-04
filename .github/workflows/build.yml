@@ -5,7 +5,6 @@ on:
     push:
         branches:
             - main
-            - 5-build-fail-by-device-info-plugin
 
 jobs:
     build-apk:
@@ -26,7 +25,8 @@ jobs:
               with:
                   toolchain: stable
 
-            - uses: actions/setup-java@v4
+            - name: Set up java 17
+              uses: actions/setup-java@v4
               with:
                   distribution: "zulu" # See 'Supported distributions' for available options
                   java-version: "17"
