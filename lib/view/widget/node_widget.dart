@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:localsend_rs/providers/core_provider.dart';
-import 'package:localsend_rs/rust/actor/model.dart';
-import 'package:localsend_rs/rust/bridge.dart';
+
+import '../../core/providers/core_provider.dart';
 
 class NodeWidget extends ConsumerWidget {
   @override

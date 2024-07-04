@@ -1,22 +1,20 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:localsend_rs/common/device_info_utils.dart';
-import 'package:localsend_rs/config_store.dart';
-import 'package:localsend_rs/pages/frame_page.dart';
-import 'package:localsend_rs/rust/actor/model.dart';
-import 'package:localsend_rs/rust/bridge.dart';
 import 'package:path_provider/path_provider.dart';
 
+import 'common/device_info_utils.dart';
+import 'core/providers/locale_provider.dart';
+import 'core/providers/theme_provider.dart';
+import 'core/rust/bridge.dart';
+import 'core/rust/frb_generated.dart';
+import 'core/store/config_store.dart';
 import 'i18n/strings.g.dart';
-import 'providers/locale_provider.dart';
-import 'providers/theme_provider.dart';
-import 'rust/frb_generated.dart';
+import 'view/pages/frame_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -62,7 +60,8 @@ class MyApp extends ConsumerWidget {
     final locale = ref.watch(localeStateProvider);
     return MaterialApp(
       title: t.appTitle,
-      locale: locale, // use provider
+      locale: locale,
+      // use provider
       supportedLocales: AppLocaleUtils.supportedLocales,
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
       theme: ThemeData(

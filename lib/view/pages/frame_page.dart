@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:localsend_rs/common/utils.dart';
-import 'package:localsend_rs/i18n/strings.g.dart';
-import 'package:localsend_rs/pages/home_page.dart';
-import 'package:localsend_rs/pages/setting_page.dart';
 
-import '../common/widgets.dart';
+import '../../common/widgets.dart';
+import '../../i18n/strings.g.dart';
+import 'home_page.dart';
+import 'setting_page.dart';
 
 enum FrameType {
   compact,
@@ -42,7 +41,7 @@ class _FramePageState extends State<FramePage> {
 
   @override
   void initState() {
-    updateSystemOverlayStyle(context);
+    // updateSystemOverlayStyle(context);
     super.initState();
   }
 

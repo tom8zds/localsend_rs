@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:localsend_rs/i18n/strings.g.dart';
-import 'package:localsend_rs/rust/bridge.dart';
-import 'package:localsend_rs/widget/network_widget.dart';
 
-import '../widget/mission_widget.dart';
+import '../../core/rust/bridge.dart';
 import '../widget/node_widget.dart';
 
 class HomePage extends StatefulWidget {

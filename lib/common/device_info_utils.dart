@@ -2,12 +2,12 @@ import 'dart:io';
 
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
-import 'package:localsend_rs/common/string_extensions.dart';
-import 'package:localsend_rs/rust/actor/model.dart';
 import 'package:slang/builder/model/enums.dart';
 import 'package:uuid/uuid.dart';
 
+import '../core/rust/actor/model.dart';
 import 'constants.dart';
+import 'string_extensions.dart';
 
 class DeviceInfoResult {
   final DeviceType deviceType;

@@ -1,7 +1,7 @@
-import 'package:equatable/equatable.dart';
-import 'package:localsend_rs/rust/actor/model.dart';
-import 'package:localsend_rs/rust/bridge.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+
+import '../rust/actor/model.dart';
+import '../rust/bridge.dart';
 
 part 'core_provider.g.dart';
 

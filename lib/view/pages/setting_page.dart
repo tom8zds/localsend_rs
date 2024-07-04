@@ -1,18 +1,17 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:localsend_rs/common/utils.dart';
-import 'package:localsend_rs/i18n/strings.g.dart';
-import 'package:localsend_rs/providers/core_provider.dart';
-import 'package:localsend_rs/rust/bridge.dart';
-import 'package:localsend_rs/widget/network_widget.dart';
 
-import '../common/constants.dart';
-import '../common/widgets.dart';
-import '../providers/locale_provider.dart';
-import '../providers/theme_provider.dart';
+import '../../common/constants.dart';
+import '../../common/utils.dart';
+import '../../common/widgets.dart';
+import '../../core/providers/core_provider.dart';
+import '../../core/providers/locale_provider.dart';
+import '../../core/providers/theme_provider.dart';
+import '../../core/rust/bridge.dart';
+import '../../i18n/strings.g.dart';
+import '../widget/network_widget.dart';
 
 class SettingPage extends StatelessWidget {
   const SettingPage({super.key});

@@ -1,10 +1,7 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../config_store.dart';
+import '../store/config_store.dart';
 
 part 'theme_provider.g.dart';
 
