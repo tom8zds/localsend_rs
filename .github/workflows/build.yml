@@ -1,4 +1,4 @@
-name: Flutter Build & Upload Artifact
+name: Build
 
 on:
     workflow_dispatch:
