@@ -1,5 +1,7 @@
 # localsend_rs
 
+[![Build](https://github.com/tom8zds/localsend_rs/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/tom8zds/localsend_rs/actions/workflows/build.yml)
+
 WIP: this repository is still WIP. 
 
 A localsend protocol V2 implementation in flutter and rust for better performance.
@@ -28,10 +30,10 @@ Test condition :
     - [x] Cancel
     - [ ] Send
 - [ ] User interface
-    - [ ] device page
-    - [ ] discover page
+    - [x] device page
+    - [x] discover page
     - [ ] send page
-    - [ ] setting page
+    - [x] setting page
 - [x] Platform
   - [x] Windows
   - [x] Android
