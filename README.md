@@ -1,6 +1,6 @@
 # localsend_rs
 
-[![Build](https://github.com/tom8zds/localsend_rs/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/tom8zds/localsend_rs/actions/workflows/build.yml)
+[![Build](https://github.com/tom8zds/localsend_rs/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/tom8zds/localsend_rs/actions/workflows/build.yml) ![version](https://img.shields.io/badge/version-0.0.1_alpha-red)
 
 WIP: this repository is still WIP. 
 
@@ -11,6 +11,7 @@ A localsend protocol V2 implementation in flutter and rust for better performanc
 Performance compare between localsend original and localsend_rs
 
 Test condition : 
+
  - router: TpLink AX3000M
  - sender: Xiaomi 13 ( localsend )
  - receiver: Windows PC ( localsend_rs / localsend )
