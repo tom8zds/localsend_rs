@@ -3,9 +3,55 @@
 
 // ignore_for_file: invalid_use_of_internal_member, unused_import, unnecessary_import
 
+import '../api/model.dart';
+import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-import '../frb_generated.dart';
+class Mission {
+  final String id;
+  final NodeDevice sender;
+  final Map<String, String> tokenMap;
+  final Map<String, String> reverseTokenMap;
+  final Map<String, FileInfo> infoMap;
+
+  const Mission({
+    required this.id,
+    required this.sender,
+    required this.tokenMap,
+    required this.reverseTokenMap,
+    required this.infoMap,
+  });
+
+  @override
+  int get hashCode =>
+      id.hashCode ^
+      sender.hashCode ^
+      tokenMap.hashCode ^
+      reverseTokenMap.hashCode ^
+      infoMap.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Mission &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          sender == other.sender &&
+          tokenMap == other.tokenMap &&
+          reverseTokenMap == other.reverseTokenMap &&
+          infoMap == other.infoMap;
+}
+
+enum MissionState {
+  idle,
+  pending,
+  transfering,
+  finished,
+  failed,
+  canceled,
+  busy,
+  ;
+}
 
 class NodeDevice {
   final String alias;

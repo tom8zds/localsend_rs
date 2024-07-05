@@ -125,13 +125,13 @@ async fn prepare_upload(
 ) -> Result<Json<FileResponse>, (StatusCode, String)> {
     debug!("prepare_upload {:?}", payload);
 
-    let exist = state
+    let device = state
         .core
         .device
-        .check_device_exist(payload.info.fingerprint.clone())
+        .get_device(payload.info.fingerprint.clone())
         .await;
 
-    if !exist {
+    if device.is_none() {
         debug!("mission rejected");
         return Err((
             StatusCode::FORBIDDEN,
@@ -139,7 +139,7 @@ async fn prepare_upload(
         ));
     }
 
-    let mission = Mission::new(payload.files);
+    let mission = Mission::new(payload.files, device.unwrap());
     let id = mission.id.clone();
 
     let (tx, mut rx) = mpsc::channel(8);

@@ -21,20 +21,24 @@ enum DeviceMessage {
         device: NodeDevice,
         respond_to: oneshot::Sender<()>,
     },
-    Get {
+    GetAll {
         respond_to: oneshot::Sender<HashMap<String, NodeDevice>>,
+    },
+    Get {
+        fingerprint: String,
+        respond_to: oneshot::Sender<Option<NodeDevice>>,
     },
     Clear {
         respond_to: oneshot::Sender<()>,
     },
-    CheckDeviceExist {
+    CheckExist {
         fingerprint: String,
         respond_to: oneshot::Sender<bool>,
     },
-    GetCurrentDevice {
+    GetCurrent {
         respond_to: oneshot::Sender<NodeDevice>,
     },
-    SetCurrentDevice {
+    SetCurrent {
         device: NodeDevice,
         respond_to: oneshot::Sender<()>,
     },
@@ -69,11 +73,26 @@ impl DeviceActor {
                 let _ = respond_to.send(());
                 self.notify_change().await;
             }
-            DeviceMessage::Get { respond_to } => {
+            DeviceMessage::Get {
+                fingerprint,
+                respond_to,
+            } => {
+                if self.current.fingerprint == fingerprint {
+                    let _ = respond_to.send(Some(self.current.clone()));
+                    return;
+                }
+                if self.device_map.contains_key(&fingerprint) {
+                    let _ =
+                        respond_to.send(Some(self.device_map.get(&fingerprint).unwrap().clone()));
+                    return;
+                }
+                let _ = respond_to.send(None);
+            }
+            DeviceMessage::GetAll { respond_to } => {
                 let id_map = self.device_map.clone();
                 let _ = respond_to.send(id_map);
             }
-            DeviceMessage::CheckDeviceExist {
+            DeviceMessage::CheckExist {
                 fingerprint,
                 respond_to,
             } => {
@@ -82,10 +101,10 @@ impl DeviceActor {
                         || self.device_map.contains_key(&fingerprint),
                 );
             }
-            DeviceMessage::GetCurrentDevice { respond_to } => {
+            DeviceMessage::GetCurrent { respond_to } => {
                 let _ = respond_to.send(self.current.clone());
             }
-            DeviceMessage::SetCurrentDevice { device, respond_to } => {
+            DeviceMessage::SetCurrent { device, respond_to } => {
                 self.current = device;
                 debug!("current device updated");
                 let _ = respond_to.send(());
@@ -151,7 +170,18 @@ impl DeviceActorHandle {
 
     pub async fn get_device_map(&self) -> HashMap<String, NodeDevice> {
         let (send, recv) = oneshot::channel();
-        let msg = DeviceMessage::Get { respond_to: send };
+        let msg = DeviceMessage::GetAll { respond_to: send };
+
+        let _ = self.sender.send(msg).await;
+        recv.await.expect("Actor task has been killed")
+    }
+
+    pub async fn get_device(&self, fingerprint: String) -> Option<NodeDevice> {
+        let (send, recv) = oneshot::channel();
+        let msg = DeviceMessage::Get {
+            fingerprint,
+            respond_to: send,
+        };
 
         let _ = self.sender.send(msg).await;
         recv.await.expect("Actor task has been killed")
@@ -159,7 +189,7 @@ impl DeviceActorHandle {
 
     pub async fn check_device_exist(&self, fingerprint: String) -> bool {
         let (send, recv) = oneshot::channel();
-        let msg = DeviceMessage::CheckDeviceExist {
+        let msg = DeviceMessage::CheckExist {
             fingerprint: fingerprint,
             respond_to: send,
         };
@@ -170,7 +200,7 @@ impl DeviceActorHandle {
 
     pub async fn set_current_device(&self, device: NodeDevice) {
         let (send, recv) = oneshot::channel();
-        let msg = DeviceMessage::SetCurrentDevice {
+        let msg = DeviceMessage::SetCurrent {
             device,
             respond_to: send,
         };
@@ -181,7 +211,7 @@ impl DeviceActorHandle {
 
     pub async fn get_current_device(&self) -> NodeDevice {
         let (send, recv) = oneshot::channel();
-        let msg = DeviceMessage::GetCurrentDevice { respond_to: send };
+        let msg = DeviceMessage::GetCurrent { respond_to: send };
 
         let _ = self.sender.send(msg).await;
         recv.await.expect("Actor task has been killed")

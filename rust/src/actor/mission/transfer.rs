@@ -43,8 +43,8 @@ enum Message {
 
 #[derive(Debug, Clone)]
 pub struct TransferMissionDto {
-    state: MissionState,
-    files: Vec<TransferFileInfo>,
+    pub state: MissionState,
+    pub files: Vec<TransferFileInfo>,
 }
 
 impl TransferMissionDto {
@@ -58,8 +58,8 @@ impl TransferMissionDto {
 
 #[derive(Debug, Clone)]
 pub struct TransferFileInfo {
-    info: FileInfo,
-    state: TransferState,
+    pub info: FileInfo,
+    pub state: TransferState,
 }
 
 #[derive(Debug, Clone)]

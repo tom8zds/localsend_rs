@@ -3,17 +3,19 @@
 
 // ignore_for_file: unused_import, unused_element, unnecessary_import, duplicate_ignore, invalid_use_of_internal_member, annotate_overrides, non_constant_identifier_names, curly_braces_in_flow_control_structures, prefer_const_literals_to_create_immutables, unused_field
 
+import 'actor/core.dart';
+import 'actor/mission/pending.dart';
+import 'actor/mission/transfer.dart';
+import 'actor/model.dart';
+import 'api/model.dart';
+import 'bridge.dart';
 import 'dart:async';
 import 'dart:convert';
-
-import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
-
-import 'actor/core.dart';
-import 'actor/model.dart';
-import 'bridge.dart';
 import 'frb_generated.dart';
-import 'frb_generated.io.dart';
+import 'frb_generated.io.dart'
+    if (dart.library.js_interop) 'frb_generated.web.dart';
 import 'logger.dart';
+import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 /// Main entrypoint of the Rust API
 class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
@@ -60,7 +62,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.0.0';
 
   @override
-  int get rustContentHash => -2093217231;
+  int get rustContentHash => -136249532;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -73,6 +75,8 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
 abstract class RustLibApi extends BaseApi {
   Future<void> crateBridgeAnnounce();
 
+  Future<void> crateBridgeCancel({required String id});
+
   Future<void> crateBridgeChangeAddress({required String addr});
 
   Future<void> crateBridgeChangeConfig({required CoreConfig config});
@@ -81,7 +85,11 @@ abstract class RustLibApi extends BaseApi {
 
   Stream<List<NodeDevice>> crateBridgeListenDevice();
 
+  Stream<PendingMissionDto> crateBridgeListenPendingMission();
+
   Stream<bool> crateBridgeListenServerState();
+
+  Stream<TransferMissionDto> crateBridgeListenTransferMission();
 
   Future<void> crateBridgeSetup({required NodeDevice device});
 
@@ -130,13 +138,37 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  Future<void> crateBridgeCancel({required String id}) {
+    return handler.executeNormal(NormalTask(
+      callFfi: (port_) {
+        final serializer = SseSerializer(generalizedFrbRustBinding);
+        sse_encode_String(id, serializer);
+        pdeCallFfi(generalizedFrbRustBinding, serializer,
+            funcId: 2, port: port_);
+      },
+      codec: SseCodec(
+        decodeSuccessData: sse_decode_unit,
+        decodeErrorData: null,
+      ),
+      constMeta: kCrateBridgeCancelConstMeta,
+      argValues: [id],
+      apiImpl: this,
+    ));
+  }
+
+  TaskConstMeta get kCrateBridgeCancelConstMeta => const TaskConstMeta(
+        debugName: "cancel",
+        argNames: ["id"],
+      );
+
+  @override
   Future<void> crateBridgeChangeAddress({required String addr}) {
     return handler.executeNormal(NormalTask(
       callFfi: (port_) {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_String(addr, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 2, port: port_);
+            funcId: 3, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_unit,
@@ -161,7 +193,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_Auto_Owned_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCoreConfig(
             config, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 3, port: port_);
+            funcId: 4, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_unit,
@@ -184,7 +216,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       callFfi: (port_) {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 4, port: port_);
+            funcId: 5, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_log_entry,
@@ -209,7 +241,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_StreamSink_list_node_device_Sse(s, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 5, port: port_);
+            funcId: 6, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_unit,
@@ -228,6 +260,33 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  Stream<PendingMissionDto> crateBridgeListenPendingMission() {
+    final s = RustStreamSink<PendingMissionDto>();
+    unawaited(handler.executeNormal(NormalTask(
+      callFfi: (port_) {
+        final serializer = SseSerializer(generalizedFrbRustBinding);
+        sse_encode_StreamSink_pending_mission_dto_Sse(s, serializer);
+        pdeCallFfi(generalizedFrbRustBinding, serializer,
+            funcId: 7, port: port_);
+      },
+      codec: SseCodec(
+        decodeSuccessData: sse_decode_unit,
+        decodeErrorData: null,
+      ),
+      constMeta: kCrateBridgeListenPendingMissionConstMeta,
+      argValues: [s],
+      apiImpl: this,
+    )));
+    return s.stream;
+  }
+
+  TaskConstMeta get kCrateBridgeListenPendingMissionConstMeta =>
+      const TaskConstMeta(
+        debugName: "listen_pending_mission",
+        argNames: ["s"],
+      );
+
+  @override
   Stream<bool> crateBridgeListenServerState() {
     final s = RustStreamSink<bool>();
     unawaited(handler.executeNormal(NormalTask(
@@ -235,7 +294,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_StreamSink_bool_Sse(s, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 6, port: port_);
+            funcId: 8, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_unit,
@@ -255,13 +314,40 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  Stream<TransferMissionDto> crateBridgeListenTransferMission() {
+    final s = RustStreamSink<TransferMissionDto>();
+    unawaited(handler.executeNormal(NormalTask(
+      callFfi: (port_) {
+        final serializer = SseSerializer(generalizedFrbRustBinding);
+        sse_encode_StreamSink_transfer_mission_dto_Sse(s, serializer);
+        pdeCallFfi(generalizedFrbRustBinding, serializer,
+            funcId: 9, port: port_);
+      },
+      codec: SseCodec(
+        decodeSuccessData: sse_decode_unit,
+        decodeErrorData: null,
+      ),
+      constMeta: kCrateBridgeListenTransferMissionConstMeta,
+      argValues: [s],
+      apiImpl: this,
+    )));
+    return s.stream;
+  }
+
+  TaskConstMeta get kCrateBridgeListenTransferMissionConstMeta =>
+      const TaskConstMeta(
+        debugName: "listen_transfer_mission",
+        argNames: ["s"],
+      );
+
+  @override
   Future<void> crateBridgeSetup({required NodeDevice device}) {
     return handler.executeNormal(NormalTask(
       callFfi: (port_) {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         sse_encode_box_autoadd_node_device(device, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 7, port: port_);
+            funcId: 10, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_unit,
@@ -284,7 +370,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       callFfi: (port_) {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 8, port: port_);
+            funcId: 11, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_unit,
@@ -307,7 +393,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       callFfi: (port_) {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 9, port: port_);
+            funcId: 12, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_unit,
@@ -347,6 +433,20 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  Map<String, String> dco_decode_Map_String_String(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return Map.fromEntries(dco_decode_list_record_string_string(raw)
+        .map((e) => MapEntry(e.$1, e.$2)));
+  }
+
+  @protected
+  Map<String, FileInfo> dco_decode_Map_String_file_info(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return Map.fromEntries(dco_decode_list_record_string_file_info(raw)
+        .map((e) => MapEntry(e.$1, e.$2)));
+  }
+
+  @protected
   CoreConfig
       dco_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCoreConfig(
           dynamic raw) {
@@ -368,6 +468,20 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  RustStreamSink<PendingMissionDto>
+      dco_decode_StreamSink_pending_mission_dto_Sse(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    throw UnimplementedError();
+  }
+
+  @protected
+  RustStreamSink<TransferMissionDto>
+      dco_decode_StreamSink_transfer_mission_dto_Sse(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    throw UnimplementedError();
+  }
+
+  @protected
   String dco_decode_String(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as String;
@@ -380,9 +494,31 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  Mission dco_decode_box_autoadd_mission(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_mission(raw);
+  }
+
+  @protected
   NodeDevice dco_decode_box_autoadd_node_device(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return dco_decode_node_device(raw);
+  }
+
+  @protected
+  FileInfo dco_decode_file_info(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 6)
+      throw Exception('unexpected arr length: expect 6 but see ${arr.length}');
+    return FileInfo(
+      id: dco_decode_String(arr[0]),
+      fileName: dco_decode_String(arr[1]),
+      size: dco_decode_i_64(arr[2]),
+      fileType: dco_decode_String(arr[3]),
+      sha256: dco_decode_opt_String(arr[4]),
+      preview: dco_decode_opt_list_prim_u_8_strict(arr[5]),
+    );
   }
 
   @protected
@@ -410,6 +546,27 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  List<(String, FileInfo)> dco_decode_list_record_string_file_info(
+      dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>)
+        .map(dco_decode_record_string_file_info)
+        .toList();
+  }
+
+  @protected
+  List<(String, String)> dco_decode_list_record_string_string(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_record_string_string).toList();
+  }
+
+  @protected
+  List<TransferFileInfo> dco_decode_list_transfer_file_info(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_transfer_file_info).toList();
+  }
+
+  @protected
   LogEntry dco_decode_log_entry(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
@@ -421,6 +578,27 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       tag: dco_decode_String(arr[2]),
       msg: dco_decode_String(arr[3]),
     );
+  }
+
+  @protected
+  Mission dco_decode_mission(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 5)
+      throw Exception('unexpected arr length: expect 5 but see ${arr.length}');
+    return Mission(
+      id: dco_decode_String(arr[0]),
+      sender: dco_decode_node_device(arr[1]),
+      tokenMap: dco_decode_Map_String_String(arr[2]),
+      reverseTokenMap: dco_decode_Map_String_String(arr[3]),
+      infoMap: dco_decode_Map_String_file_info(arr[4]),
+    );
+  }
+
+  @protected
+  MissionState dco_decode_mission_state(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return MissionState.values[raw as int];
   }
 
   @protected
@@ -442,6 +620,107 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       announcement: dco_decode_bool(arr[9]),
       announce: dco_decode_bool(arr[10]),
     );
+  }
+
+  @protected
+  String? dco_decode_opt_String(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_String(raw);
+  }
+
+  @protected
+  Mission? dco_decode_opt_box_autoadd_mission(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_mission(raw);
+  }
+
+  @protected
+  Uint8List? dco_decode_opt_list_prim_u_8_strict(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_list_prim_u_8_strict(raw);
+  }
+
+  @protected
+  PendingMissionDto dco_decode_pending_mission_dto(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 2)
+      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    return PendingMissionDto(
+      mission: dco_decode_opt_box_autoadd_mission(arr[0]),
+      state: dco_decode_mission_state(arr[1]),
+    );
+  }
+
+  @protected
+  (String, FileInfo) dco_decode_record_string_file_info(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 2) {
+      throw Exception('Expected 2 elements, got ${arr.length}');
+    }
+    return (
+      dco_decode_String(arr[0]),
+      dco_decode_file_info(arr[1]),
+    );
+  }
+
+  @protected
+  (String, String) dco_decode_record_string_string(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 2) {
+      throw Exception('Expected 2 elements, got ${arr.length}');
+    }
+    return (
+      dco_decode_String(arr[0]),
+      dco_decode_String(arr[1]),
+    );
+  }
+
+  @protected
+  TransferFileInfo dco_decode_transfer_file_info(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 2)
+      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    return TransferFileInfo(
+      info: dco_decode_file_info(arr[0]),
+      state: dco_decode_transfer_state(arr[1]),
+    );
+  }
+
+  @protected
+  TransferMissionDto dco_decode_transfer_mission_dto(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 2)
+      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
+    return TransferMissionDto(
+      state: dco_decode_mission_state(arr[0]),
+      files: dco_decode_list_transfer_file_info(arr[1]),
+    );
+  }
+
+  @protected
+  TransferState dco_decode_transfer_state(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    switch (raw[0]) {
+      case 0:
+        return TransferState_Pending();
+      case 1:
+        return TransferState_Transfer();
+      case 2:
+        return TransferState_Finish();
+      case 3:
+        return TransferState_Skip();
+      case 4:
+        return TransferState_Fail(
+          msg: dco_decode_String(raw[1]),
+        );
+      default:
+        throw Exception("unreachable");
+    }
   }
 
   @protected
@@ -485,6 +764,22 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  Map<String, String> sse_decode_Map_String_String(
+      SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var inner = sse_decode_list_record_string_string(deserializer);
+    return Map.fromEntries(inner.map((e) => MapEntry(e.$1, e.$2)));
+  }
+
+  @protected
+  Map<String, FileInfo> sse_decode_Map_String_file_info(
+      SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var inner = sse_decode_list_record_string_file_info(deserializer);
+    return Map.fromEntries(inner.map((e) => MapEntry(e.$1, e.$2)));
+  }
+
+  @protected
   CoreConfig
       sse_decode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCoreConfig(
           SseDeserializer deserializer) {
@@ -508,6 +803,22 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  RustStreamSink<PendingMissionDto>
+      sse_decode_StreamSink_pending_mission_dto_Sse(
+          SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    throw UnimplementedError('Unreachable ()');
+  }
+
+  @protected
+  RustStreamSink<TransferMissionDto>
+      sse_decode_StreamSink_transfer_mission_dto_Sse(
+          SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    throw UnimplementedError('Unreachable ()');
+  }
+
+  @protected
   String sse_decode_String(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var inner = sse_decode_list_prim_u_8_strict(deserializer);
@@ -521,9 +832,33 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  Mission sse_decode_box_autoadd_mission(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_mission(deserializer));
+  }
+
+  @protected
   NodeDevice sse_decode_box_autoadd_node_device(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return (sse_decode_node_device(deserializer));
+  }
+
+  @protected
+  FileInfo sse_decode_file_info(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_id = sse_decode_String(deserializer);
+    var var_fileName = sse_decode_String(deserializer);
+    var var_size = sse_decode_i_64(deserializer);
+    var var_fileType = sse_decode_String(deserializer);
+    var var_sha256 = sse_decode_opt_String(deserializer);
+    var var_preview = sse_decode_opt_list_prim_u_8_strict(deserializer);
+    return FileInfo(
+        id: var_id,
+        fileName: var_fileName,
+        size: var_size,
+        fileType: var_fileType,
+        sha256: var_sha256,
+        preview: var_preview);
   }
 
   @protected
@@ -558,6 +893,45 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  List<(String, FileInfo)> sse_decode_list_record_string_file_info(
+      SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <(String, FileInfo)>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_record_string_file_info(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
+  List<(String, String)> sse_decode_list_record_string_string(
+      SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <(String, String)>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_record_string_string(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
+  List<TransferFileInfo> sse_decode_list_transfer_file_info(
+      SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <TransferFileInfo>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_transfer_file_info(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
   LogEntry sse_decode_log_entry(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var var_timeMillis = sse_decode_i_64(deserializer);
@@ -569,6 +943,29 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         level: var_level,
         tag: var_tag,
         msg: var_msg);
+  }
+
+  @protected
+  Mission sse_decode_mission(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_id = sse_decode_String(deserializer);
+    var var_sender = sse_decode_node_device(deserializer);
+    var var_tokenMap = sse_decode_Map_String_String(deserializer);
+    var var_reverseTokenMap = sse_decode_Map_String_String(deserializer);
+    var var_infoMap = sse_decode_Map_String_file_info(deserializer);
+    return Mission(
+        id: var_id,
+        sender: var_sender,
+        tokenMap: var_tokenMap,
+        reverseTokenMap: var_reverseTokenMap,
+        infoMap: var_infoMap);
+  }
+
+  @protected
+  MissionState sse_decode_mission_state(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var inner = sse_decode_i_32(deserializer);
+    return MissionState.values[inner];
   }
 
   @protected
@@ -597,6 +994,105 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         download: var_download,
         announcement: var_announcement,
         announce: var_announce);
+  }
+
+  @protected
+  String? sse_decode_opt_String(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_String(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  Mission? sse_decode_opt_box_autoadd_mission(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_mission(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  Uint8List? sse_decode_opt_list_prim_u_8_strict(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_list_prim_u_8_strict(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
+  PendingMissionDto sse_decode_pending_mission_dto(
+      SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_mission = sse_decode_opt_box_autoadd_mission(deserializer);
+    var var_state = sse_decode_mission_state(deserializer);
+    return PendingMissionDto(mission: var_mission, state: var_state);
+  }
+
+  @protected
+  (String, FileInfo) sse_decode_record_string_file_info(
+      SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_field0 = sse_decode_String(deserializer);
+    var var_field1 = sse_decode_file_info(deserializer);
+    return (var_field0, var_field1);
+  }
+
+  @protected
+  (String, String) sse_decode_record_string_string(
+      SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_field0 = sse_decode_String(deserializer);
+    var var_field1 = sse_decode_String(deserializer);
+    return (var_field0, var_field1);
+  }
+
+  @protected
+  TransferFileInfo sse_decode_transfer_file_info(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_info = sse_decode_file_info(deserializer);
+    var var_state = sse_decode_transfer_state(deserializer);
+    return TransferFileInfo(info: var_info, state: var_state);
+  }
+
+  @protected
+  TransferMissionDto sse_decode_transfer_mission_dto(
+      SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_state = sse_decode_mission_state(deserializer);
+    var var_files = sse_decode_list_transfer_file_info(deserializer);
+    return TransferMissionDto(state: var_state, files: var_files);
+  }
+
+  @protected
+  TransferState sse_decode_transfer_state(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var tag_ = sse_decode_i_32(deserializer);
+    switch (tag_) {
+      case 0:
+        return TransferState_Pending();
+      case 1:
+        return TransferState_Transfer();
+      case 2:
+        return TransferState_Finish();
+      case 3:
+        return TransferState_Skip();
+      case 4:
+        var var_msg = sse_decode_String(deserializer);
+        return TransferState_Fail(msg: var_msg);
+      default:
+        throw UnimplementedError('');
+    }
   }
 
   @protected
@@ -639,6 +1135,22 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_Map_String_String(
+      Map<String, String> self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_list_record_string_string(
+        self.entries.map((e) => (e.key, e.value)).toList(), serializer);
+  }
+
+  @protected
+  void sse_encode_Map_String_file_info(
+      Map<String, FileInfo> self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_list_record_string_file_info(
+        self.entries.map((e) => (e.key, e.value)).toList(), serializer);
+  }
+
+  @protected
   void
       sse_encode_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerCoreConfig(
           CoreConfig self, SseSerializer serializer) {
@@ -674,6 +1186,32 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_StreamSink_pending_mission_dto_Sse(
+      RustStreamSink<PendingMissionDto> self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(
+        self.setupAndSerialize(
+            codec: SseCodec(
+          decodeSuccessData: sse_decode_pending_mission_dto,
+          decodeErrorData: sse_decode_AnyhowException,
+        )),
+        serializer);
+  }
+
+  @protected
+  void sse_encode_StreamSink_transfer_mission_dto_Sse(
+      RustStreamSink<TransferMissionDto> self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(
+        self.setupAndSerialize(
+            codec: SseCodec(
+          decodeSuccessData: sse_decode_transfer_mission_dto,
+          decodeErrorData: sse_decode_AnyhowException,
+        )),
+        serializer);
+  }
+
+  @protected
   void sse_encode_String(String self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_list_prim_u_8_strict(utf8.encoder.convert(self), serializer);
@@ -686,10 +1224,27 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_box_autoadd_mission(Mission self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_mission(self, serializer);
+  }
+
+  @protected
   void sse_encode_box_autoadd_node_device(
       NodeDevice self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_node_device(self, serializer);
+  }
+
+  @protected
+  void sse_encode_file_info(FileInfo self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.id, serializer);
+    sse_encode_String(self.fileName, serializer);
+    sse_encode_i_64(self.size, serializer);
+    sse_encode_String(self.fileType, serializer);
+    sse_encode_opt_String(self.sha256, serializer);
+    sse_encode_opt_list_prim_u_8_strict(self.preview, serializer);
   }
 
   @protected
@@ -723,12 +1278,58 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_list_record_string_file_info(
+      List<(String, FileInfo)> self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_record_string_file_info(item, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_list_record_string_string(
+      List<(String, String)> self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_record_string_string(item, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_list_transfer_file_info(
+      List<TransferFileInfo> self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_transfer_file_info(item, serializer);
+    }
+  }
+
+  @protected
   void sse_encode_log_entry(LogEntry self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_i_64(self.timeMillis, serializer);
     sse_encode_i_32(self.level, serializer);
     sse_encode_String(self.tag, serializer);
     sse_encode_String(self.msg, serializer);
+  }
+
+  @protected
+  void sse_encode_mission(Mission self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.id, serializer);
+    sse_encode_node_device(self.sender, serializer);
+    sse_encode_Map_String_String(self.tokenMap, serializer);
+    sse_encode_Map_String_String(self.reverseTokenMap, serializer);
+    sse_encode_Map_String_file_info(self.infoMap, serializer);
+  }
+
+  @protected
+  void sse_encode_mission_state(MissionState self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.index, serializer);
   }
 
   @protected
@@ -745,6 +1346,98 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_bool(self.download, serializer);
     sse_encode_bool(self.announcement, serializer);
     sse_encode_bool(self.announce, serializer);
+  }
+
+  @protected
+  void sse_encode_opt_String(String? self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_String(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_box_autoadd_mission(
+      Mission? self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_mission(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_opt_list_prim_u_8_strict(
+      Uint8List? self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_list_prim_u_8_strict(self, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_pending_mission_dto(
+      PendingMissionDto self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_opt_box_autoadd_mission(self.mission, serializer);
+    sse_encode_mission_state(self.state, serializer);
+  }
+
+  @protected
+  void sse_encode_record_string_file_info(
+      (String, FileInfo) self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.$1, serializer);
+    sse_encode_file_info(self.$2, serializer);
+  }
+
+  @protected
+  void sse_encode_record_string_string(
+      (String, String) self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.$1, serializer);
+    sse_encode_String(self.$2, serializer);
+  }
+
+  @protected
+  void sse_encode_transfer_file_info(
+      TransferFileInfo self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_file_info(self.info, serializer);
+    sse_encode_transfer_state(self.state, serializer);
+  }
+
+  @protected
+  void sse_encode_transfer_mission_dto(
+      TransferMissionDto self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_mission_state(self.state, serializer);
+    sse_encode_list_transfer_file_info(self.files, serializer);
+  }
+
+  @protected
+  void sse_encode_transfer_state(TransferState self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    switch (self) {
+      case TransferState_Pending():
+        sse_encode_i_32(0, serializer);
+      case TransferState_Transfer():
+        sse_encode_i_32(1, serializer);
+      case TransferState_Finish():
+        sse_encode_i_32(2, serializer);
+      case TransferState_Skip():
+        sse_encode_i_32(3, serializer);
+      case TransferState_Fail(msg: final msg):
+        sse_encode_i_32(4, serializer);
+        sse_encode_String(msg, serializer);
+      default:
+        throw UnimplementedError('');
+    }
   }
 
   @protected

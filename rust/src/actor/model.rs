@@ -71,13 +71,14 @@ impl NodeDevice {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Mission {
     pub id: String,
+    pub sender: NodeDevice,
     pub token_map: HashMap<String, String>,
     pub reverse_token_map: HashMap<String, String>,
     pub info_map: HashMap<String, FileInfo>,
 }
 
 impl Mission {
-    pub fn new(info_map: HashMap<String, FileInfo>) -> Self {
+    pub fn new(info_map: HashMap<String, FileInfo>, sender: NodeDevice) -> Self {
         let id = uuid::Uuid::new_v4().to_string();
         let mut token_map = HashMap::new();
         let mut reverse_token_map = HashMap::new();
@@ -89,6 +90,7 @@ impl Mission {
 
         Mission {
             id: id.clone(),
+            sender,
             token_map,
             reverse_token_map,
             info_map: info_map.clone(),
@@ -98,6 +100,7 @@ impl Mission {
 
 #[derive(Debug, Clone, Copy)]
 pub enum MissionState {
+    Idle,
     Pending,
     Transfering,
     Finished,

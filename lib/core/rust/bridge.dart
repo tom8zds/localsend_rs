@@ -3,12 +3,14 @@
 
 // ignore_for_file: invalid_use_of_internal_member, unused_import, unnecessary_import
 
-import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
-
 import 'actor/core.dart';
+import 'actor/mission/pending.dart';
+import 'actor/mission/transfer.dart';
 import 'actor/model.dart';
+import 'api/model.dart';
 import 'frb_generated.dart';
 import 'logger.dart';
+import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 // These functions are ignored because they are not marked as `pub`: `_get_core`
 // These types are ignored because they are not used by any `pub` functions: `CORE`
@@ -33,6 +35,15 @@ Future<void> changeConfig({required CoreConfig config}) =>
 
 Stream<List<NodeDevice>> listenDevice() =>
     RustLib.instance.api.crateBridgeListenDevice();
+
+Stream<PendingMissionDto> listenPendingMission() =>
+    RustLib.instance.api.crateBridgeListenPendingMission();
+
+Future<void> cancel({required String id}) =>
+    RustLib.instance.api.crateBridgeCancel(id: id);
+
+Stream<TransferMissionDto> listenTransferMission() =>
+    RustLib.instance.api.crateBridgeListenTransferMission();
 
 Future<LogEntry> getLog() => RustLib.instance.api.crateBridgeGetLog();
 
