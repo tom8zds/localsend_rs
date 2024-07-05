@@ -1,3 +1,4 @@
 rust_input: crate::bridge
 rust_root: rust/
 dart_output: lib/core/rust
+web: false
