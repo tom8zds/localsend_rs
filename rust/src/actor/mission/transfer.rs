@@ -111,7 +111,7 @@ impl Actor {
         }
     }
     pub fn notify(&self, mission: TransferMission) {
-        self.notify.send(TransferMissionDto {
+        let _ = self.notify.send(TransferMissionDto {
             state: mission.state,
             files: mission
                 .files

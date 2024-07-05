@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:localsend_rs/view/pages/pending_page.dart';
 
 import '../../common/utils.dart';
 import '../../common/widgets.dart';
+import '../../core/providers/mission_provider.dart';
+import '../../core/rust/actor/model.dart';
+import '../../core/rust/bridge.dart';
 import '../../i18n/strings.g.dart';
 import 'home_page.dart';
 import 'setting_page.dart';
@@ -10,17 +16,16 @@ enum FrameType {
   compact,
   normal,
   wide,
-  expanded,
 }
 
-class FramePage extends StatefulWidget {
+class FramePage extends ConsumerStatefulWidget {
   const FramePage({super.key});
 
   @override
-  State<FramePage> createState() => _FramePageState();
+  ConsumerState<ConsumerStatefulWidget> createState() => _FramePageState();
 }
 
-class _FramePageState extends State<FramePage> {
+class _FramePageState extends ConsumerState<FramePage> {
   int index = 0;
 
   List<Widget> pages = [
@@ -29,20 +34,18 @@ class _FramePageState extends State<FramePage> {
   ];
 
   FrameType getFrameType(double width) {
-    if (width < 640) {
+    if (width < 960) {
       return FrameType.compact;
-    } else if (width < 960) {
+    } else if (width < 1440) {
       return FrameType.normal;
-    } else if (width < 1280) {
-      return FrameType.wide;
     } else {
-      return FrameType.expanded;
+      return FrameType.wide;
     }
   }
 
-  bool init =false;
+  bool init = false;
 
-  void initOverlay(Brightness brightness){
+  void initOverlay(Brightness brightness) {
     setState(() {
       init = true;
     });
@@ -51,199 +54,155 @@ class _FramePageState extends State<FramePage> {
 
   @override
   Widget build(BuildContext context) {
-    if(!init){
+    if (!init) {
       final brightness = Theme.of(context).brightness;
       initOverlay(brightness);
     }
+    final data = ref.watch(pendingMissionProvider);
+
     final width = MediaQuery.of(context).size.width;
     final frameType = getFrameType(width);
-    return Scaffold(
-      body: SafeArea(child: getView(frameType)),
-      bottomNavigationBar: frameType == FrameType.compact
-          ? BottomNavigationBar(
-              currentIndex: index,
-              onTap: (index) {
-                setState(() {
-                  this.index = index;
-                });
-              },
-              items: [
-                BottomNavigationBarItem(
-                  icon: const Icon(Icons.home),
-                  label: context.t.home.title,
-                ),
-                BottomNavigationBarItem(
-                  icon: const Icon(Icons.settings),
-                  label: context.t.setting.title,
-                ),
-              ],
-            )
-          : null,
+    if (frameType == FrameType.compact && data.state == MissionState.pending) {
+      return MissionPendingPage(
+        isParalle: false,
+      );
+    }
+    return SafeArea(
+      child: Scaffold(
+        body: getView(frameType),
+        bottomNavigationBar: frameType == FrameType.compact
+            ? BottomNavigationBar(
+                currentIndex: index,
+                onTap: (index) {
+                  setState(() {
+                    this.index = index;
+                  });
+                },
+                items: [
+                  BottomNavigationBarItem(
+                    icon: const Icon(Icons.home),
+                    label: context.t.home.title,
+                  ),
+                  BottomNavigationBarItem(
+                    icon: const Icon(Icons.settings),
+                    label: context.t.setting.title,
+                  ),
+                ],
+              )
+            : null,
+      ),
+    );
+  }
+
+  Widget getSideNavigation(FrameType frameType) {
+    if (frameType == FrameType.wide) {
+      return NavigationDrawer(
+        onDestinationSelected: (index) {
+          setState(() {
+            this.index = index;
+          });
+        },
+        selectedIndex: index,
+        children: [
+          const SizedBox(
+            height: 112,
+            child: Center(
+              child: AppTitle(),
+            ),
+          ),
+          NavigationDrawerDestination(
+            icon: const Icon(Icons.home_outlined),
+            selectedIcon: const Icon(Icons.home),
+            label: Text(context.t.home.title),
+          ),
+          NavigationDrawerDestination(
+            icon: const Icon(Icons.settings_outlined),
+            selectedIcon: const Icon(Icons.settings),
+            label: Text(context.t.setting.title),
+          ),
+        ],
+      );
+    }
+    if (frameType == FrameType.normal) {
+      return NavigationRail(
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
+        onDestinationSelected: (value) {
+          setState(() {
+            index = value;
+          });
+        },
+        labelType: NavigationRailLabelType.selected,
+        destinations: [
+          NavigationRailDestination(
+            icon: const Icon(Icons.home),
+            label: Text(context.t.home.title),
+          ),
+          NavigationRailDestination(
+            icon: const Icon(Icons.settings),
+            label: Text(context.t.setting.title),
+          ),
+        ],
+        selectedIndex: index,
+      );
+    }
+    return Container();
+  }
+
+  Widget getParalleView(FrameType frameType) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
+      ),
+      child: Row(
+        children: [
+          getSideNavigation(frameType),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surface,
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      child: IndexedStack(
+                        index: index,
+                        children: pages,
+                      ),
+                    ),
+                  ),
+                  SizedBox(
+                    width: 8,
+                  ),
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surface,
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      child: MissionPendingPage(
+                        isParalle: true,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   Widget getView(FrameType frameType) {
-    switch (frameType) {
-      case FrameType.compact:
-        return IndexedStack(
-          index: index,
-          children: pages,
-        );
-      case FrameType.normal:
-        return Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerLow,
-          ),
-          child: Row(
-            children: [
-              NavigationRail(
-                backgroundColor:
-                    Theme.of(context).colorScheme.surfaceContainerLow,
-                destinations: [
-                  NavigationRailDestination(
-                    icon: const Icon(Icons.home),
-                    label: Text(context.t.home.title),
-                  ),
-                  NavigationRailDestination(
-                    icon: const Icon(Icons.settings),
-                    label: Text(context.t.setting.title),
-                  ),
-                ],
-                selectedIndex: index,
-              ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface,
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    child: IndexedStack(
-                      index: index,
-                      children: pages,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      case FrameType.wide:
-        return Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerLow,
-          ),
-          child: Row(
-            children: [
-              NavigationDrawer(
-                onDestinationSelected: (index) {
-                  setState(() {
-                    this.index = index;
-                  });
-                },
-                selectedIndex: index,
-                children: [
-                  const SizedBox(
-                    height: 112,
-                    child: Center(
-                      child: AppTitle(),
-                    ),
-                  ),
-                  NavigationDrawerDestination(
-                    icon: const Icon(Icons.home_outlined),
-                    selectedIcon: const Icon(Icons.home),
-                    label: Text(context.t.home.title),
-                  ),
-                  NavigationDrawerDestination(
-                    icon: const Icon(Icons.settings_outlined),
-                    selectedIcon: const Icon(Icons.settings),
-                    label: Text(context.t.setting.title),
-                  ),
-                ],
-              ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface,
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    child: IndexedStack(
-                      index: index,
-                      children: pages,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      case FrameType.expanded:
-        return Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerLow,
-          ),
-          child: Row(
-            children: [
-              NavigationDrawer(
-                onDestinationSelected: (index) {
-                  setState(() {
-                    this.index = index;
-                  });
-                },
-                selectedIndex: index,
-                children: [
-                  const SizedBox(
-                    height: 112,
-                    child: Center(
-                      child: AppTitle(),
-                    ),
-                  ),
-                  NavigationDrawerDestination(
-                    icon: const Icon(Icons.home_outlined),
-                    selectedIcon: const Icon(Icons.home),
-                    label: Text(context.t.home.title),
-                  ),
-                  NavigationDrawerDestination(
-                    icon: const Icon(Icons.settings_outlined),
-                    selectedIcon: const Icon(Icons.settings),
-                    label: Text(context.t.setting.title),
-                  ),
-                ],
-              ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface,
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: IndexedStack(
-                            index: index,
-                            children: pages,
-                          ),
-                        ),
-                        Expanded(
-                          child: Container(
-                            child: const Center(
-                              child: Text("support page"),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
+    if (frameType == FrameType.compact) {
+      return IndexedStack(
+        index: index,
+        children: pages,
+      );
     }
+    return getParalleView(frameType);
   }
 }

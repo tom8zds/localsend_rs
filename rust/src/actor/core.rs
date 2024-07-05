@@ -58,12 +58,15 @@ enum CoreMessage {
 }
 
 impl CoreActor {
-    fn new(receiver: mpsc::Receiver<CoreMessage>) -> Self {
+    fn new(receiver: mpsc::Receiver<CoreMessage>, device: NodeDevice) -> Self {
         let (tx, rx) = watch::channel(false);
+        let mut core_config = CoreConfig::default();
+        core_config.port = device.port;
+        core_config.interface_addr = Ipv4Addr::from_str(&device.address).unwrap();
         CoreActor {
             receiver,
             context: AppContext {
-                config: CoreConfig::default(),
+                config: core_config,
             },
             server: None,
             server_state_sender: tx,
@@ -126,7 +129,7 @@ pub struct CoreActorHandle {
 impl CoreActorHandle {
     pub fn new(device: NodeDevice) -> Self {
         let (sender, receiver) = mpsc::channel(8);
-        let actor = CoreActor::new(receiver);
+        let actor = CoreActor::new(receiver, device.clone());
         tokio::spawn(run_context_actor(actor));
 
         let device = DeviceActorHandle::new(device);

@@ -139,6 +139,8 @@ async fn prepare_upload(
         ));
     }
 
+    debug!("mission incoming");
+
     let mission = Mission::new(payload.files, device.unwrap());
     let id = mission.id.clone();
 

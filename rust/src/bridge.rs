@@ -1,13 +1,14 @@
 use std::net::{IpAddr, SocketAddr};
 
 use lazy_static::lazy_static;
+use log::debug;
 use tokio::{net::UdpSocket, sync::OnceCell};
 
 use crate::{
     actor::{
         core::{CoreActorHandle, CoreConfig},
         mission::{pending::PendingMissionDto, transfer::TransferMissionDto},
-        model::{NodeDevice},
+        model::NodeDevice,
     },
     frb_generated::StreamSink,
     logger,
@@ -67,13 +68,18 @@ pub async fn listen_pending_mission(s: StreamSink<PendingMissionDto>) {
     let mut rx = _get_core().mission.pending.listen().await;
     loop {
         let _ = rx.changed().await;
+        debug!("mission change");
         let data = rx.borrow().clone();
         let _ = s.add(data);
     }
 }
 
-pub async fn cancel(id: String) {
+pub async fn cancel_pending(id: String) {
     _get_core().mission.pending.cancel(id).await;
+}
+
+pub async fn clear_pending() {
+    _get_core().mission.pending.clear().await;
 }
 
 pub async fn listen_transfer_mission(s: StreamSink<TransferMissionDto>) {

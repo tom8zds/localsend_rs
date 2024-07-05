@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../core/rust/bridge.dart';
-import '../widget/node_widget.dart';
+import '../../i18n/strings.g.dart';
+import '../widget/common_widget.dart';
+import '../widget/discover_widget.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -30,13 +32,11 @@ class _HomePageState extends State<HomePage> {
       backgroundColor: Colors.transparent,
       body: Center(
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           constraints: const BoxConstraints(maxWidth: 800),
           child: Column(
             children: [
-              const SizedBox(
-                height: 8,
-              ),
+              StaticAppbar(title: context.t.home.title),
               // MissionWidget(),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8.0),
@@ -73,16 +73,10 @@ class _HomePageState extends State<HomePage> {
                   padding: EdgeInsets.all(8.0),
                   child: LinearProgressIndicator(),
                 ),
-              const Expanded(child: NodeWidget()),
+              const Expanded(child: DiscoverWidget()),
             ],
           ),
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        child: const Icon(Icons.search),
-        onPressed: () async {
-          // await discover();
-        },
       ),
     );
   }

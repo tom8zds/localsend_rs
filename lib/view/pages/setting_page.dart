@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../common/widgets.dart';
 import '../../core/rust/bridge.dart';
 import '../../i18n/strings.g.dart';
+import '../widget/common_widget.dart';
 import '../widget/network_widget.dart';
 import '../widget/setting_widgets.dart';
 
@@ -16,15 +17,7 @@ class SettingPage extends StatelessWidget {
       body: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
-            child: SizedBox(
-              height: kToolbarHeight,
-              child: Center(
-                child: Text(
-                  context.t.setting.title,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-              ),
-            ),
+            child: StaticAppbar(title: context.t.setting.title),
           ),
           SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),

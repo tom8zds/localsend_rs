@@ -14,6 +14,9 @@ enum Message {
         id: String,
         respond_to: oneshot::Sender<()>,
     },
+    Clear {
+        respond_to: oneshot::Sender<()>,
+    },
     Accept {
         id: String,
         respond_to: oneshot::Sender<()>,
@@ -109,6 +112,14 @@ impl Actor {
 
                 let _ = respond_to.send(());
             }
+            Message::Clear { respond_to } => {
+                let _ = self.notify.send(PendingMissionDto {
+                    mission: None,
+                    state: MissionState::Idle,
+                });
+
+                let _ = respond_to.send(());
+            }
             Message::Accept { id, respond_to } => {
                 match &self.store.mission {
                     Some(mission) => {
@@ -165,6 +176,13 @@ impl Handle {
             mission,
             respond_to: send,
         };
+
+        let _ = self.sender.send(msg).await;
+        recv.await.expect("Actor task has been killed")
+    }
+    pub async fn clear(&self) {
+        let (send, recv) = oneshot::channel();
+        let msg = Message::Clear { respond_to: send };
 
         let _ = self.sender.send(msg).await;
         recv.await.expect("Actor task has been killed")

@@ -39,8 +39,10 @@ Stream<List<NodeDevice>> listenDevice() =>
 Stream<PendingMissionDto> listenPendingMission() =>
     RustLib.instance.api.crateBridgeListenPendingMission();
 
-Future<void> cancel({required String id}) =>
-    RustLib.instance.api.crateBridgeCancel(id: id);
+Future<void> cancelPending({required String id}) =>
+    RustLib.instance.api.crateBridgeCancelPending(id: id);
+
+Future<void> clearPending() => RustLib.instance.api.crateBridgeClearPending();
 
 Stream<TransferMissionDto> listenTransferMission() =>
     RustLib.instance.api.crateBridgeListenTransferMission();
