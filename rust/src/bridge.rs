@@ -7,7 +7,7 @@ use crate::{
     actor::{
         core::{CoreActorHandle, CoreConfig},
         mission::{pending::PendingMissionDto, transfer::TransferMissionDto},
-        model::{Mission, NodeDevice},
+        model::{NodeDevice},
     },
     frb_generated::StreamSink,
     logger,
@@ -64,7 +64,7 @@ pub async fn listen_device(s: StreamSink<Vec<NodeDevice>>) {
 }
 
 pub async fn listen_pending_mission(s: StreamSink<PendingMissionDto>) {
-    let rx = _get_core().mission.pending.listen().await;
+    let mut rx = _get_core().mission.pending.listen().await;
     loop {
         let _ = rx.changed().await;
         let data = rx.borrow().clone();
