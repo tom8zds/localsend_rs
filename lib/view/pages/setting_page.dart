@@ -16,7 +16,7 @@ class SettingPage extends StatelessWidget {
       body: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
-            child: Container(
+            child: SizedBox(
               height: kToolbarHeight,
               child: Center(
                 child: Text(
@@ -46,7 +46,7 @@ class SettingPage extends StatelessWidget {
                     title: t.setting.core.title,
                     children: [
                       // core status
-                      ServerTile(), // core log
+                      const ServerTile(), // core log
                       NetworkWidget(
                         onPressed: (addr) {
                           changeAddress(addr: addr);

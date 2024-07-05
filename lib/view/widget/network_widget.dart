@@ -47,8 +47,8 @@ class _NetworkWidgetState extends State<NetworkWidget> {
         children: [
           TextButton.icon(
             onPressed: getInterface,
-            label: Text("refresh"),
-            icon: Icon(Icons.refresh),
+            label: const Text("refresh"),
+            icon: const Icon(Icons.refresh),
           ),
           for (final addr in addressList)
             TextButton(

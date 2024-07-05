@@ -18,7 +18,7 @@ class _HomePageState extends State<HomePage> {
       refreshing = true;
     });
     await announce();
-    await Future.delayed(Duration(seconds: 4));
+    await Future.delayed(const Duration(seconds: 4));
     setState(() {
       refreshing = false;
     });
@@ -30,11 +30,11 @@ class _HomePageState extends State<HomePage> {
       backgroundColor: Colors.transparent,
       body: Center(
         child: Container(
-          padding: EdgeInsets.symmetric(horizontal: 8),
-          constraints: BoxConstraints(maxWidth: 800),
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          constraints: const BoxConstraints(maxWidth: 800),
           child: Column(
             children: [
-              SizedBox(
+              const SizedBox(
                 height: 8,
               ),
               // MissionWidget(),
@@ -42,18 +42,18 @@ class _HomePageState extends State<HomePage> {
                 padding: const EdgeInsets.symmetric(horizontal: 8.0),
                 child: Row(
                   children: [
-                    Text(
+                    const Text(
                       "附近的设备",
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    SizedBox(
+                    const SizedBox(
                       width: 8,
                     ),
                     IconButton(
-                        style: ButtonStyle(
+                        style: const ButtonStyle(
                           iconSize: WidgetStatePropertyAll(20),
                           padding: WidgetStatePropertyAll(EdgeInsets.all(8)),
                           minimumSize: WidgetStatePropertyAll(Size(16, 16)),
@@ -62,18 +62,18 @@ class _HomePageState extends State<HomePage> {
                         onPressed: () {
                           refresh();
                         },
-                        icon: Icon(
+                        icon: const Icon(
                           Icons.sync,
                         ))
                   ],
                 ),
               ),
               if (refreshing)
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
+                const Padding(
+                  padding: EdgeInsets.all(8.0),
                   child: LinearProgressIndicator(),
                 ),
-              Expanded(child: NodeWidget()),
+              const Expanded(child: NodeWidget()),
             ],
           ),
         ),

@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/providers/core_provider.dart';
 
 class NodeWidget extends ConsumerWidget {
+  const NodeWidget({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final core = ref.watch(coreStateProvider);
@@ -34,7 +36,7 @@ class NodeWidget extends ConsumerWidget {
                   height: 80,
                   child: Row(
                     children: [
-                      SizedBox(
+                      const SizedBox(
                         height: 80,
                         width: 80,
                         child: Icon(
@@ -48,15 +50,15 @@ class NodeWidget extends ConsumerWidget {
                         children: [
                           Text(
                             item.alias,
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 20,
                             ),
                           ),
-                          SizedBox(
+                          const SizedBox(
                             height: 4,
                           ),
                           Container(
-                            padding: EdgeInsets.symmetric(
+                            padding: const EdgeInsets.symmetric(
                                 horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(4),

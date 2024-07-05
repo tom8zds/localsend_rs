@@ -707,13 +707,13 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     switch (raw[0]) {
       case 0:
-        return TransferState_Pending();
+        return const TransferState_Pending();
       case 1:
-        return TransferState_Transfer();
+        return const TransferState_Transfer();
       case 2:
-        return TransferState_Finish();
+        return const TransferState_Finish();
       case 3:
-        return TransferState_Skip();
+        return const TransferState_Skip();
       case 4:
         return TransferState_Fail(
           msg: dco_decode_String(raw[1]),
@@ -1080,13 +1080,13 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var tag_ = sse_decode_i_32(deserializer);
     switch (tag_) {
       case 0:
-        return TransferState_Pending();
+        return const TransferState_Pending();
       case 1:
-        return TransferState_Transfer();
+        return const TransferState_Transfer();
       case 2:
-        return TransferState_Finish();
+        return const TransferState_Finish();
       case 3:
-        return TransferState_Skip();
+        return const TransferState_Skip();
       case 4:
         var var_msg = sse_decode_String(deserializer);
         return TransferState_Fail(msg: var_msg);

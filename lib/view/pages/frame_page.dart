@@ -231,7 +231,7 @@ class _FramePageState extends State<FramePage> {
                         ),
                         Expanded(
                           child: Container(
-                            child: Center(
+                            child: const Center(
                               child: Text("support page"),
                             ),
                           ),
