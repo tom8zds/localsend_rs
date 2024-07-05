@@ -1,8 +1,8 @@
 import 'package:localsend_rs/core/rust/actor/mission/pending.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../listeners/pending_mission_listener.dart';
 import '../rust/actor/model.dart';
-import '../rust/bridge.dart';
 
 part 'mission_provider.g.dart';
 
@@ -10,7 +10,7 @@ part 'mission_provider.g.dart';
 class PendingMission extends _$PendingMission {
   @override
   PendingMissionDto build() {
-    final subPendingMission = listenPendingMission().listen(
+    final subPendingMission = PendingMissionListener.instance().stream.listen(
       (event) {
         state = event;
       },

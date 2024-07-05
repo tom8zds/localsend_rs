@@ -1,3 +1,4 @@
+import 'package:localsend_rs/core/listeners/core_listener.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../rust/actor/model.dart';
@@ -22,12 +23,12 @@ class RustCoreState {
 class CoreState extends _$CoreState {
   @override
   RustCoreState build() {
-    final subServerState = listenServerState().listen(
+    final subServerState = CoreListener.instance().stateStream.listen(
       (event) {
         state = state.copyWith(serverState: event);
       },
     );
-    final subDevice = listenDevice().listen(
+    final subDevice = CoreListener.instance().deviceStream.listen(
       (event) {
         state = state.copyWith(devices: event);
       },
