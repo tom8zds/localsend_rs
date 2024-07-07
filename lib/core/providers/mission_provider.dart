@@ -1,23 +1,22 @@
-import 'package:localsend_rs/core/rust/actor/mission/pending.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-import '../listeners/pending_mission_listener.dart';
-import '../rust/actor/model.dart';
+import '../listeners/mission_listener.dart';
+import '../rust/actor/mission.dart';
 
 part 'mission_provider.g.dart';
 
 @riverpod
-class PendingMission extends _$PendingMission {
+class CoreMission extends _$CoreMission {
   @override
-  PendingMissionDto build() {
-    final subPendingMission = PendingMissionListener.instance().stream.listen(
+  MissionInfo? build() {
+    final subMission = MissionListener.instance().stream.listen(
       (event) {
         state = event;
       },
     );
     ref.onDispose(() {
-      subPendingMission.cancel();
+      subMission.cancel();
     });
-    return const PendingMissionDto(state: MissionState.idle);
+    return null;
   }
 }

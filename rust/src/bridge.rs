@@ -7,11 +7,11 @@ use tokio::{net::UdpSocket, sync::OnceCell};
 use crate::{
     actor::{
         core::{CoreActorHandle, CoreConfig},
-        mission::{pending::PendingMissionDto, transfer::TransferMissionDto},
+        mission::{MissionInfo, MISSION_NOTIFY},
         model::NodeDevice,
     },
     frb_generated::StreamSink,
-    logger,
+    logger::{self, LogEntry},
 };
 
 lazy_static! {
@@ -64,8 +64,8 @@ pub async fn listen_device(s: StreamSink<Vec<NodeDevice>>) {
     }
 }
 
-pub async fn listen_pending_mission(s: StreamSink<PendingMissionDto>) {
-    let mut rx = _get_core().mission.pending.listen().await;
+pub async fn listen_mission(s: StreamSink<Option<MissionInfo>>) {
+    let mut rx = MISSION_NOTIFY.listen().await;
     loop {
         let _ = rx.changed().await;
         debug!("mission change");
@@ -74,34 +74,20 @@ pub async fn listen_pending_mission(s: StreamSink<PendingMissionDto>) {
     }
 }
 
+pub async fn clear_mission() {
+    MISSION_NOTIFY.clear().await;
+}
+
 pub async fn cancel_pending(id: String) {
     _get_core().mission.pending.cancel(id).await;
 }
 
-pub async fn clear_pending() {
-    _get_core().mission.pending.clear().await;
+pub async fn accept_pending(id: String) {
+    _get_core().mission.pending.accept(id).await;
 }
 
-pub async fn listen_transfer_mission(s: StreamSink<TransferMissionDto>) {
-    let rx = _get_core().mission.transfer.listen().await;
-    if rx.is_err() {
-        panic!("no transfering mission");
-    }
-    let mut rx = rx.unwrap();
-    loop {
-        let _ = rx.changed().await;
-        let data = rx.borrow().clone();
-        let _ = s.add(data);
-    }
-}
-
-pub fn get_log() -> logger::LogEntry {
-    logger::LogEntry {
-        time_millis: 0,
-        level: 0,
-        tag: String::new(),
-        msg: String::new(),
-    }
+pub fn create_log_stream(s: StreamSink<LogEntry>) {
+    logger::SendToDartLogger::set_stream_sink(s);
 }
 
 pub async fn announce() {

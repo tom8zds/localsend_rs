@@ -4,17 +4,16 @@ use log::debug;
 use tokio::sync::{mpsc, oneshot, watch};
 
 use crate::{
-    actor::model::{Mission, MissionState, TaskState},
+    actor::model::{Mission, MissionState, NodeDevice, TaskState},
     api::model::FileInfo,
 };
+
+use super::{FileState, MissionFileInfo, MissionInfo, MISSION_NOTIFY};
 
 enum Message {
     Add {
         mission: Mission,
         respond_to: oneshot::Sender<Result<(), MissionState>>,
-    },
-    Listen {
-        respond_to: oneshot::Sender<Result<watch::Receiver<TransferMissionDto>, String>>,
     },
     ListenTask {
         token: String,
@@ -32,7 +31,7 @@ enum Message {
     StateTask {
         id: String,
         token: String,
-        state: TransferState,
+        state: FileState,
         respond_to: oneshot::Sender<()>,
     },
     Cancel {
@@ -40,41 +39,11 @@ enum Message {
         respond_to: oneshot::Sender<()>,
     },
 }
-
-#[derive(Debug, Clone)]
-pub struct TransferMissionDto {
-    pub state: MissionState,
-    pub files: Vec<TransferFileInfo>,
-}
-
-impl TransferMissionDto {
-    pub fn empty() -> Self {
-        TransferMissionDto {
-            state: MissionState::Pending,
-            files: Vec::new(),
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct TransferFileInfo {
-    pub info: FileInfo,
-    pub state: TransferState,
-}
-
-#[derive(Debug, Clone)]
-pub enum TransferState {
-    Pending,
-    Transfer,
-    Finish,
-    Skip,
-    Fail { msg: String },
-}
-
 #[derive(Debug, Clone)]
 struct TransferMission {
-    info: Mission,
-    files: HashMap<String, TransferFileInfo>,
+    id: String,
+    sender: NodeDevice,
+    files: HashMap<String, MissionFileInfo>,
     state: MissionState,
 }
 struct MissionStore {
@@ -85,8 +54,6 @@ struct MissionStore {
 struct Actor {
     receiver: mpsc::Receiver<Message>,
     store: MissionStore,
-    notify: watch::Sender<TransferMissionDto>,
-    listener: watch::Receiver<TransferMissionDto>,
 }
 
 #[derive(Debug, Clone)]
@@ -96,29 +63,28 @@ struct TransferTask {
     progress: watch::Receiver<usize>,
 }
 
-impl Actor {
-    fn new(receiver: mpsc::Receiver<Message>) -> Self {
-        let (tx, rx) = watch::channel(TransferMissionDto::empty());
-        let store: MissionStore = MissionStore {
-            mission: Option::None,
-            task: Option::None,
-        };
-        Actor {
-            receiver,
-            store,
-            notify: tx,
-            listener: rx,
-        }
-    }
-    pub fn notify(&self, mission: TransferMission) {
-        let _ = self.notify.send(TransferMissionDto {
-            state: mission.state,
+impl MissionInfo {
+    fn from_transfer_mission(mission: TransferMission) -> Self {
+        Self {
+            id: mission.id,
+            sender: mission.sender,
             files: mission
                 .files
                 .values()
                 .map(|x| x.clone())
                 .collect::<Vec<_>>(),
-        });
+            state: mission.state,
+        }
+    }
+}
+
+impl Actor {
+    fn new(receiver: mpsc::Receiver<Message>) -> Self {
+        let store: MissionStore = MissionStore {
+            mission: Option::None,
+            task: Option::None,
+        };
+        Actor { receiver, store }
     }
     async fn handle_message(&mut self, msg: Message) {
         match msg {
@@ -136,44 +102,31 @@ impl Actor {
                 let token_map = mission.token_map.clone();
                 let info_map = mission.info_map.clone();
                 for (k, v) in token_map {
-                    let info = TransferFileInfo {
-                        state: TransferState::Pending,
+                    let info = MissionFileInfo {
+                        state: FileState::Pending,
                         info: info_map.get(&v).unwrap().clone(),
                     };
                     files.insert(k, info);
                 }
 
-                let (_tx, _rx) = watch::channel(TransferMissionDto {
+                let transfer_mission = TransferMission {
+                    id: mission.id,
+                    sender: mission.sender,
                     state: MissionState::Transfering,
-                    files: files.values().map(|x| x.clone()).collect::<Vec<_>>(),
-                });
-
-                let pending_mission = TransferMission {
-                    state: MissionState::Transfering,
-                    info: mission,
                     files: files,
                 };
 
-                self.store.mission.replace(pending_mission);
+                self.store.mission.replace(transfer_mission.clone());
+                MISSION_NOTIFY.notify(Some(MissionInfo::from_transfer_mission(transfer_mission)));
                 let _ = respond_to.send(Ok(()));
             }
-            Message::Listen { respond_to } => match &self.store.mission {
-                Some(_mission) => {
-                    let rx = self.listener.clone();
-                    let _ = respond_to.send(Ok(rx));
-                }
-                None => {
-                    let _ = respond_to.send(Err("mission not exists".to_string()));
-                    return;
-                }
-            },
             Message::StartTask {
                 id,
                 token,
                 respond_to,
             } => match &self.store.mission {
                 Some(mission) => {
-                    if mission.info.id != id {
+                    if mission.id != id {
                         let _ = respond_to.send(Err("mission not exist".to_string()));
                         return;
                     }
@@ -203,7 +156,7 @@ impl Actor {
             Message::Finish { id, respond_to } => {
                 match &self.store.mission {
                     Some(mission) => {
-                        if mission.info.id == id {
+                        if mission.id == id {
                             let _ = self.store.mission.take();
                         }
                     }
@@ -220,10 +173,11 @@ impl Actor {
             } => {
                 match &self.store.mission {
                     Some(mission) => {
-                        if mission.info.id == id {
+                        if mission.id == id {
                             let mut mission = self.store.mission.take().unwrap();
                             mission.state = MissionState::Canceled;
-                            let _ = self.notify(mission);
+                            MISSION_NOTIFY
+                                .notify(Some(MissionInfo::from_transfer_mission(mission)));
                         }
                     }
                     None => {}
@@ -234,10 +188,11 @@ impl Actor {
             Message::Cancel { id, respond_to } => {
                 match &self.store.mission {
                     Some(mission) => {
-                        if mission.info.id == id {
+                        if mission.id == id {
                             let mut mission = self.store.mission.take().unwrap();
                             mission.state = MissionState::Canceled;
-                            let _ = self.notify(mission);
+                            MISSION_NOTIFY
+                                .notify(Some(MissionInfo::from_transfer_mission(mission)));
                         }
                     }
                     None => {}
@@ -305,15 +260,6 @@ impl Handle {
         recv.await.expect("Actor task has been killed")
     }
 
-    pub async fn listen(&self) -> Result<watch::Receiver<TransferMissionDto>, String> {
-        let (send, recv) = oneshot::channel();
-        let msg = Message::Listen { respond_to: send };
-
-        let _ = self.sender.send(msg).await;
-
-        recv.await.expect("Actor task has been killed")
-    }
-
     pub async fn listen_task_progress(
         &self,
         token: String,
@@ -329,7 +275,7 @@ impl Handle {
         recv.await.expect("Actor task has been killed")
     }
 
-    pub async fn fail_file(&self, id: String, token: String, state: TransferState) {
+    pub async fn fail_file(&self, id: String, token: String, state: FileState) {
         let (send, recv) = oneshot::channel();
         let msg = Message::StateTask {
             id,

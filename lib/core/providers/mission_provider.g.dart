@@ -6,21 +6,20 @@ part of 'mission_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$pendingMissionHash() => r'4dab284ff3f064ab337359a344914bfcfadd7fa7';
+String _$coreMissionHash() => r'11026c14485ff442423627f646ecc515cb310c43';
 
-/// See also [PendingMission].
-@ProviderFor(PendingMission)
-final pendingMissionProvider =
-    AutoDisposeNotifierProvider<PendingMission, PendingMissionDto>.internal(
-  PendingMission.new,
-  name: r'pendingMissionProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$pendingMissionHash,
+/// See also [CoreMission].
+@ProviderFor(CoreMission)
+final coreMissionProvider =
+    AutoDisposeNotifierProvider<CoreMission, MissionInfo?>.internal(
+  CoreMission.new,
+  name: r'coreMissionProvider',
+  debugGetCreateSourceHash:
+      const bool.fromEnvironment('dart.vm.product') ? null : _$coreMissionHash,
   dependencies: null,
   allTransitiveDependencies: null,
 );
 
-typedef _$PendingMission = AutoDisposeNotifier<PendingMissionDto>;
+typedef _$CoreMission = AutoDisposeNotifier<MissionInfo?>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member

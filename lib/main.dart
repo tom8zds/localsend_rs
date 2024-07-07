@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -26,6 +27,12 @@ Future<void> main() async {
         const SystemUiOverlayStyle(statusBarColor: Colors.transparent);
     SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
     storePath = "/storage/emulated/0/Download";
+    if (kDebugMode) {
+      createLogStream().listen((event) {
+        debugPrint(
+            '${event.level} ${event.tag} ${event.msg} ${event.timeMillis}');
+      });
+    }
   } else {
     storePath = (await getDownloadsDirectory())!.absolute.path;
   }

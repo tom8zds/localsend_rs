@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:localsend_rs/view/pages/pending_page.dart';
+import 'package:localsend_rs/view/pages/mission_page.dart';
 
 import '../../common/utils.dart';
 import '../../common/widgets.dart';
@@ -58,39 +58,39 @@ class _FramePageState extends ConsumerState<FramePage> {
       final brightness = Theme.of(context).brightness;
       initOverlay(brightness);
     }
-    final data = ref.watch(pendingMissionProvider);
+    final data = ref.watch(coreMissionProvider);
 
     final width = MediaQuery.of(context).size.width;
     final frameType = getFrameType(width);
-    if (frameType == FrameType.compact && data.state == MissionState.pending) {
-      return MissionPendingPage(
-        isParalle: false,
-      );
+    if (frameType == FrameType.compact) {
+      if (data != null && data.state == MissionState.pending) {
+        return const MissionPendingPage(
+          isParalle: false,
+        );
+      }
     }
-    return SafeArea(
-      child: Scaffold(
-        body: getView(frameType),
-        bottomNavigationBar: frameType == FrameType.compact
-            ? BottomNavigationBar(
-                currentIndex: index,
-                onTap: (index) {
-                  setState(() {
-                    this.index = index;
-                  });
-                },
-                items: [
-                  BottomNavigationBarItem(
-                    icon: const Icon(Icons.home),
-                    label: context.t.home.title,
-                  ),
-                  BottomNavigationBarItem(
-                    icon: const Icon(Icons.settings),
-                    label: context.t.setting.title,
-                  ),
-                ],
-              )
-            : null,
-      ),
+    return Scaffold(
+      body: SafeArea(child: getView(frameType)),
+      bottomNavigationBar: frameType == FrameType.compact
+          ? BottomNavigationBar(
+              currentIndex: index,
+              onTap: (index) {
+                setState(() {
+                  this.index = index;
+                });
+              },
+              items: [
+                BottomNavigationBarItem(
+                  icon: const Icon(Icons.home),
+                  label: context.t.home.title,
+                ),
+                BottomNavigationBarItem(
+                  icon: const Icon(Icons.settings),
+                  label: context.t.setting.title,
+                ),
+              ],
+            )
+          : null,
     );
   }
 
@@ -173,7 +173,7 @@ class _FramePageState extends ConsumerState<FramePage> {
                       ),
                     ),
                   ),
-                  SizedBox(
+                  const SizedBox(
                     width: 8,
                   ),
                   Expanded(
@@ -182,7 +182,7 @@ class _FramePageState extends ConsumerState<FramePage> {
                         color: Theme.of(context).colorScheme.surface,
                         borderRadius: BorderRadius.circular(24),
                       ),
-                      child: MissionPendingPage(
+                      child: const MissionPendingPage(
                         isParalle: true,
                       ),
                     ),

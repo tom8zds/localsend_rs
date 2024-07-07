@@ -1,7 +1,9 @@
 import 'dart:io';
+import 'dart:math';
 
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
+import 'package:localsend_rs/core/store/config_store.dart';
 import 'package:slang/builder/model/enums.dart';
 import 'package:uuid/uuid.dart';
 
@@ -42,17 +44,23 @@ Future<List<String>> getInterface() async {
   return addressList;
 }
 
+int randomPort() {
+  return 10000 + Random().nextInt(65535 - 10000);
+}
+
 Future<NodeDevice> newDevice() async {
   final deviceInfo = await getDeviceInfo();
   final addressList = await getInterface();
+  final alias =
+      "${deviceInfo.deviceModel ?? "unknown"}#${addressList[0].split(".")[3]}";
   return NodeDevice(
-    alias: "test",
+    alias: alias,
     version: "2.0",
     deviceModel: deviceInfo.deviceModel ?? "unknown",
     deviceType: deviceInfo.deviceType.name,
-    fingerprint: const Uuid().v4(),
+    fingerprint: ConfigStore().deviceId(),
     address: addressList[0],
-    port: 9999,
+    port: randomPort(),
     protocol: "http",
     download: true,
     announcement: true,

@@ -3,7 +3,7 @@ use tokio::sync::{mpsc, oneshot, watch};
 
 use crate::actor::model::{Mission, MissionState};
 
-use super::transfer;
+use super::{transfer, FileState, MissionFileInfo, MissionInfo, MISSION_NOTIFY};
 
 enum Message {
     Add {
@@ -14,15 +14,9 @@ enum Message {
         id: String,
         respond_to: oneshot::Sender<()>,
     },
-    Clear {
-        respond_to: oneshot::Sender<()>,
-    },
     Accept {
         id: String,
         respond_to: oneshot::Sender<()>,
-    },
-    Listen {
-        respond_to: oneshot::Sender<watch::Receiver<PendingMissionDto>>,
     },
 }
 
@@ -31,10 +25,22 @@ pub struct PendingMission {
     pub notify: watch::Sender<MissionState>,
 }
 
-#[derive(Clone)]
-pub struct PendingMissionDto {
-    pub mission: Option<Mission>,
-    pub state: MissionState,
+impl MissionInfo {
+    fn from_mission(mission: Mission) -> Self {
+        Self {
+            id: mission.id,
+            sender: mission.sender,
+            files: mission
+                .info_map
+                .values()
+                .map(|x| MissionFileInfo {
+                    info: x.clone(),
+                    state: FileState::Pending,
+                })
+                .collect::<Vec<_>>(),
+            state: MissionState::Pending,
+        }
+    }
 }
 
 struct MissionStore {
@@ -45,17 +51,10 @@ struct Actor {
     transfer: transfer::Handle,
     receiver: mpsc::Receiver<Message>,
     store: MissionStore,
-    notify: watch::Sender<PendingMissionDto>,
-    listener: watch::Receiver<PendingMissionDto>,
 }
 
 impl Actor {
     fn new(receiver: mpsc::Receiver<Message>, transfer: transfer::Handle) -> Self {
-        let (tx, rx) = watch::channel(PendingMissionDto {
-            mission: None,
-            state: MissionState::Idle,
-        });
-
         let store: MissionStore = MissionStore {
             mission: Option::None,
         };
@@ -63,8 +62,6 @@ impl Actor {
             receiver,
             store,
             transfer,
-            notify: tx,
-            listener: rx,
         }
     }
     async fn handle_message(&mut self, msg: Message) {
@@ -89,10 +86,9 @@ impl Actor {
                 };
 
                 self.store.mission.replace(pending_mission);
-                let _ = self.notify.send(PendingMissionDto {
-                    mission: Some(mission),
-                    state: MissionState::Pending,
-                });
+                MISSION_NOTIFY
+                    .notify(Some(MissionInfo::from_mission(mission)))
+                    .await;
                 let _ = respond_to.send(rx);
             }
             Message::Cancel { id, respond_to } => {
@@ -101,22 +97,13 @@ impl Actor {
                         if mission.mission.id == id {
                             let mission = self.store.mission.take().unwrap();
                             let _ = mission.notify.send(MissionState::Canceled);
-                            let _ = self.notify.send(PendingMissionDto {
-                                mission: Some(mission.mission),
-                                state: MissionState::Canceled,
-                            });
+                            MISSION_NOTIFY
+                                .notify(Some(MissionInfo::from_mission(mission.mission)))
+                                .await;
                         }
                     }
                     None => {}
                 }
-
-                let _ = respond_to.send(());
-            }
-            Message::Clear { respond_to } => {
-                let _ = self.notify.send(PendingMissionDto {
-                    mission: None,
-                    state: MissionState::Idle,
-                });
 
                 let _ = respond_to.send(());
             }
@@ -133,10 +120,6 @@ impl Actor {
                 }
 
                 let _ = respond_to.send(());
-            }
-            Message::Listen { respond_to } => {
-                let rx = self.listener.clone();
-                let _ = respond_to.send(rx);
             }
         }
     }
@@ -161,15 +144,6 @@ impl Handle {
 
         Self { sender }
     }
-
-    pub async fn listen(&self) -> watch::Receiver<PendingMissionDto> {
-        let (send, recv) = oneshot::channel();
-        let msg = Message::Listen { respond_to: send };
-
-        let _ = self.sender.send(msg).await;
-        recv.await.expect("Actor task has been killed")
-    }
-
     pub async fn add(&self, mission: Mission) -> watch::Receiver<MissionState> {
         let (send, recv) = oneshot::channel();
         let msg = Message::Add {
@@ -180,14 +154,6 @@ impl Handle {
         let _ = self.sender.send(msg).await;
         recv.await.expect("Actor task has been killed")
     }
-    pub async fn clear(&self) {
-        let (send, recv) = oneshot::channel();
-        let msg = Message::Clear { respond_to: send };
-
-        let _ = self.sender.send(msg).await;
-        recv.await.expect("Actor task has been killed")
-    }
-
     pub async fn cancel(&self, id: String) {
         let (send, recv) = oneshot::channel();
         debug!("cancel mission {}", id);

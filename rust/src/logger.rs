@@ -38,7 +38,7 @@ pub fn init_logger(is_debug: bool) {
             // #[cfg(not(any(target_os = "android", target_os = "ios")))]
             TermLogger::new(
                 level,
-                ConfigBuilder::new().build(),
+                ConfigBuilder::new().add_filter_ignore_str("ureq").build(),
                 TerminalMode::Mixed,
                 ColorChoice::Auto,
             ),
@@ -47,11 +47,6 @@ pub fn init_logger(is_debug: bool) {
             error!("init_logger (inside 'once') has error: {:?}", e);
         });
         info!("init_logger (inside 'once') finished");
-
-        warn!(
-            "init_logger finished, chosen level={:?} (deliberately output by warn level)",
-            level
-        );
     });
 }
 

@@ -62,7 +62,6 @@ impl CoreActor {
         let (tx, rx) = watch::channel(false);
         let mut core_config = CoreConfig::default();
         core_config.port = device.port;
-        core_config.interface_addr = Ipv4Addr::from_str(&device.address).unwrap();
         CoreActor {
             receiver,
             context: AppContext {

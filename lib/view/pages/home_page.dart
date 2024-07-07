@@ -36,8 +36,7 @@ class _HomePageState extends State<HomePage> {
           constraints: const BoxConstraints(maxWidth: 800),
           child: Column(
             children: [
-              StaticAppbar(title: context.t.home.title),
-              // MissionWidget(),
+              // StaticAppbar(title: context.t.home.title),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8.0),
                 child: Row(
