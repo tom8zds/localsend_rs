@@ -117,47 +117,51 @@ impl Actor {
                 };
 
                 self.store.mission.replace(transfer_mission.clone());
-                MISSION_NOTIFY.notify(Some(MissionInfo::from_transfer_mission(transfer_mission)));
+                MISSION_NOTIFY
+                    .notify(Some(MissionInfo::from_transfer_mission(transfer_mission)))
+                    .await;
                 let _ = respond_to.send(Ok(()));
             }
             Message::StartTask {
                 id,
                 token,
                 respond_to,
-            } => match &self.store.mission {
-                Some(mission) => {
-                    if mission.id != id {
-                        let _ = respond_to.send(Err("mission not exist".to_string()));
-                        return;
-                    }
-                    if !mission.files.contains_key(&token) {
-                        let _ = respond_to.send(Err("task token not exist".to_string()));
-                        return;
-                    }
-
-                    let file = mission.files.get(&token).unwrap();
-
-                    let (tx, rx) = watch::channel(0);
-
-                    let task = TransferTask {
-                        token: token,
-                        state: TaskState::Transfering,
-                        progress: rx,
-                    };
-
-                    self.store.task.replace(task);
-                    let _ = respond_to.send(Ok((tx, file.info.clone())));
+            } => {
+                let mission = self.store.mission.as_mut().unwrap();
+                if mission.id != id {
+                    let _ = respond_to.send(Err("mission not exist".to_string()));
                     return;
                 }
-                None => {
-                    let _ = respond_to.send(Err("mission not exist".to_string()));
+                if !mission.files.contains_key(&token) {
+                    let _ = respond_to.send(Err("task token not exist".to_string()));
+                    return;
                 }
-            },
+
+                let mut file = mission.files.get(&token).unwrap().clone();
+                file.state = FileState::Transfer;
+                mission.files.insert(token.clone(), file.clone());
+
+                let (tx, rx) = watch::channel(0);
+
+                let task = TransferTask {
+                    token: token,
+                    state: TaskState::Transfering,
+                    progress: rx,
+                };
+
+                self.store.task.replace(task);
+
+                let _ = respond_to.send(Ok((tx, file.info)));
+            }
             Message::Finish { id, respond_to } => {
                 match &self.store.mission {
                     Some(mission) => {
                         if mission.id == id {
-                            let _ = self.store.mission.take();
+                            let mut mission = self.store.mission.take().unwrap();
+                            mission.state = MissionState::Finished;
+                            MISSION_NOTIFY
+                                .notify(Some(MissionInfo::from_transfer_mission(mission)))
+                                .await;
                         }
                     }
                     None => {}

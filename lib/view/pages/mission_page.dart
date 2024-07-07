@@ -40,33 +40,108 @@ class TransferPage extends StatelessWidget {
       backgroundColor: isParalle ? Colors.transparent : null,
       body: Column(
         children: [
-          for (final file in mission.files)
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Container(
-                decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.secondaryContainer,
-                    borderRadius: BorderRadius.circular(12)),
-                height: 96,
-                child: Row(
+          Expanded(
+              child: ListView.builder(
+                  itemCount: mission.files.length,
+                  itemBuilder: (context, index) {
+                    final file = mission.files.elementAt(index);
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      child: Container(
+                        height: 72,
+                        child: Row(
+                          children: [
+                            SizedBox(
+                              width: 8,
+                            ),
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.secondary,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              height: 48,
+                              width: 48,
+                              child: Icon(
+                                Icons.file_present,
+                                size: 36,
+                              ),
+                            ),
+                            SizedBox(
+                              width: 8,
+                            ),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(file.info.fileName),
+                                  Text(file.state.toString()),
+                                  LinearProgressIndicator(value: 0.3),
+                                ],
+                              ),
+                            ),
+                            SizedBox(
+                              width: 16,
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  })),
+          Container(
+            margin: EdgeInsets.symmetric(
+              horizontal: 16,
+            ),
+            padding: EdgeInsets.symmetric(
+              vertical: 8,
+              horizontal: 16,
+            ),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.secondaryContainer,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            height: 96,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  mission.state.toString(),
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                SizedBox(
+                  height: 8,
+                ),
+                LinearProgressIndicator(
+                  value: 0.3,
+                  minHeight: 8,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                SizedBox(
+                  height: 8,
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    Icon(Icons.file_present),
-                    SizedBox(
-                      width: 8,
+                    TextButton.icon(
+                      onPressed: () {},
+                      label: Text("高级"),
+                      icon: Icon(Icons.info),
                     ),
-                    Column(
-                      children: [
-                        Text(file.info.fileName),
-                        Text(file.state.toString()),
-                        LinearProgressIndicator(value: 0.3),
-                      ],
+                    TextButton.icon(
+                      onPressed: () {
+                        clearMission();
+                      },
+                      label: Text("取消"),
+                      icon: Icon(Icons.info),
                     )
                   ],
                 ),
-              ),
+              ],
             ),
+          ),
           const SizedBox(
-            height: 32,
+            height: 16,
           )
         ],
       ),

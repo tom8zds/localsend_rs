@@ -62,12 +62,10 @@ class _FramePageState extends ConsumerState<FramePage> {
 
     final width = MediaQuery.of(context).size.width;
     final frameType = getFrameType(width);
-    if (frameType == FrameType.compact) {
-      if (data != null && data.state == MissionState.pending) {
-        return const MissionPendingPage(
-          isParalle: false,
-        );
-      }
+    if (frameType == FrameType.compact && data != null) {
+      return const MissionPendingPage(
+        isParalle: false,
+      );
     }
     return Scaffold(
       body: SafeArea(child: getView(frameType)),
