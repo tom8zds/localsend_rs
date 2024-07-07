@@ -1,5 +1,9 @@
-use std::net::{IpAddr, SocketAddr};
+use std::{
+    net::{IpAddr, Ipv4Addr, SocketAddr},
+    str::FromStr as _,
+};
 
+use axum::extract::path;
 use lazy_static::lazy_static;
 use log::debug;
 use tokio::{net::UdpSocket, sync::OnceCell};
@@ -22,9 +26,9 @@ fn _get_core() -> CoreActorHandle {
     CORE.get().unwrap().clone()
 }
 
-pub async fn setup(device: NodeDevice) {
+pub async fn setup(device: NodeDevice, config: CoreConfig) {
     logger::init_logger(true);
-    let _ = CORE.set(CoreActorHandle::new(device));
+    let _ = CORE.set(CoreActorHandle::new(device, config));
     _get_core().start().await;
 }
 
@@ -45,10 +49,13 @@ pub async fn shutdown_server() {
     _get_core().shutdown().await;
 }
 
-pub async fn change_address(addr: String) {
+pub async fn restart_server() {
     _get_core().shutdown().await;
-    _get_core().change_address(addr).await;
     _get_core().start().await;
+}
+
+pub async fn change_path(path: String) {
+    _get_core().change_path(path).await;
 }
 
 pub async fn change_config(config: CoreConfig) {
@@ -92,8 +99,8 @@ pub fn create_log_stream(s: StreamSink<LogEntry>) {
 
 pub async fn announce() {
     let config = _get_core().get_config().await;
-    let interface_addr = config.interface_addr;
-    let multicast_addr = config.multicast_addr;
+    let interface_addr = Ipv4Addr::from_str(&config.interface_addr).unwrap();
+    let multicast_addr = Ipv4Addr::from_str(&config.multicast_addr).unwrap();
     let multicast_port = config.multicast_port;
 
     _get_core().device.clear_devices().await;

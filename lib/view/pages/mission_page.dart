@@ -1,11 +1,14 @@
+import 'package:filesize/filesize.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:localsend_rs/common/utils.dart';
 import 'package:localsend_rs/core/rust/actor/mission.dart';
 
-import '../../common/widgets.dart';
 import '../../core/providers/mission_provider.dart';
 import '../../core/rust/actor/model.dart';
 import '../../core/rust/bridge.dart';
+import '../../i18n/strings.g.dart';
+import '../widget/common_widget.dart';
 import '../widget/device_widget.dart';
 
 class IdlePage extends StatelessWidget {
@@ -24,27 +27,54 @@ class IdlePage extends StatelessWidget {
   }
 }
 
-class TransferPage extends StatelessWidget {
+class TransferPage extends StatefulWidget {
   final MissionInfo mission;
   final bool isParalle;
 
-  TransferPage({super.key, required this.mission, required this.isParalle});
+  const TransferPage(
+      {super.key, required this.mission, required this.isParalle});
 
+  @override
+  State<TransferPage> createState() => _TransferPageState();
+}
+
+class _TransferPageState extends State<TransferPage> {
   final ButtonStyle style = ElevatedButton.styleFrom(
     padding: const EdgeInsets.fromLTRB(16, 16, 24, 16),
   );
 
+  bool showAdvaned = false;
+
+  List<Widget> advanceMessage(MissionInfo mission) {
+    int totalNum = mission.files.length;
+    int totalSize = 0;
+    int finishedNum = 0;
+    int finishedSize = 0;
+    for (var file in mission.files) {
+      totalSize += file.info.size;
+      if (file.state == const FileState.finish()) {
+        finishedNum += 1;
+        finishedSize += file.info.size;
+      }
+    }
+    return [
+      Text("${t.common.file}: $finishedNum / $totalNum"),
+      Text(
+          "${t.common.size}: ${filesize(finishedSize)} / ${filesize(totalSize)}")
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: isParalle ? Colors.transparent : null,
+      backgroundColor: widget.isParalle ? Colors.transparent : null,
       body: Column(
         children: [
           Expanded(
               child: ListView.builder(
-                  itemCount: mission.files.length,
+                  itemCount: widget.mission.files.length,
                   itemBuilder: (context, index) {
-                    final file = mission.files.elementAt(index);
+                    final file = widget.mission.files.elementAt(index);
                     return Padding(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 8),
@@ -57,13 +87,16 @@ class TransferPage extends StatelessWidget {
                             ),
                             Container(
                               decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.secondary,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .secondaryContainer,
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               height: 48,
                               width: 48,
                               child: Icon(
                                 Icons.file_present,
+                                color: Theme.of(context).colorScheme.secondary,
                                 size: 36,
                               ),
                             ),
@@ -75,9 +108,18 @@ class TransferPage extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Text(file.info.fileName),
-                                  Text(file.state.toString()),
-                                  LinearProgressIndicator(value: 0.3),
+                                  Text(
+                                      "${file.info.fileName} (${filesize(file.info.size)})"),
+                                  Text(
+                                    file.state.getName(),
+                                    style: TextStyle(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .secondary,
+                                    ),
+                                  ),
+                                  if (file.state == const FileState.transfer())
+                                    LinearProgressIndicator(value: 0.3),
                                 ],
                               ),
                             ),
@@ -89,53 +131,101 @@ class TransferPage extends StatelessWidget {
                       ),
                     );
                   })),
-          Container(
+          AnimatedContainer(
+            curve: Curves.ease,
             margin: EdgeInsets.symmetric(
-              horizontal: 16,
-            ),
-            padding: EdgeInsets.symmetric(
-              vertical: 8,
               horizontal: 16,
             ),
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.secondaryContainer,
               borderRadius: BorderRadius.circular(12),
             ),
-            height: 96,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            duration: Durations.medium1,
+            height: showAdvaned ? 144 : 96,
+            child: Stack(
               children: [
-                Text(
-                  mission.state.toString(),
-                  style: Theme.of(context).textTheme.titleMedium,
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                    vertical: 8,
+                    horizontal: 16,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.mission.state.getName(),
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      SizedBox(
+                        height: 8,
+                      ),
+                      if (widget.mission.state == MissionState.finished)
+                        LinearProgressIndicator(
+                          value: 1,
+                          minHeight: 8,
+                          borderRadius: BorderRadius.circular(12),
+                        )
+                      else
+                        LinearProgressIndicator(
+                          value: 0.3,
+                          minHeight: 8,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      SizedBox(
+                        height: 8,
+                      ),
+                      Container(
+                        height: 48,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: advanceMessage(widget.mission),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                SizedBox(
-                  height: 8,
-                ),
-                LinearProgressIndicator(
-                  value: 0.3,
-                  minHeight: 8,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                SizedBox(
-                  height: 8,
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton.icon(
-                      onPressed: () {},
-                      label: Text("高级"),
-                      icon: Icon(Icons.info),
+                Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      vertical: 8,
+                      horizontal: 16,
                     ),
-                    TextButton.icon(
-                      onPressed: () {
-                        clearMission();
-                      },
-                      label: Text("取消"),
-                      icon: Icon(Icons.info),
-                    )
-                  ],
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.secondaryContainer,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton.icon(
+                          onPressed: () {
+                            setState(() {
+                              showAdvaned = !showAdvaned;
+                            });
+                          },
+                          label: Text(context.t.mission.advance),
+                          icon: Icon(Icons.info),
+                        ),
+                        if (widget.mission.state == MissionState.finished)
+                          FilledButton.icon(
+                            onPressed: () {
+                              clearMission();
+                            },
+                            label: Text(context.t.mission.complete),
+                            icon: Icon(Icons.info),
+                          )
+                        else
+                          TextButton.icon(
+                            onPressed: () {
+                              clearMission();
+                            },
+                            label: Text(context.t.mission.cancel),
+                            icon: Icon(Icons.cancel),
+                          )
+                      ],
+                    ),
+                  ),
                 ),
               ],
             ),

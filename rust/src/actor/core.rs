@@ -10,9 +10,10 @@ use super::{
 #[derive(Clone)]
 pub struct CoreConfig {
     pub port: u16,
-    pub interface_addr: Ipv4Addr,
-    pub multicast_addr: Ipv4Addr,
+    pub interface_addr: String,
+    pub multicast_addr: String,
     pub multicast_port: u16,
+    pub store_path: String,
 }
 
 struct AppContext {
@@ -23,9 +24,10 @@ impl CoreConfig {
     fn default() -> Self {
         CoreConfig {
             port: 8080,
-            interface_addr: Ipv4Addr::new(0, 0, 0, 0),
-            multicast_addr: Ipv4Addr::new(224, 0, 0, 167),
+            interface_addr: "0.0.0.0".to_string(),
+            multicast_addr: "224.0.0.167".to_string(),
             multicast_port: 53317,
+            store_path: "./".to_string(),
         }
     }
 }
@@ -58,15 +60,16 @@ enum CoreMessage {
 }
 
 impl CoreActor {
-    fn new(receiver: mpsc::Receiver<CoreMessage>, device: NodeDevice) -> Self {
+    fn new(
+        receiver: mpsc::Receiver<CoreMessage>,
+        device: NodeDevice,
+        mut config: CoreConfig,
+    ) -> Self {
         let (tx, rx) = watch::channel(false);
-        let mut core_config = CoreConfig::default();
-        core_config.port = device.port;
+        config.port = device.port;
         CoreActor {
             receiver,
-            context: AppContext {
-                config: core_config,
-            },
+            context: AppContext { config },
             server: None,
             server_state_sender: tx,
             server_state_listener: rx,
@@ -126,9 +129,9 @@ pub struct CoreActorHandle {
 }
 
 impl CoreActorHandle {
-    pub fn new(device: NodeDevice) -> Self {
+    pub fn new(device: NodeDevice, config: CoreConfig) -> Self {
         let (sender, receiver) = mpsc::channel(8);
-        let actor = CoreActor::new(receiver, device.clone());
+        let actor = CoreActor::new(receiver, device.clone(), config);
         tokio::spawn(run_context_actor(actor));
 
         let device = DeviceActorHandle::new(device);
@@ -178,9 +181,9 @@ impl CoreActorHandle {
         self.change_config(value).await;
     }
 
-    pub async fn change_address(&self, addr: String) {
+    pub async fn change_path(&self, path: String) {
         let mut value = self.get_config().await;
-        value.interface_addr = Ipv4Addr::from_str(&addr).unwrap();
+        value.store_path = path;
         self.change_config(value).await;
     }
 

@@ -1,7 +1,25 @@
 {
-    "appTitle": "RustSend",
+    "appTitle": {
+        "parta": "LocalSend",
+        "partb": "_RS"
+    },
     "home": {
         "title": "Home Page"
+    },
+    "mission": {
+        "accept": "Accept",
+        "cancel": "Cancel",
+        "complete": "Complete",
+        "finished": "Finished",
+        "tranfer": "Transfering",
+        "pending": "Pending",
+        "failed": "Failed",
+        "skip": "Skip",
+        "advance": "Advance"
+    },
+    "common": {
+        "file": "File",
+        "size": "Size"
     },
     "setting": {
         "title": "Settings",
@@ -18,6 +36,13 @@
         "language": {
             "title": "Language",
             "subTitle": "Current language: $language"
+        },
+        "receive": {
+            "title": "Receive",
+            "quickSave": "Quick Save",
+            "quickSaveHint": "Start tranfer without accept",
+            "saveFolder": "Save Folder",
+            "selectSaveFolder": "Select"
         },
         "core": {
             "title": "core setting",

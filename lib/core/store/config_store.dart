@@ -73,4 +73,30 @@ class ConfigStore {
   Future<void> updateLocaleMode(LocaleMode mode) async {
     await _prefs!.setInt(_localeKey, mode.index);
   }
+
+  static const _storePathKey = 'storePath';
+
+  bool storePathSet() {
+    return _prefs!.containsKey(_storePathKey);
+  }
+
+  String storePath() {
+    final value = _prefs!.getString(_storePathKey) ?? "./";
+    return value;
+  }
+
+  Future<void> setStorePath(String path) async {
+    await _prefs!.setString(_storePathKey, path);
+  }
+
+  static const _quickSaveKey = 'quickSave';
+
+  bool quickSave() {
+    final value = _prefs!.getBool(_quickSaveKey) ?? false;
+    return value;
+  }
+
+  Future<void> setQuickSave(bool value) async {
+    await _prefs!.setBool(_quickSaveKey, value);
+  }
 }

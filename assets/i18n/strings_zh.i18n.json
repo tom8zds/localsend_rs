@@ -1,7 +1,25 @@
 {
-    "appTitle": "锈船",
+    "appTitle": {
+        "parta": "快传",
+        "partb": "锈"
+    },
     "home": {
         "title": "主页"
+    },
+    "mission": {
+        "accept": "接收",
+        "cancel": "取消",
+        "complete": "完成",
+        "finished": "已完成",
+        "tranfer": "传输中",
+        "pending": "等待中",
+        "failed": "失败",
+        "skip": "跳过",
+        "advance": "高级"
+    },
+    "common": {
+        "file": "文件",
+        "size": "大小"
     },
     "setting": {
         "title": "设置",
@@ -18,6 +36,13 @@
         "language": {
             "title": "语言",
             "subTitle": "当前语言: $language"
+        },
+        "receive": {
+            "title": "接收设置",
+            "quickSave": "快速保存",
+            "quickSaveHint": "不需要等待确认直接接受",
+            "saveFolder": "保存目录",
+            "selectSaveFolder": "选择"
         },
         "core": {
             "title": "核心设置",

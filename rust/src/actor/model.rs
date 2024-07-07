@@ -72,27 +72,27 @@ impl NodeDevice {
 pub struct Mission {
     pub id: String,
     pub sender: NodeDevice,
-    pub token_map: HashMap<String, String>,
-    pub reverse_token_map: HashMap<String, String>,
+    pub id_token_map: HashMap<String, String>,
+    pub token_id_map: HashMap<String, String>,
     pub info_map: HashMap<String, FileInfo>,
 }
 
 impl Mission {
     pub fn new(info_map: HashMap<String, FileInfo>, sender: NodeDevice) -> Self {
         let id = uuid::Uuid::new_v4().to_string();
-        let mut token_map = HashMap::new();
-        let mut reverse_token_map = HashMap::new();
-        info_map.iter().for_each(|(key, _value)| {
+        let mut id_token_map = HashMap::new();
+        let mut token_id_map = HashMap::new();
+        info_map.iter().for_each(|(id, _value)| {
             let token = uuid::Uuid::new_v4().to_string();
-            reverse_token_map.insert(key.clone(), token.clone());
-            token_map.insert(token.clone(), key.clone());
+            id_token_map.insert(id.clone(), token.clone());
+            token_id_map.insert(token.clone(), id.clone());
         });
 
         Mission {
             id: id.clone(),
             sender,
-            token_map,
-            reverse_token_map,
+            id_token_map,
+            token_id_map,
             info_map: info_map.clone(),
         }
     }

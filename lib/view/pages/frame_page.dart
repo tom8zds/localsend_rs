@@ -1,14 +1,13 @@
+import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:localsend_rs/view/pages/mission_page.dart';
 
 import '../../common/utils.dart';
-import '../../common/widgets.dart';
 import '../../core/providers/mission_provider.dart';
-import '../../core/rust/actor/model.dart';
-import '../../core/rust/bridge.dart';
 import '../../i18n/strings.g.dart';
+import '../widget/common_widget.dart';
 import 'home_page.dart';
 import 'setting_page.dart';
 
@@ -27,6 +26,7 @@ class FramePage extends ConsumerStatefulWidget {
 
 class _FramePageState extends ConsumerState<FramePage> {
   int index = 0;
+  int lastIndex = 0;
 
   List<Widget> pages = [
     const HomePage(),
@@ -34,9 +34,9 @@ class _FramePageState extends ConsumerState<FramePage> {
   ];
 
   FrameType getFrameType(double width) {
-    if (width < 960) {
+    if (width < 800) {
       return FrameType.compact;
-    } else if (width < 1440) {
+    } else if (width < 1200) {
       return FrameType.normal;
     } else {
       return FrameType.wide;
@@ -50,6 +50,16 @@ class _FramePageState extends ConsumerState<FramePage> {
       init = true;
     });
     updateSystemOverlayStyle(brightness);
+  }
+
+  void changeIndex(int value) {
+    if (value == index) {
+      return;
+    }
+    setState(() {
+      lastIndex = index;
+      index = value;
+    });
   }
 
   @override
@@ -70,20 +80,18 @@ class _FramePageState extends ConsumerState<FramePage> {
     return Scaffold(
       body: SafeArea(child: getView(frameType)),
       bottomNavigationBar: frameType == FrameType.compact
-          ? BottomNavigationBar(
-              currentIndex: index,
-              onTap: (index) {
-                setState(() {
-                  this.index = index;
-                });
-              },
-              items: [
-                BottomNavigationBarItem(
-                  icon: const Icon(Icons.home),
+          ? NavigationBar(
+              selectedIndex: index,
+              onDestinationSelected: changeIndex,
+              destinations: [
+                NavigationDestination(
+                  icon: const Icon(Icons.home_outlined),
+                  selectedIcon: const Icon(Icons.home),
                   label: context.t.home.title,
                 ),
-                BottomNavigationBarItem(
-                  icon: const Icon(Icons.settings),
+                NavigationDestination(
+                  icon: const Icon(Icons.settings_outlined),
+                  selectedIcon: const Icon(Icons.settings),
                   label: context.t.setting.title,
                 ),
               ],
@@ -95,11 +103,7 @@ class _FramePageState extends ConsumerState<FramePage> {
   Widget getSideNavigation(FrameType frameType) {
     if (frameType == FrameType.wide) {
       return NavigationDrawer(
-        onDestinationSelected: (index) {
-          setState(() {
-            this.index = index;
-          });
-        },
+        onDestinationSelected: changeIndex,
         selectedIndex: index,
         children: [
           const SizedBox(
@@ -124,11 +128,7 @@ class _FramePageState extends ConsumerState<FramePage> {
     if (frameType == FrameType.normal) {
       return NavigationRail(
         backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
-        onDestinationSelected: (value) {
-          setState(() {
-            index = value;
-          });
-        },
+        onDestinationSelected: changeIndex,
         labelType: NavigationRailLabelType.selected,
         destinations: [
           NavigationRailDestination(
@@ -160,14 +160,23 @@ class _FramePageState extends ConsumerState<FramePage> {
               child: Row(
                 children: [
                   Expanded(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surface,
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                      child: IndexedStack(
-                        index: index,
-                        children: pages,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(24),
+                      child: PageTransitionSwitcher(
+                        reverse: lastIndex > index,
+                        transitionBuilder: (
+                          Widget child,
+                          Animation<double> animation,
+                          Animation<double> secondaryAnimation,
+                        ) {
+                          return SharedAxisTransition(
+                            animation: animation,
+                            secondaryAnimation: secondaryAnimation,
+                            transitionType: SharedAxisTransitionType.vertical,
+                            child: child,
+                          );
+                        },
+                        child: pages.elementAt(index),
                       ),
                     ),
                   ),
@@ -196,9 +205,21 @@ class _FramePageState extends ConsumerState<FramePage> {
 
   Widget getView(FrameType frameType) {
     if (frameType == FrameType.compact) {
-      return IndexedStack(
-        index: index,
-        children: pages,
+      return PageTransitionSwitcher(
+        reverse: lastIndex > index,
+        transitionBuilder: (
+          Widget child,
+          Animation<double> animation,
+          Animation<double> secondaryAnimation,
+        ) {
+          return SharedAxisTransition(
+            animation: animation,
+            secondaryAnimation: secondaryAnimation,
+            transitionType: SharedAxisTransitionType.horizontal,
+            child: child,
+          );
+        },
+        child: pages.elementAt(index),
       );
     }
     return getParalleView(frameType);

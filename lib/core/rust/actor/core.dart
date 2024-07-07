@@ -6,5 +6,37 @@
 import '../frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// Rust type: RustOpaqueMoi<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<CoreConfig>>
-abstract class CoreConfig implements RustOpaqueInterface {}
+class CoreConfig {
+  final int port;
+  final String interfaceAddr;
+  final String multicastAddr;
+  final int multicastPort;
+  final String storePath;
+
+  const CoreConfig({
+    required this.port,
+    required this.interfaceAddr,
+    required this.multicastAddr,
+    required this.multicastPort,
+    required this.storePath,
+  });
+
+  @override
+  int get hashCode =>
+      port.hashCode ^
+      interfaceAddr.hashCode ^
+      multicastAddr.hashCode ^
+      multicastPort.hashCode ^
+      storePath.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CoreConfig &&
+          runtimeType == other.runtimeType &&
+          port == other.port &&
+          interfaceAddr == other.interfaceAddr &&
+          multicastAddr == other.multicastAddr &&
+          multicastPort == other.multicastPort &&
+          storePath == other.storePath;
+}

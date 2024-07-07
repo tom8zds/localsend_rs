@@ -1,15 +1,14 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
+import 'package:chinese_font_library/chinese_font_library.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:window_manager/window_manager.dart';
 
 import 'common/device_info_utils.dart';
+import 'common/utils.dart';
 import 'core/providers/locale_provider.dart';
 import 'core/providers/theme_provider.dart';
 import 'core/rust/bridge.dart';
@@ -21,60 +20,67 @@ import 'view/pages/frame_page.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await RustLib.init();
-  String storePath;
-  if (Platform.isAndroid) {
-    SystemUiOverlayStyle systemUiOverlayStyle =
-        const SystemUiOverlayStyle(statusBarColor: Colors.transparent);
-    SystemChrome.setSystemUIOverlayStyle(systemUiOverlayStyle);
-    storePath = "/storage/emulated/0/Download";
-    if (kDebugMode) {
-      createLogStream().listen((event) {
-        debugPrint(
-            '${event.level} ${event.tag} ${event.msg} ${event.timeMillis}');
-      });
-    }
-  } else {
-    storePath = (await getDownloadsDirectory())!.absolute.path;
-  }
+  initLogger();
 
   await ConfigStore.ensureInitialized();
-  final locale = ConfigStore().locale();
-  final String defaultLocale = Platform.localeName;
-  final countryCode = LocaleSettings.currentLocale.countryCode;
-  if (countryCode == null || countryCode != locale) {
-    LocaleSettings.setLocaleRaw(defaultLocale);
+
+  final device = await getDevice();
+  final config = await getConfig(device.port);
+  await setup(device: device, config: config);
+
+  if (Platform.isWindows) {
+    // Must add this line.
+    await windowManager.ensureInitialized();
+
+    WindowOptions windowOptions = const WindowOptions(
+      size: Size(1080, 960),
+      center: true,
+    );
+    windowManager.waitUntilReadyToShow(windowOptions, () async {
+      await windowManager.show();
+      await windowManager.focus();
+    });
   }
-  final device = await newDevice();
-  await setup(device: device);
+
+  initLocale();
+
   runApp(ProviderScope(child: TranslationProvider(child: const MyApp())));
 }
 
 class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
-  ThemeData _buildTheme(Brightness brightness) {
+  ThemeData _buildTheme(Brightness brightness, Locale locale) {
     var baseTheme = ThemeData(
         useMaterial3: true,
         colorSchemeSeed: const Color(0xfff74c00),
         brightness: brightness);
 
-    return baseTheme.copyWith(
-      textTheme: GoogleFonts.notoSansTextTheme(baseTheme.textTheme),
-    );
+    if (locale.languageCode == "zh") {
+      return baseTheme.useSystemChineseFont(brightness);
+    }
+    return baseTheme;
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeStateProvider);
     final localeConfig = ref.watch(localeStateProvider);
+    final locale = localeConfig.getLocale();
     return MaterialApp(
-      title: t.appTitle,
-      locale: localeConfig.getLocale(),
+      title: t.appTitle.parta + t.appTitle.partb,
+      locale: locale,
       // use provider
       supportedLocales: AppLocaleUtils.supportedLocales,
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      theme: _buildTheme(Brightness.light),
-      darkTheme: _buildTheme(Brightness.dark),
+      theme: _buildTheme(
+        Brightness.light,
+        locale,
+      ),
+      darkTheme: _buildTheme(
+        Brightness.dark,
+        locale,
+      ),
       themeMode: themeMode,
       home: const FramePage(),
     );

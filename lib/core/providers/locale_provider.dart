@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:window_manager/window_manager.dart';
 
 import '../../common/constants.dart';
 import '../../common/utils.dart';
@@ -45,6 +46,9 @@ class LocaleState extends _$LocaleState {
       LocaleSettings.useDeviceLocale();
     } else {
       LocaleSettings.setLocaleRaw(state.customLocale.languageCode);
+    }
+    if (Platform.isWindows) {
+      windowManager.setTitle(t.appTitle.parta + t.appTitle.partb);
     }
   }
 

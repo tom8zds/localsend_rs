@@ -20,16 +20,10 @@ enum Message {
         respond_to: oneshot::Sender<Result<watch::Receiver<usize>, String>>,
     },
     StartTask {
-        id: String,
         token: String,
         respond_to: oneshot::Sender<Result<(watch::Sender<usize>, FileInfo), String>>,
     },
-    Finish {
-        id: String,
-        respond_to: oneshot::Sender<()>,
-    },
     StateTask {
-        id: String,
         token: String,
         state: FileState,
         respond_to: oneshot::Sender<()>,
@@ -86,6 +80,43 @@ impl Actor {
         };
         Actor { receiver, store }
     }
+    fn check_finish(&self) -> bool {
+        for (_, file) in self.store.mission.clone().unwrap().files {
+            match file.state {
+                FileState::Finish => {}
+                FileState::Skip => {}
+                _ => {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+    fn change_file_state(&mut self, token: String, state: FileState) {
+        let mut file = self
+            .store
+            .mission
+            .clone()
+            .unwrap()
+            .files
+            .get(&token)
+            .unwrap()
+            .clone();
+        file.state = state;
+        self.store
+            .mission
+            .as_mut()
+            .unwrap()
+            .files
+            .insert(token, file.clone());
+    }
+    async fn finish_mission(&mut self, state: MissionState) {
+        let mut mission = self.store.mission.take().unwrap();
+        mission.state = state;
+        MISSION_NOTIFY
+            .notify(Some(MissionInfo::from_transfer_mission(mission)))
+            .await;
+    }
     async fn handle_message(&mut self, msg: Message) {
         match msg {
             Message::Add {
@@ -99,14 +130,14 @@ impl Actor {
                 }
 
                 let mut files = HashMap::new();
-                let token_map = mission.token_map.clone();
+                let token_map = mission.id_token_map.clone();
                 let info_map = mission.info_map.clone();
                 for (k, v) in token_map {
                     let info = MissionFileInfo {
                         state: FileState::Pending,
-                        info: info_map.get(&v).unwrap().clone(),
+                        info: info_map.get(&k).unwrap().clone(),
                     };
-                    files.insert(k, info);
+                    files.insert(v, info);
                 }
 
                 let transfer_mission = TransferMission {
@@ -122,16 +153,8 @@ impl Actor {
                     .await;
                 let _ = respond_to.send(Ok(()));
             }
-            Message::StartTask {
-                id,
-                token,
-                respond_to,
-            } => {
+            Message::StartTask { token, respond_to } => {
                 let mission = self.store.mission.as_mut().unwrap();
-                if mission.id != id {
-                    let _ = respond_to.send(Err("mission not exist".to_string()));
-                    return;
-                }
                 if !mission.files.contains_key(&token) {
                     let _ = respond_to.send(Err("task token not exist".to_string()));
                     return;
@@ -150,41 +173,38 @@ impl Actor {
                 };
 
                 self.store.task.replace(task);
-
+                MISSION_NOTIFY
+                    .notify(Some(MissionInfo::from_transfer_mission(
+                        self.store.mission.clone().unwrap(),
+                    )))
+                    .await;
                 let _ = respond_to.send(Ok((tx, file.info)));
             }
-            Message::Finish { id, respond_to } => {
-                match &self.store.mission {
-                    Some(mission) => {
-                        if mission.id == id {
-                            let mut mission = self.store.mission.take().unwrap();
-                            mission.state = MissionState::Finished;
+            Message::StateTask {
+                token,
+                state,
+                respond_to,
+            } => {
+                if self.store.mission.is_some() {
+                    self.change_file_state(token, state.clone());
+                    match state {
+                        FileState::Skip | FileState::Finish => {
+                            let finish = self.check_finish();
+                            if finish {
+                                self.finish_mission(MissionState::Finished).await;
+                            }
+                        }
+                        FileState::Fail { msg: _ } => {
+                            self.finish_mission(MissionState::Failed).await;
+                        }
+                        _ => {
                             MISSION_NOTIFY
-                                .notify(Some(MissionInfo::from_transfer_mission(mission)))
+                                .notify(Some(MissionInfo::from_transfer_mission(
+                                    self.store.mission.clone().unwrap(),
+                                )))
                                 .await;
                         }
                     }
-                    None => {}
-                }
-
-                let _ = respond_to.send(());
-            }
-            Message::StateTask {
-                id,
-                token: _,
-                state: _,
-                respond_to,
-            } => {
-                match &self.store.mission {
-                    Some(mission) => {
-                        if mission.id == id {
-                            let mut mission = self.store.mission.take().unwrap();
-                            mission.state = MissionState::Canceled;
-                            MISSION_NOTIFY
-                                .notify(Some(MissionInfo::from_transfer_mission(mission)));
-                        }
-                    }
-                    None => {}
                 }
 
                 let _ = respond_to.send(());
@@ -196,7 +216,8 @@ impl Actor {
                             let mut mission = self.store.mission.take().unwrap();
                             mission.state = MissionState::Canceled;
                             MISSION_NOTIFY
-                                .notify(Some(MissionInfo::from_transfer_mission(mission)));
+                                .notify(Some(MissionInfo::from_transfer_mission(mission)))
+                                .await;
                         }
                     }
                     None => {}
@@ -250,12 +271,10 @@ impl Handle {
 
     pub async fn start_task(
         &self,
-        id: String,
         token: String,
     ) -> Result<(watch::Sender<usize>, FileInfo), String> {
         let (send, recv) = oneshot::channel();
         let msg = Message::StartTask {
-            id,
             token,
             respond_to: send,
         };
@@ -279,26 +298,13 @@ impl Handle {
         recv.await.expect("Actor task has been killed")
     }
 
-    pub async fn fail_file(&self, id: String, token: String, state: FileState) {
+    pub async fn state_task(&self, token: String, state: FileState) {
         let (send, recv) = oneshot::channel();
         let msg = Message::StateTask {
-            id,
             token,
             state,
             respond_to: send,
         };
-        let _ = self.sender.send(msg).await;
-
-        recv.await.expect("Actor task has been killed");
-    }
-
-    pub async fn finish(&self, id: String) {
-        let (send, recv) = oneshot::channel();
-        let msg = Message::Finish {
-            id: id,
-            respond_to: send,
-        };
-
         let _ = self.sender.send(msg).await;
 
         recv.await.expect("Actor task has been killed");

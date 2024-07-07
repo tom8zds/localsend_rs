@@ -22,6 +22,7 @@ use tokio_util::io::StreamReader;
 use crate::{
     actor::{
         core::CoreActorHandle,
+        mission::FileState,
         model::{Mission, MissionState, NodeAnnounce, NodeDevice},
     },
     util::ProgressWriteAdapter,
@@ -56,7 +57,8 @@ impl Drop for Guard {
 }
 
 async fn stream_to_file<S, E>(
-    path: &str,
+    dir: &str,
+    file_name: &str,
     stream: S,
     progress: watch::Sender<usize>,
 ) -> Result<(), (StatusCode, String)>
@@ -72,13 +74,13 @@ where
         futures::pin_mut!(body_reader);
 
         // Create the file. `File` implements `AsyncWrite`.
-        let path = std::path::Path::new("./").join(path);
-        let dir = path.parent().unwrap();
-        if dir.exists() == false {
-            tokio::fs::create_dir_all(dir).await?;
+        let file_path = std::path::Path::new(dir).join(file_name);
+        let store_dir = file_path.parent().unwrap();
+        if store_dir.exists() == false {
+            tokio::fs::create_dir_all(store_dir).await?;
         }
 
-        let file = BufWriter::new(File::create(path).await?);
+        let file = BufWriter::new(File::create(file_path).await?);
         let mut writer = ProgressWriteAdapter::new(file, progress);
 
         // Copy the body into the file.
@@ -99,8 +101,9 @@ async fn handle_upload(
     debug!("handle_upload {:?}", task);
 
     let handle = state.core.mission.transfer.clone();
+    let store_path = state.core.get_config().await.store_path;
 
-    let res = handle.start_task(task.session_id, task.token).await;
+    let res = handle.start_task(task.token.clone()).await;
 
     match res {
         Ok((tx, file)) => {
@@ -108,11 +111,21 @@ async fn handle_upload(
             // ...
             let body_stream = request.into_body().into_data_stream();
 
-            let res = stream_to_file(&file_name, body_stream, tx).await;
+            let res = stream_to_file(&store_path, &file_name, body_stream, tx).await;
 
             match res {
-                Ok(_) => Ok(()),
-                Err(e) => Err(e),
+                Ok(_) => {
+                    handle
+                        .state_task(task.token.clone(), FileState::Finish)
+                        .await;
+                    Ok(())
+                }
+                Err(e) => {
+                    handle
+                        .state_task(task.token, FileState::Fail { msg: e.1.clone() })
+                        .await;
+                    Err(e)
+                }
             }
         }
         Err(_) => todo!(),
@@ -177,7 +190,7 @@ async fn pending_mission(
     let result = match *state_rx.borrow_and_update() {
         MissionState::Transfering => Ok(Json(FileResponse {
             session_id: mission.id,
-            files: mission.reverse_token_map,
+            files: mission.id_token_map,
         })),
         MissionState::Busy => {
             debug!("core is resolving another mission");

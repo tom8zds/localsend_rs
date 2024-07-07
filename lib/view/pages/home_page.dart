@@ -29,14 +29,15 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent,
       body: Center(
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           constraints: const BoxConstraints(maxWidth: 800),
           child: Column(
             children: [
-              // StaticAppbar(title: context.t.home.title),
+              SizedBox(
+                height: 8,
+              ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8.0),
                 child: Row(

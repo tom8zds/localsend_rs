@@ -4,9 +4,9 @@
 /// To regenerate, run: `dart run slang`
 ///
 /// Locales: 2
-/// Strings: 26 (13 per locale)
+/// Strings: 60 (30 per locale)
 ///
-/// Built on 2024-07-07 at 04:40 UTC
+/// Built on 2024-07-07 at 14:19 UTC
 
 // coverage:ignore-file
 // ignore_for_file: type=lint
@@ -148,9 +148,22 @@ class Translations implements BaseTranslations<AppLocale, Translations> {
 	late final Translations _root = this; // ignore: unused_field
 
 	// Translations
-	String get appTitle => 'RustSend';
+	late final _StringsAppTitleEn appTitle = _StringsAppTitleEn._(_root);
 	late final _StringsHomeEn home = _StringsHomeEn._(_root);
+	late final _StringsMissionEn mission = _StringsMissionEn._(_root);
+	late final _StringsCommonEn common = _StringsCommonEn._(_root);
 	late final _StringsSettingEn setting = _StringsSettingEn._(_root);
+}
+
+// Path: appTitle
+class _StringsAppTitleEn {
+	_StringsAppTitleEn._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+	String get parta => 'LocalSend';
+	String get partb => '_RS';
 }
 
 // Path: home
@@ -161,6 +174,35 @@ class _StringsHomeEn {
 
 	// Translations
 	String get title => 'Home Page';
+}
+
+// Path: mission
+class _StringsMissionEn {
+	_StringsMissionEn._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+	String get accept => 'Accept';
+	String get cancel => 'Cancel';
+	String get complete => 'Complete';
+	String get finished => 'Finished';
+	String get tranfer => 'Transfering';
+	String get pending => 'Pending';
+	String get failed => 'Failed';
+	String get skip => 'Skip';
+	String get advance => 'Advance';
+}
+
+// Path: common
+class _StringsCommonEn {
+	_StringsCommonEn._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+	String get file => 'File';
+	String get size => 'Size';
 }
 
 // Path: setting
@@ -174,6 +216,7 @@ class _StringsSettingEn {
 	String get common => 'Common';
 	late final _StringsSettingBrightnessEn brightness = _StringsSettingBrightnessEn._(_root);
 	late final _StringsSettingLanguageEn language = _StringsSettingLanguageEn._(_root);
+	late final _StringsSettingReceiveEn receive = _StringsSettingReceiveEn._(_root);
 	late final _StringsSettingCoreEn core = _StringsSettingCoreEn._(_root);
 }
 
@@ -198,6 +241,20 @@ class _StringsSettingLanguageEn {
 	// Translations
 	String get title => 'Language';
 	String subTitle({required Object language}) => 'Current language: ${language}';
+}
+
+// Path: setting.receive
+class _StringsSettingReceiveEn {
+	_StringsSettingReceiveEn._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+	String get title => 'Receive';
+	String get quickSave => 'Quick Save';
+	String get quickSaveHint => 'Start tranfer without accept';
+	String get saveFolder => 'Save Folder';
+	String get selectSaveFolder => 'Select';
 }
 
 // Path: setting.core
@@ -257,9 +314,22 @@ class _StringsZh implements Translations {
 	@override late final _StringsZh _root = this; // ignore: unused_field
 
 	// Translations
-	@override String get appTitle => '锈船';
+	@override late final _StringsAppTitleZh appTitle = _StringsAppTitleZh._(_root);
 	@override late final _StringsHomeZh home = _StringsHomeZh._(_root);
+	@override late final _StringsMissionZh mission = _StringsMissionZh._(_root);
+	@override late final _StringsCommonZh common = _StringsCommonZh._(_root);
 	@override late final _StringsSettingZh setting = _StringsSettingZh._(_root);
+}
+
+// Path: appTitle
+class _StringsAppTitleZh implements _StringsAppTitleEn {
+	_StringsAppTitleZh._(this._root);
+
+	@override final _StringsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get parta => '快传';
+	@override String get partb => '锈';
 }
 
 // Path: home
@@ -270,6 +340,35 @@ class _StringsHomeZh implements _StringsHomeEn {
 
 	// Translations
 	@override String get title => '主页';
+}
+
+// Path: mission
+class _StringsMissionZh implements _StringsMissionEn {
+	_StringsMissionZh._(this._root);
+
+	@override final _StringsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get accept => '接收';
+	@override String get cancel => '取消';
+	@override String get complete => '完成';
+	@override String get finished => '已完成';
+	@override String get tranfer => '传输中';
+	@override String get pending => '等待中';
+	@override String get failed => '失败';
+	@override String get skip => '跳过';
+	@override String get advance => '高级';
+}
+
+// Path: common
+class _StringsCommonZh implements _StringsCommonEn {
+	_StringsCommonZh._(this._root);
+
+	@override final _StringsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get file => '文件';
+	@override String get size => '大小';
 }
 
 // Path: setting
@@ -283,6 +382,7 @@ class _StringsSettingZh implements _StringsSettingEn {
 	@override String get common => '通用';
 	@override late final _StringsSettingBrightnessZh brightness = _StringsSettingBrightnessZh._(_root);
 	@override late final _StringsSettingLanguageZh language = _StringsSettingLanguageZh._(_root);
+	@override late final _StringsSettingReceiveZh receive = _StringsSettingReceiveZh._(_root);
 	@override late final _StringsSettingCoreZh core = _StringsSettingCoreZh._(_root);
 }
 
@@ -307,6 +407,20 @@ class _StringsSettingLanguageZh implements _StringsSettingLanguageEn {
 	// Translations
 	@override String get title => '语言';
 	@override String subTitle({required Object language}) => '当前语言: ${language}';
+}
+
+// Path: setting.receive
+class _StringsSettingReceiveZh implements _StringsSettingReceiveEn {
+	_StringsSettingReceiveZh._(this._root);
+
+	@override final _StringsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '接收设置';
+	@override String get quickSave => '快速保存';
+	@override String get quickSaveHint => '不需要等待确认直接接受';
+	@override String get saveFolder => '保存目录';
+	@override String get selectSaveFolder => '选择';
 }
 
 // Path: setting.core
@@ -348,8 +462,20 @@ class _StringsSettingCoreServerZh implements _StringsSettingCoreServerEn {
 extension on Translations {
 	dynamic _flatMapFunction(String path) {
 		switch (path) {
-			case 'appTitle': return 'RustSend';
+			case 'appTitle.parta': return 'LocalSend';
+			case 'appTitle.partb': return '_RS';
 			case 'home.title': return 'Home Page';
+			case 'mission.accept': return 'Accept';
+			case 'mission.cancel': return 'Cancel';
+			case 'mission.complete': return 'Complete';
+			case 'mission.finished': return 'Finished';
+			case 'mission.tranfer': return 'Transfering';
+			case 'mission.pending': return 'Pending';
+			case 'mission.failed': return 'Failed';
+			case 'mission.skip': return 'Skip';
+			case 'mission.advance': return 'Advance';
+			case 'common.file': return 'File';
+			case 'common.size': return 'Size';
 			case 'setting.title': return 'Settings';
 			case 'setting.common': return 'Common';
 			case 'setting.brightness.title': return 'Brightness';
@@ -359,6 +485,11 @@ extension on Translations {
 			case 'setting.brightness.themeMode.dark': return 'Dark mode';
 			case 'setting.language.title': return 'Language';
 			case 'setting.language.subTitle': return ({required Object language}) => 'Current language: ${language}';
+			case 'setting.receive.title': return 'Receive';
+			case 'setting.receive.quickSave': return 'Quick Save';
+			case 'setting.receive.quickSaveHint': return 'Start tranfer without accept';
+			case 'setting.receive.saveFolder': return 'Save Folder';
+			case 'setting.receive.selectSaveFolder': return 'Select';
 			case 'setting.core.title': return 'core setting';
 			case 'setting.core.server.title': return 'server';
 			default: return null;
@@ -369,8 +500,20 @@ extension on Translations {
 extension on _StringsZh {
 	dynamic _flatMapFunction(String path) {
 		switch (path) {
-			case 'appTitle': return '锈船';
+			case 'appTitle.parta': return '快传';
+			case 'appTitle.partb': return '锈';
 			case 'home.title': return '主页';
+			case 'mission.accept': return '接收';
+			case 'mission.cancel': return '取消';
+			case 'mission.complete': return '完成';
+			case 'mission.finished': return '已完成';
+			case 'mission.tranfer': return '传输中';
+			case 'mission.pending': return '等待中';
+			case 'mission.failed': return '失败';
+			case 'mission.skip': return '跳过';
+			case 'mission.advance': return '高级';
+			case 'common.file': return '文件';
+			case 'common.size': return '大小';
 			case 'setting.title': return '设置';
 			case 'setting.common': return '通用';
 			case 'setting.brightness.title': return '明暗';
@@ -380,6 +523,11 @@ extension on _StringsZh {
 			case 'setting.brightness.themeMode.dark': return '深色模式';
 			case 'setting.language.title': return '语言';
 			case 'setting.language.subTitle': return ({required Object language}) => '当前语言: ${language}';
+			case 'setting.receive.title': return '接收设置';
+			case 'setting.receive.quickSave': return '快速保存';
+			case 'setting.receive.quickSaveHint': return '不需要等待确认直接接受';
+			case 'setting.receive.saveFolder': return '保存目录';
+			case 'setting.receive.selectSaveFolder': return '选择';
 			case 'setting.core.title': return '核心设置';
 			case 'setting.core.server.title': return '服务器';
 			default: return null;

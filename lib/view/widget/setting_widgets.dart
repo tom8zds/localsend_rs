@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -9,6 +10,7 @@ import '../../core/providers/core_provider.dart';
 import '../../core/providers/locale_provider.dart';
 import '../../core/providers/theme_provider.dart';
 import '../../core/rust/bridge.dart';
+import '../../core/store/config_store.dart';
 import '../../i18n/strings.g.dart';
 
 class SettingTileGroup extends StatelessWidget {
@@ -74,9 +76,9 @@ class ThemeTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeStateProvider);
     return ListTile(
-      title: Text(t.setting.brightness.title),
-      subtitle:
-          Text(t.setting.brightness.subTitle(mode: getThemeName(themeMode))),
+      title: Text(context.t.setting.brightness.title),
+      subtitle: Text(
+          context.t.setting.brightness.subTitle(mode: getThemeName(themeMode))),
       trailing: OverflowBar(
         children: [
           IconButton(
@@ -131,8 +133,9 @@ class LocaleTile extends ConsumerWidget {
         supportLanguages[locale.languageCode]?.name ?? "unknown";
 
     return ListTile(
-      title: Text(t.setting.language.title),
-      subtitle: Text(t.setting.language.subTitle(language: currentLocaleName)),
+      title: Text(context.t.setting.language.title),
+      subtitle: Text(
+          context.t.setting.language.subTitle(language: currentLocaleName)),
       trailing: FilledButton(
         onPressed: () {
           showDialog(
@@ -143,7 +146,7 @@ class LocaleTile extends ConsumerWidget {
                     supportLanguages[systemLocale.languageCode]?.name ??
                         "unknown";
                 return SimpleDialog(
-                  title: Text(t.setting.language.title),
+                  title: Text(context.t.setting.language.title),
                   children: [
                     ListTile(
                       title: Text("系统默认: $systemLocaleName"),
@@ -184,7 +187,7 @@ class ServerTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final core = ref.watch(coreStateProvider);
     return ListTile(
-      title: Text(t.setting.core.server.title),
+      title: Text(context.t.setting.core.server.title),
       trailing: OverflowBar(
         children: [
           IconButton(
@@ -204,6 +207,63 @@ class ServerTile extends ConsumerWidget {
             icon: const Icon(Icons.stop),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class QuickSaveWidget extends StatefulWidget {
+  const QuickSaveWidget({
+    super.key,
+  });
+
+  @override
+  State<QuickSaveWidget> createState() => _QuickSaveWidgetState();
+}
+
+class _QuickSaveWidgetState extends State<QuickSaveWidget> {
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      title: Text(context.t.setting.receive.quickSave),
+      subtitle: Text(context.t.setting.receive.quickSaveHint),
+      trailing: Switch(
+        onChanged: (value) {
+          ConfigStore().setQuickSave(value);
+          setState(() {});
+        },
+        value: ConfigStore().quickSave(),
+      ),
+    );
+  }
+}
+
+class StorePathWIdget extends StatefulWidget {
+  const StorePathWIdget({
+    super.key,
+  });
+
+  @override
+  State<StorePathWIdget> createState() => _StorePathWIdgetState();
+}
+
+class _StorePathWIdgetState extends State<StorePathWIdget> {
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      title: Text(context.t.setting.receive.saveFolder),
+      subtitle: Text(ConfigStore().storePath()),
+      trailing: FilledButton(
+        onPressed: () async {
+          String? selectedDirectory =
+              await FilePicker.platform.getDirectoryPath();
+
+          if (selectedDirectory != null) {
+            ConfigStore().setStorePath(selectedDirectory);
+          }
+          setState(() {});
+        },
+        child: Text(context.t.setting.receive.selectSaveFolder),
       ),
     );
   }

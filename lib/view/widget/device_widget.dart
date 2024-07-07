@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:localsend_rs/core/rust/actor/model.dart';
+import 'package:simple_icons/simple_icons.dart';
 
 import 'common_widget.dart';
 
@@ -54,6 +55,35 @@ class DeviceWidget extends StatelessWidget {
 
   const DeviceWidget({super.key, required this.device});
 
+  Widget getDeviceBadge(BuildContext context) {
+    IconData? icon = null;
+    if (SimpleIcons.values.containsKey(device.deviceModel.toLowerCase())) {
+      icon = SimpleIcons.values[device.deviceModel.toLowerCase()];
+    } else if (SimpleIcons.values
+        .containsKey(device.deviceType.toLowerCase())) {
+      icon = SimpleIcons.values[device.deviceType.toLowerCase()];
+    }
+
+    return icon == null
+        ? const SizedBox()
+        : Align(
+            alignment: Alignment.bottomRight,
+            child: Container(
+              margin: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                icon,
+                color: Theme.of(context).colorScheme.primary,
+                size: 18,
+              ),
+            ),
+          );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -66,12 +96,20 @@ class DeviceWidget extends StatelessWidget {
         height: 80,
         child: Row(
           children: [
-            const SizedBox(
+            SizedBox(
               height: 80,
               width: 80,
-              child: Icon(
-                Icons.smartphone,
-                size: 48,
+              child: Stack(
+                children: [
+                  Align(
+                    alignment: Alignment.center,
+                    child: Icon(
+                      Icons.smartphone,
+                      size: 48,
+                    ),
+                  ),
+                  getDeviceBadge(context),
+                ],
               ),
             ),
             Column(

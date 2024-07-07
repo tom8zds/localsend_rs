@@ -48,7 +48,7 @@ int randomPort() {
   return 10000 + Random().nextInt(65535 - 10000);
 }
 
-Future<NodeDevice> newDevice() async {
+Future<NodeDevice> getDevice() async {
   final deviceInfo = await getDeviceInfo();
   final addressList = await getInterface();
   final alias =

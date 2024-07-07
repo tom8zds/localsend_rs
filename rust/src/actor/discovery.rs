@@ -1,5 +1,7 @@
 use std::net::IpAddr;
+use std::net::Ipv4Addr;
 use std::net::SocketAddr;
+use std::str::FromStr;
 
 use log::{debug, info};
 use tokio::sync::mpsc;
@@ -47,8 +49,8 @@ async fn register(current: NodeDevice, target: NodeDevice) -> bool {
 }
 
 async fn announce(config: CoreConfig, current: String) {
-    let interface_addr = config.interface_addr;
-    let multicast_addr = config.multicast_addr;
+    let interface_addr = Ipv4Addr::from_str(&config.interface_addr).unwrap();
+    let multicast_addr = Ipv4Addr::from_str(&config.multicast_addr).unwrap();
     let multicast_port = config.multicast_port;
 
     let send_socket: UdpSocket = UdpSocket::bind((interface_addr, multicast_port + 2))
@@ -72,8 +74,8 @@ async fn announce(config: CoreConfig, current: String) {
 
 async fn run_udp_actor(mut actor: DiscoverActor, shutdown_callback: watch::Sender<bool>) {
     let config = actor.core.get_config().await;
-    let interface_addr = config.interface_addr;
-    let multicast_addr = config.multicast_addr;
+    let interface_addr = Ipv4Addr::from_str(&config.interface_addr).unwrap();
+    let multicast_addr = Ipv4Addr::from_str(&config.multicast_addr).unwrap();
     let multicast_port = config.multicast_port;
 
     info!("udp service {} started", multicast_port);

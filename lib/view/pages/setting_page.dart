@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:localsend_rs/core/store/config_store.dart';
 
-import '../../common/widgets.dart';
-import '../../core/rust/bridge.dart';
 import '../../i18n/strings.g.dart';
 import '../widget/common_widget.dart';
-import '../widget/network_widget.dart';
 import '../widget/setting_widgets.dart';
 
 class SettingPage extends StatelessWidget {
@@ -13,7 +11,6 @@ class SettingPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent,
       body: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
@@ -36,25 +33,20 @@ class SettingPage extends StatelessWidget {
                     height: 16,
                   ),
                   SettingTileGroup(
-                    title: t.setting.core.title,
+                    title: t.setting.receive.title,
                     children: [
-                      // core status
-                      const ServerTile(), // core log
-                      NetworkWidget(
-                        onPressed: (addr) {
-                          changeAddress(addr: addr);
-                        },
-                      ),
+                      const QuickSaveWidget(),
+                      const StorePathWIdget()
                     ],
                   ),
                   const SizedBox(
                     height: 16,
                   ),
-                  const SettingTileGroup(
-                    title: "behavior",
+                  SettingTileGroup(
+                    title: t.setting.core.title,
                     children: [
-                      // receive without accept
-                      // save dir
+                      // core status
+                      const ServerTile(), // core log
                     ],
                   ),
                   const SizedBox(
