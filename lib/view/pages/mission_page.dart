@@ -10,6 +10,7 @@ import '../../core/rust/bridge.dart';
 import '../../i18n/strings.g.dart';
 import '../widget/common_widget.dart';
 import '../widget/device_widget.dart';
+import '../widget/mission_widget.dart';
 
 class IdlePage extends StatelessWidget {
   @override
@@ -119,7 +120,9 @@ class _TransferPageState extends State<TransferPage> {
                                     ),
                                   ),
                                   if (file.state == const FileState.transfer())
-                                    LinearProgressIndicator(value: 0.3),
+                                    TaskProgress(
+                                      total: file.info.size,
+                                    ),
                                 ],
                               ),
                             ),

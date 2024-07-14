@@ -40,6 +40,9 @@ Stream<List<NodeDevice>> listenDevice() =>
 Stream<MissionInfo?> listenMission() =>
     RustLib.instance.api.crateBridgeListenMission();
 
+Stream<BigInt> listenTaskProgress() =>
+    RustLib.instance.api.crateBridgeListenTaskProgress();
+
 Future<void> clearMission() => RustLib.instance.api.crateBridgeClearMission();
 
 Future<void> cancelPending({required String id}) =>

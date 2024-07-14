@@ -81,6 +81,20 @@ pub async fn listen_mission(s: StreamSink<Option<MissionInfo>>) {
     }
 }
 
+pub async fn listen_task_progress(s: StreamSink<usize>) {
+    let mut rx = _get_core()
+        .mission
+        .transfer
+        .listen_task_progress()
+        .await
+        .unwrap();
+    loop {
+        let _ = rx.changed().await;
+        let data = rx.borrow().clone();
+        let _ = s.add(data);
+    }
+}
+
 pub async fn clear_mission() {
     MISSION_NOTIFY.clear().await;
 }

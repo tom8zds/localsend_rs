@@ -16,7 +16,6 @@ enum Message {
         respond_to: oneshot::Sender<Result<(), MissionState>>,
     },
     ListenTask {
-        token: String,
         respond_to: oneshot::Sender<Result<watch::Receiver<usize>, String>>,
     },
     StartTask {
@@ -225,16 +224,12 @@ impl Actor {
 
                 let _ = respond_to.send(());
             }
-            Message::ListenTask { token, respond_to } => match &self.store.mission {
+            Message::ListenTask { respond_to } => match &self.store.mission {
                 Some(_) => {
                     let task = self.store.task.clone();
                     match task {
                         Some(task) => {
-                            if task.token == token {
-                                let _ = respond_to.send(Ok(task.progress));
-                                return;
-                            }
-                            let _ = respond_to.send(Err("task token not match".to_string()));
+                            let _ = respond_to.send(Ok(task.progress));
                         }
                         None => {
                             let _ = respond_to.send(Err("task not found".to_string()));
@@ -283,15 +278,9 @@ impl Handle {
         recv.await.expect("Actor task has been killed")
     }
 
-    pub async fn listen_task_progress(
-        &self,
-        token: String,
-    ) -> Result<watch::Receiver<usize>, String> {
+    pub async fn listen_task_progress(&self) -> Result<watch::Receiver<usize>, String> {
         let (send, recv) = oneshot::channel();
-        let msg = Message::ListenTask {
-            token,
-            respond_to: send,
-        };
+        let msg = Message::ListenTask { respond_to: send };
 
         let _ = self.sender.send(msg).await;
 

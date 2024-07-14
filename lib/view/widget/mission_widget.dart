@@ -1,5 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:localsend_rs/core/rust/bridge.dart';
+
+class TaskProgress extends StatelessWidget {
+  final progressStream = listenTaskProgress();
+  final int total;
+
+  TaskProgress({super.key, required this.total});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder(
+        stream: progressStream,
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            print("${snapshot.data} / ${total}");
+            return LinearProgressIndicator(
+              value: (snapshot.data?.toDouble() ?? 0) / total,
+            );
+          }
+          return Container();
+        });
+  }
+}
 
 class MissionWidget extends ConsumerWidget {
   const MissionWidget({super.key});

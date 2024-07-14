@@ -34,12 +34,19 @@ impl<R: AsyncWrite> AsyncWrite for ProgressWriteAdapter<R> {
         let this = self.project();
 
         let result = this.inner.poll_write(cx, buf);
-        let after = buf.len();
+        match result {
+            Poll::Ready(ref res) => {
+                if res.is_ok() {
+                    *this.interval_bytes = *this.interval_bytes + res.as_ref().clone().unwrap();
+                }
+            }
+            _ => {}
+        }
 
         match this.interval.poll_tick(cx) {
             Poll::Pending => {}
             Poll::Ready(_) => {
-                let _ = this.tx.send(after);
+                let _ = this.tx.send(*this.interval_bytes);
             }
         };
 
