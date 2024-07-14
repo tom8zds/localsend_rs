@@ -27,16 +27,30 @@ Test condition :
     - [x] Register
     - [x] Prepare upload
     - [x] Upload
-    - [x] Cancel
+    - [ ] Cancel
     - [ ] Send
 - [ ] User interface
-    - [x] device page
-    - [x] discover page
+    - [ ] discover page
+      - [x] device list
+      - [ ] device favorite
+    - [x] receive page
+      - [x] task progress
+      - [ ] pic preview
+      - [ ] mission progress
     - [ ] send page
-    - [x] setting page
+    - [ ] setting page
+      - [x] theme setting
+      - [x] locale setting
+      - [x] server setting
+        - [x] start / stop
+        - [ ] server config
+        - [x] save directory
+        - [ ] save pic to album
+        - [ ] save to history
 - [x] Platform
   - [x] Windows
   - [x] Android
+  - [ ] linux
 
 ## Getting Started
 
