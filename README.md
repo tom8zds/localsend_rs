@@ -1,12 +1,18 @@
 # localsend_rs
 
+![logo](./assets/icon/logo_128.png)
+
 [![Build](https://github.com/tom8zds/localsend_rs/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/tom8zds/localsend_rs/actions/workflows/build.yml) ![version](https://img.shields.io/badge/version-0.0.1_alpha-red)
 
 WIP: this repository is still WIP. 
 
 A localsend protocol V2 implementation in flutter and rust for better performance.
 
-## Compare
+## Screen shots
+
+![logo](./screenshots/desktop.png)
+
+## Performance
 
 Performance compare between localsend original and localsend_rs
 
