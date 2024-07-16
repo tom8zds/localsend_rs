@@ -1,3 +1,7 @@
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
+import 'package:filesize/filesize.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/rust/bridge.dart';
@@ -26,6 +30,9 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  List<File> selectedFiles = [];
+  int selectedFileSize = 0;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -35,6 +42,95 @@ class _HomePageState extends State<HomePage> {
           constraints: const BoxConstraints(maxWidth: 800),
           child: Column(
             children: [
+              SizedBox(
+                height: kToolbarHeight,
+                child: Row(
+                  children: [
+                    ElevatedButton(
+                        onPressed: () async {
+                          FilePickerResult? result = await FilePicker.platform
+                              .pickFiles(allowMultiple: true);
+
+                          if (result != null) {
+                            setState(() {
+                              selectedFiles = result.paths
+                                  .map((path) => File(path!))
+                                  .toList();
+                              selectedFiles.forEach((element) =>
+                                  selectedFileSize += element.lengthSync());
+                            });
+                          } else {
+                            // User canceled the picker
+                          }
+                        },
+                        child: Text("Send File")),
+                    SizedBox(
+                      width: 8,
+                    ),
+                    ElevatedButton(
+                        onPressed: () async {
+                          String? selectedDirectory =
+                              await FilePicker.platform.getDirectoryPath();
+
+                          if (selectedDirectory == null) {
+                            // User canceled the picker
+                          }
+                        },
+                        child: Text("Send Folder")),
+                  ],
+                ),
+              ),
+              SizedBox(
+                height: 120,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                        '文件: ${selectedFiles.length} 大小: ${filesize(selectedFileSize)}'),
+                    SizedBox(
+                      height: 8,
+                    ),
+                    Row(
+                      children: [
+                        for (final (index, file) in selectedFiles.indexed)
+                          Padding(
+                            padding: const EdgeInsets.all(4.0),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .secondaryContainer,
+                                  borderRadius: BorderRadius.circular(12)),
+                              height: 40,
+                              width: 40,
+                              child: Icon(Icons.file_present),
+                            ),
+                          )
+                      ],
+                    ),
+                    SizedBox(
+                      height: 12,
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton.icon(
+                            onPressed: () {},
+                            icon: Icon(Icons.info_outline),
+                            label: Text("详情")),
+                        SizedBox(
+                          width: 8,
+                        ),
+                        FilledButton.icon(
+                          onPressed: () {},
+                          icon: Icon(Icons.add),
+                          label: Text("添加"),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
               SizedBox(
                 height: 8,
               ),
