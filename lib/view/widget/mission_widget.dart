@@ -14,7 +14,7 @@ class TaskProgress extends StatelessWidget {
         stream: progressStream,
         builder: (context, snapshot) {
           if (snapshot.hasData) {
-            print("${snapshot.data} / ${total}");
+            print("${snapshot.data} / $total");
             return LinearProgressIndicator(
               value: (snapshot.data?.toDouble() ?? 0) / total,
             );

@@ -5,8 +5,6 @@ import 'package:filesize/filesize.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/rust/bridge.dart';
-import '../../i18n/strings.g.dart';
-import '../widget/common_widget.dart';
 import '../widget/discover_widget.dart';
 
 class HomePage extends StatefulWidget {
@@ -56,15 +54,16 @@ class _HomePageState extends State<HomePage> {
                               selectedFiles = result.paths
                                   .map((path) => File(path!))
                                   .toList();
-                              selectedFiles.forEach((element) =>
-                                  selectedFileSize += element.lengthSync());
+                              for (var element in selectedFiles) {
+                                selectedFileSize += element.lengthSync();
+                              }
                             });
                           } else {
                             // User canceled the picker
                           }
                         },
-                        child: Text("Send File")),
-                    SizedBox(
+                        child: const Text("Send File")),
+                    const SizedBox(
                       width: 8,
                     ),
                     ElevatedButton(
@@ -76,7 +75,7 @@ class _HomePageState extends State<HomePage> {
                             // User canceled the picker
                           }
                         },
-                        child: Text("Send Folder")),
+                        child: const Text("Send Folder")),
                   ],
                 ),
               ),
@@ -87,7 +86,7 @@ class _HomePageState extends State<HomePage> {
                   children: [
                     Text(
                         '文件: ${selectedFiles.length} 大小: ${filesize(selectedFileSize)}'),
-                    SizedBox(
+                    const SizedBox(
                       height: 8,
                     ),
                     Row(
@@ -103,12 +102,12 @@ class _HomePageState extends State<HomePage> {
                                   borderRadius: BorderRadius.circular(12)),
                               height: 40,
                               width: 40,
-                              child: Icon(Icons.file_present),
+                              child: const Icon(Icons.file_present),
                             ),
                           )
                       ],
                     ),
-                    SizedBox(
+                    const SizedBox(
                       height: 12,
                     ),
                     Row(
@@ -116,22 +115,22 @@ class _HomePageState extends State<HomePage> {
                       children: [
                         TextButton.icon(
                             onPressed: () {},
-                            icon: Icon(Icons.info_outline),
-                            label: Text("详情")),
-                        SizedBox(
+                            icon: const Icon(Icons.info_outline),
+                            label: const Text("详情")),
+                        const SizedBox(
                           width: 8,
                         ),
                         FilledButton.icon(
                           onPressed: () {},
-                          icon: Icon(Icons.add),
-                          label: Text("添加"),
+                          icon: const Icon(Icons.add),
+                          label: const Text("添加"),
                         ),
                       ],
                     ),
                   ],
                 ),
               ),
-              SizedBox(
+              const SizedBox(
                 height: 8,
               ),
               Padding(

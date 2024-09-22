@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:localsend_rs/core/store/config_store.dart';
 
 import '../../i18n/strings.g.dart';
 import '../widget/common_widget.dart';
@@ -34,9 +33,9 @@ class SettingPage extends StatelessWidget {
                   ),
                   SettingTileGroup(
                     title: t.setting.receive.title,
-                    children: [
-                      const QuickSaveWidget(),
-                      const StorePathWIdget()
+                    children: const [
+                      QuickSaveWidget(),
+                      StorePathWIdget()
                     ],
                   ),
                   const SizedBox(
@@ -44,9 +43,9 @@ class SettingPage extends StatelessWidget {
                   ),
                   SettingTileGroup(
                     title: t.setting.core.title,
-                    children: [
+                    children: const [
                       // core status
-                      const ServerTile(), // core log
+                      ServerTile(), // core log
                     ],
                   ),
                   const SizedBox(

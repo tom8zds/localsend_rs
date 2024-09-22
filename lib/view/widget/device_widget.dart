@@ -11,23 +11,23 @@ class DeviceWidgetLarge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
       height: 240,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
+          const Icon(
             Icons.smartphone,
             size: 64,
           ),
-          SizedBox(
+          const SizedBox(
             height: 16,
           ),
           Text(
             device.alias,
             style: Theme.of(context).textTheme.displayMedium,
           ),
-          SizedBox(
+          const SizedBox(
             height: 16,
           ),
           Row(
@@ -37,7 +37,7 @@ class DeviceWidgetLarge extends StatelessWidget {
               Tag(title: device.deviceModel),
             ],
           ),
-          SizedBox(
+          const SizedBox(
             height: 24,
           ),
           Text(
@@ -56,7 +56,7 @@ class DeviceWidget extends StatelessWidget {
   const DeviceWidget({super.key, required this.device});
 
   Widget getDeviceBadge(BuildContext context) {
-    IconData? icon = null;
+    IconData? icon;
     if (SimpleIcons.values.containsKey(device.deviceModel.toLowerCase())) {
       icon = SimpleIcons.values[device.deviceModel.toLowerCase()];
     } else if (SimpleIcons.values
@@ -101,7 +101,7 @@ class DeviceWidget extends StatelessWidget {
               width: 80,
               child: Stack(
                 children: [
-                  Align(
+                  const Align(
                     alignment: Alignment.center,
                     child: Icon(
                       Icons.smartphone,

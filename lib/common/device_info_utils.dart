@@ -5,7 +5,6 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:localsend_rs/core/store/config_store.dart';
 import 'package:slang/builder/model/enums.dart';
-import 'package:uuid/uuid.dart';
 
 import '../core/rust/actor/model.dart';
 import 'constants.dart';

@@ -13,6 +13,8 @@ import '../widget/device_widget.dart';
 import '../widget/mission_widget.dart';
 
 class IdlePage extends StatelessWidget {
+  const IdlePage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -79,11 +81,11 @@ class _TransferPageState extends State<TransferPage> {
                     return Padding(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 8),
-                      child: Container(
+                      child: SizedBox(
                         height: 72,
                         child: Row(
                           children: [
-                            SizedBox(
+                            const SizedBox(
                               width: 8,
                             ),
                             Container(
@@ -101,7 +103,7 @@ class _TransferPageState extends State<TransferPage> {
                                 size: 36,
                               ),
                             ),
-                            SizedBox(
+                            const SizedBox(
                               width: 8,
                             ),
                             Expanded(
@@ -126,7 +128,7 @@ class _TransferPageState extends State<TransferPage> {
                                 ],
                               ),
                             ),
-                            SizedBox(
+                            const SizedBox(
                               width: 16,
                             ),
                           ],
@@ -136,7 +138,7 @@ class _TransferPageState extends State<TransferPage> {
                   })),
           AnimatedContainer(
             curve: Curves.ease,
-            margin: EdgeInsets.symmetric(
+            margin: const EdgeInsets.symmetric(
               horizontal: 16,
             ),
             decoration: BoxDecoration(
@@ -148,7 +150,7 @@ class _TransferPageState extends State<TransferPage> {
             child: Stack(
               children: [
                 Padding(
-                  padding: EdgeInsets.symmetric(
+                  padding: const EdgeInsets.symmetric(
                     vertical: 8,
                     horizontal: 16,
                   ),
@@ -159,7 +161,7 @@ class _TransferPageState extends State<TransferPage> {
                         widget.mission.state.getName(),
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
-                      SizedBox(
+                      const SizedBox(
                         height: 8,
                       ),
                       if (widget.mission.state == MissionState.finished)
@@ -174,10 +176,10 @@ class _TransferPageState extends State<TransferPage> {
                           minHeight: 8,
                           borderRadius: BorderRadius.circular(12),
                         ),
-                      SizedBox(
+                      const SizedBox(
                         height: 8,
                       ),
-                      Container(
+                      SizedBox(
                         height: 48,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -190,7 +192,7 @@ class _TransferPageState extends State<TransferPage> {
                 Align(
                   alignment: Alignment.bottomCenter,
                   child: Container(
-                    padding: EdgeInsets.symmetric(
+                    padding: const EdgeInsets.symmetric(
                       vertical: 8,
                       horizontal: 16,
                     ),
@@ -208,7 +210,7 @@ class _TransferPageState extends State<TransferPage> {
                             });
                           },
                           label: Text(context.t.mission.advance),
-                          icon: Icon(Icons.info),
+                          icon: const Icon(Icons.info),
                         ),
                         if (widget.mission.state == MissionState.finished)
                           FilledButton.icon(
@@ -216,7 +218,7 @@ class _TransferPageState extends State<TransferPage> {
                               clearMission();
                             },
                             label: Text(context.t.mission.complete),
-                            icon: Icon(Icons.info),
+                            icon: const Icon(Icons.info),
                           )
                         else
                           TextButton.icon(
@@ -224,7 +226,7 @@ class _TransferPageState extends State<TransferPage> {
                               clearMission();
                             },
                             label: Text(context.t.mission.cancel),
-                            icon: Icon(Icons.cancel),
+                            icon: const Icon(Icons.cancel),
                           )
                       ],
                     ),
@@ -262,7 +264,7 @@ class PendingPage extends StatelessWidget {
               child: Center(
             child: DeviceWidgetLarge(device: mission.sender),
           )),
-          Container(
+          SizedBox(
             height: kToolbarHeight,
             child: mission.state == MissionState.canceled
                 ? Center(
@@ -349,9 +351,9 @@ class MissionPendingPage extends ConsumerWidget {
         case MissionState.finished:
           return TransferPage(mission: data, isParalle: isParalle);
         default:
-          return IdlePage();
+          return const IdlePage();
       }
     }
-    return IdlePage();
+    return const IdlePage();
   }
 }

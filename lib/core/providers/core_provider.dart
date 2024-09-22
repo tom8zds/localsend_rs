@@ -2,7 +2,6 @@ import 'package:localsend_rs/core/listeners/core_listener.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../rust/actor/model.dart';
-import '../rust/bridge.dart';
 
 part 'core_provider.g.dart';
 
