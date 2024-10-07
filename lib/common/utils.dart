@@ -115,19 +115,19 @@ const levelList = [
 ];
 
 void initLogger() {
-  var logger = Logger();
+  // var logger = Logger();
 
-  if (Platform.isAndroid) {
-    if (kDebugMode) {
-      createLogStream().listen((event) {
-        logger.log(
-          levelList[event.level],
-          event.msg,
-          time: DateTime.fromMillisecondsSinceEpoch(event.timeMillis),
-        );
-      });
-    }
-  }
+  // if (Platform.isAndroid) {
+  //   if (kDebugMode) {
+  //     createLogStream().listen((event) {
+  //       logger.log(
+  //         levelList[event.level],
+  //         event.msg,
+  //         time: DateTime.fromMillisecondsSinceEpoch(event.timeMillis),
+  //       );
+  //     });
+  //   }
+  // }
 }
 
 void initLocale() {

@@ -71,7 +71,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.4.0';
 
   @override
-  int get rustContentHash => 1509709400;
+  int get rustContentHash => 1936224693;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -105,6 +105,9 @@ abstract class RustLibApi extends BaseApi {
   Stream<BigInt> crateBridgeListenTaskProgress();
 
   Future<void> crateBridgeRestartServer();
+
+  Future<void> crateBridgeSendFile(
+      {required String path, required NodeDevice node});
 
   Future<void> crateBridgeSetup(
       {required NodeDevice device, required CoreConfig config});
@@ -420,6 +423,32 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
+  Future<void> crateBridgeSendFile(
+      {required String path, required NodeDevice node}) {
+    return handler.executeNormal(NormalTask(
+      callFfi: (port_) {
+        final serializer = SseSerializer(generalizedFrbRustBinding);
+        sse_encode_String(path, serializer);
+        sse_encode_box_autoadd_node_device(node, serializer);
+        pdeCallFfi(generalizedFrbRustBinding, serializer,
+            funcId: 13, port: port_);
+      },
+      codec: SseCodec(
+        decodeSuccessData: sse_decode_unit,
+        decodeErrorData: null,
+      ),
+      constMeta: kCrateBridgeSendFileConstMeta,
+      argValues: [path, node],
+      apiImpl: this,
+    ));
+  }
+
+  TaskConstMeta get kCrateBridgeSendFileConstMeta => const TaskConstMeta(
+        debugName: "send_file",
+        argNames: ["path", "node"],
+      );
+
+  @override
   Future<void> crateBridgeSetup(
       {required NodeDevice device, required CoreConfig config}) {
     return handler.executeNormal(NormalTask(
@@ -428,7 +457,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         sse_encode_box_autoadd_node_device(device, serializer);
         sse_encode_box_autoadd_core_config(config, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 13, port: port_);
+            funcId: 14, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_unit,
@@ -451,7 +480,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       callFfi: (port_) {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 14, port: port_);
+            funcId: 15, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_unit,
@@ -474,7 +503,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       callFfi: (port_) {
         final serializer = SseSerializer(generalizedFrbRustBinding);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
-            funcId: 15, port: port_);
+            funcId: 16, port: port_);
       },
       codec: SseCodec(
         decodeSuccessData: sse_decode_unit,

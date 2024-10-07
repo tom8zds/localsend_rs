@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use serde_derive::{Deserialize, Serialize};
 
-use crate::api::model::FileInfo;
+use crate::api::model::{FileInfo, SenderInfo};
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -49,6 +49,19 @@ impl NodeDevice {
             download: announce.download,
             announcement: announce.announcement,
             announce: announce.announce,
+        }
+    }
+
+    pub fn to_sender(&self) -> SenderInfo {
+        SenderInfo {
+            alias: self.alias.clone(),
+            version: self.version.clone(),
+            device_model: self.device_model.clone(),
+            device_type: self.device_type.clone(),
+            fingerprint: self.fingerprint.clone(),
+            port: self.port,
+            protocol: self.protocol.clone(),
+            download: self.download,
         }
     }
 

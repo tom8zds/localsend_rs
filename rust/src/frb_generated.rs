@@ -37,7 +37,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.4.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 1509709400;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 1936224693;
 
 // Section: executor
 
@@ -501,6 +501,45 @@ fn wire__crate__bridge__restart_server_impl(
                     (move || async move {
                         let output_ok = Result::<_, ()>::Ok({
                             crate::bridge::restart_server().await;
+                        })?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
+            }
+        },
+    )
+}
+fn wire__crate__bridge__send_file_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "send_file",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_path = <String>::sse_decode(&mut deserializer);
+            let api_node = <crate::actor::model::NodeDevice>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, ()>(
+                    (move || async move {
+                        let output_ok = Result::<_, ()>::Ok({
+                            crate::bridge::send_file(api_path, api_node).await;
                         })?;
                         Ok(output_ok)
                     })()
@@ -992,9 +1031,10 @@ fn pde_ffi_dispatcher_primary_impl(
         10 => wire__crate__bridge__listen_server_state_impl(port, ptr, rust_vec_len, data_len),
         11 => wire__crate__bridge__listen_task_progress_impl(port, ptr, rust_vec_len, data_len),
         12 => wire__crate__bridge__restart_server_impl(port, ptr, rust_vec_len, data_len),
-        13 => wire__crate__bridge__setup_impl(port, ptr, rust_vec_len, data_len),
-        14 => wire__crate__bridge__shutdown_server_impl(port, ptr, rust_vec_len, data_len),
-        15 => wire__crate__bridge__start_server_impl(port, ptr, rust_vec_len, data_len),
+        13 => wire__crate__bridge__send_file_impl(port, ptr, rust_vec_len, data_len),
+        14 => wire__crate__bridge__setup_impl(port, ptr, rust_vec_len, data_len),
+        15 => wire__crate__bridge__shutdown_server_impl(port, ptr, rust_vec_len, data_len),
+        16 => wire__crate__bridge__start_server_impl(port, ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }

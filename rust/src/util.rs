@@ -4,7 +4,7 @@ use std::task::{Context, Poll};
 use std::time::Duration;
 
 use pin_project_lite::pin_project;
-use tokio::io::AsyncWrite;
+use tokio::io::{AsyncRead, AsyncWrite, ReadBuf};
 use tokio::sync::watch::Sender;
 use tokio::time::{interval, Interval};
 
@@ -62,5 +62,50 @@ impl<R: AsyncWrite> AsyncWrite for ProgressWriteAdapter<R> {
         cx: &mut Context<'_>,
     ) -> Poll<std::result::Result<(), std::io::Error>> {
         self.project().inner.poll_shutdown(cx)
+    }
+}
+
+pin_project! {
+    pub struct ProgressReadAdapter<R: AsyncRead> {
+        #[pin]
+        inner: R,
+        interval: Interval,
+        interval_bytes: usize,
+        tx: Sender<usize>
+    }
+}
+
+impl<R: AsyncRead> ProgressReadAdapter<R> {
+    pub fn new(inner: R, tx: Sender<usize>) -> Self {
+        Self {
+            inner,
+            interval: interval(Duration::from_millis(100)),
+            interval_bytes: 0,
+            tx,
+        }
+    }
+}
+
+impl<R: AsyncRead> AsyncRead for ProgressReadAdapter<R> {
+    fn poll_read(
+        self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        buf: &mut ReadBuf<'_>,
+    ) -> Poll<Result<()>> {
+        let this = self.project();
+
+        let before = buf.filled().len();
+        let result = this.inner.poll_read(cx, buf);
+        let after = buf.filled().len();
+        *this.interval_bytes += after - before;
+
+        match this.interval.poll_tick(cx) {
+            Poll::Pending => {}
+            Poll::Ready(_) => {
+                let _ = this.tx.send(*this.interval_bytes);
+            }
+        };
+
+        result
     }
 }

@@ -168,7 +168,11 @@ class _HomePageState extends State<HomePage> {
                   padding: EdgeInsets.all(8.0),
                   child: LinearProgressIndicator(),
                 ),
-              const Expanded(child: DiscoverWidget()),
+              Expanded(child: DiscoverWidget(
+                onDeviceTapped: (device) {
+                  sendFile(path: selectedFiles.first.path, node: device);
+                },
+              )),
             ],
           ),
         ),

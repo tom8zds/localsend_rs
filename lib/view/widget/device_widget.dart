@@ -52,8 +52,9 @@ class DeviceWidgetLarge extends StatelessWidget {
 
 class DeviceWidget extends StatelessWidget {
   final NodeDevice device;
+  final Function(NodeDevice)? onTap;
 
-  const DeviceWidget({super.key, required this.device});
+  const DeviceWidget({super.key, required this.device, this.onTap});
 
   Widget getDeviceBadge(BuildContext context) {
     IconData? icon;
@@ -68,17 +69,24 @@ class DeviceWidget extends StatelessWidget {
         ? const SizedBox()
         : Align(
             alignment: Alignment.bottomRight,
-            child: Container(
-              margin: const EdgeInsets.all(8),
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                icon,
-                color: Theme.of(context).colorScheme.primary,
-                size: 18,
+            child: InkWell(
+              onTap: () {
+                onTap?.call(device);
+              },
+              child: Ink(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Icon(
+                    icon,
+                    color: Theme.of(context).colorScheme.primary,
+                    size: 18,
+                  ),
+                ),
               ),
             ),
           );

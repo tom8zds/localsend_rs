@@ -10,7 +10,7 @@ pub struct SenderInfo {
     pub device_model: String,
     pub device_type: String,
     pub fingerprint: String,
-    pub port: i64,
+    pub port: u16,
     pub protocol: String,
     pub download: bool,
 }

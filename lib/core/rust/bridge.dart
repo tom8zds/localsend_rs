@@ -55,3 +55,6 @@ Stream<LogEntry> createLogStream() =>
     RustLib.instance.api.crateBridgeCreateLogStream();
 
 Future<void> announce() => RustLib.instance.api.crateBridgeAnnounce();
+
+Future<void> sendFile({required String path, required NodeDevice node}) =>
+    RustLib.instance.api.crateBridgeSendFile(path: path, node: node);

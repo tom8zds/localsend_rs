@@ -1,13 +1,5 @@
-use log::{debug, trace};
+use log::trace;
 use tokio::sync::{mpsc, oneshot, watch};
-
-use crate::{
-    actor::{
-        mission::MISSION_NOTIFY,
-        model::{Mission, MissionState, NodeDevice},
-    },
-    api::model::FileInfo,
-};
 
 use super::MissionInfo;
 
@@ -18,7 +10,9 @@ enum Message {
     Listen {
         respond_to: oneshot::Sender<watch::Receiver<Option<MissionInfo>>>,
     },
-    Clear,
+    Clear {
+        respond_to: oneshot::Sender<()>,
+    },
 }
 
 struct Actor {
@@ -47,8 +41,9 @@ impl Actor {
                 let rx = self.listener.clone();
                 let _ = respond_to.send(rx);
             }
-            Message::Clear => {
+            Message::Clear { respond_to } => {
                 let _ = self.notify.send(None);
+                let _ = respond_to.send(());
             }
         }
     }
@@ -88,7 +83,7 @@ impl Handle {
     }
     pub async fn clear(&self) {
         let (send, recv) = oneshot::channel();
-        let msg = Message::Clear;
+        let msg = Message::Clear { respond_to: send };
 
         let _ = self.sender.send(msg).await;
         recv.await.expect("Actor task has been killed")

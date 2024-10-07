@@ -3,7 +3,6 @@ use std::{
     str::FromStr as _,
 };
 
-use axum::extract::path;
 use lazy_static::lazy_static;
 use log::debug;
 use tokio::{net::UdpSocket, sync::OnceCell};
@@ -14,6 +13,7 @@ use crate::{
         mission::{MissionInfo, MISSION_NOTIFY},
         model::NodeDevice,
     },
+    api,
     frb_generated::StreamSink,
     logger::{self, LogEntry},
 };
@@ -139,4 +139,9 @@ pub async fn announce() {
             )
             .await;
     }
+}
+
+pub async fn send_file(path: String, node: NodeDevice) {
+    let current_node = _get_core().device.get_current_device().await;
+    api::client::send(path, node, current_node).await;
 }
