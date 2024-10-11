@@ -143,5 +143,5 @@ pub async fn announce() {
 
 pub async fn send_file(path: String, node: NodeDevice) {
     let current_node = _get_core().device.get_current_device().await;
-    api::client::send(path, node, current_node).await;
+    api::client::send(path, node, current_node);
 }

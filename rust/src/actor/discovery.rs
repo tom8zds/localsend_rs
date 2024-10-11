@@ -9,8 +9,7 @@ use tokio::sync::watch;
 
 use tokio::net::UdpSocket;
 
-use crate::actor::model::NodeDevice;
-use crate::api::client;
+use crate::core::model::NodeDevice;
 
 use super::core::CoreActorHandle;
 use super::core::CoreConfig;
@@ -34,10 +33,9 @@ async fn register(current: NodeDevice, target: NodeDevice) -> bool {
     let announce = current.to_announce();
 
     let message = serde_json::to_string(&announce).unwrap();
-
-    let client = reqwest::Client::new();
-    let resp = client.post(&api).body(message).send().await;
-
+    let resp = ureq::post(&api)
+        .set("X-My-Header", "Secret")
+        .send_string(&message);
     match resp {
         Ok(_) => {
             debug!("register success");
