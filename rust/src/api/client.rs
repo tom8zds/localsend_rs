@@ -1,8 +1,9 @@
 use std::{collections::HashMap, fs::File, io::BufReader, path::Path};
 
 use log::debug;
+use tokio::sync::watch;
 
-use crate::core::model::NodeDevice;
+use crate::{actor::model::NodeDevice, util::ProgressReadAdapter};
 
 use std::fs::Metadata;
 
@@ -29,7 +30,86 @@ fn get_file_size(metadata: Metadata) -> u64 {
     metadata.file_size()
 }
 
-fn read_file_info(path: &str) -> FileInfo {
+#[derive(Debug, Clone)]
+pub struct Client {
+    target: String,
+    current_node: NodeDevice,
+    agent: ureq::Agent,
+}
+
+impl Client {
+    pub fn new(node: NodeDevice, current_node: NodeDevice) -> Self {
+        let target = format!("http://{}:{}/api/localsend/v2", node.address, node.port);
+        let agent = ureq::AgentBuilder::new()
+            .timeout_read(std::time::Duration::from_secs(60))
+            .build();
+
+        Self {
+            target,
+            current_node,
+            agent,
+        }
+    }
+
+    pub fn prepare_upload(&self, files: HashMap<String, FileInfo>) -> Result<FileResponse, String> {
+        let req = FileRequest {
+            info: self.current_node.to_sender(),
+            files,
+        };
+
+        let data = serde_json::to_string(&req).unwrap();
+        let api = format!("{}/prepare-upload", self.target);
+
+        debug!("prepare upload: {}", api);
+
+        match self.agent.post(&api).send_string(&data) {
+            Ok(resp) => {
+                let body = resp.into_string().unwrap();
+                let file_resp: FileResponse = serde_json::from_str(&body).unwrap();
+                return Result::Ok(file_resp);
+            }
+            Err(err) => {
+                debug!("prepare error: {:?}", err);
+                return Result::Err(err.to_string());
+            }
+        };
+    }
+
+    pub fn upload_file(
+        &self,
+        session_id: String,
+        path: String,
+        file_id: String,
+        token: String,
+        tx: watch::Sender<usize>,
+    ) {
+        let f = File::open(path).unwrap();
+        let buffered_reader = BufReader::new(f);
+        let progress_reader = ProgressReadAdapter::new(buffered_reader, tx);
+        let api = format!("{}/upload", self.target);
+
+        let r = ureq::post(&api)
+            .query("sessionId", &session_id)
+            .query("fileId", &file_id)
+            .query("token", &token)
+            .send(progress_reader);
+        match r {
+            Ok(_) => debug!("upload success"),
+            Err(err) => debug!("upload error: {:?}", err),
+        };
+    }
+}
+
+pub fn read_file_info_map(files: Vec<String>) -> HashMap<String, FileInfo> {
+    let mut res = HashMap::new();
+    for file in files {
+        let info = read_file_info(&file);
+        res.insert(info.id.clone(), info);
+    }
+    res
+}
+
+pub fn read_file_info(path: &str) -> FileInfo {
     let file_id = uuid::Uuid::new_v4().to_string();
     let f = File::open(path).unwrap();
     let file_name = Path::new(path)
@@ -48,73 +128,4 @@ fn read_file_info(path: &str) -> FileInfo {
         sha256: None,
         preview: None,
     }
-}
-
-pub fn send(path: String, node: NodeDevice, current_node: NodeDevice) {
-    let file_info = read_file_info(&path);
-    let file_id = file_info.id.clone();
-    let request = FileRequest {
-        info: current_node.to_sender(),
-        files: HashMap::from([(file_id.clone(), file_info)]),
-    };
-    let base_api = format!(
-        "http://{}:{}/{}",
-        node.address, node.port, "api/localsend/v2/"
-    );
-    let result = prepare(&base_api, request);
-    match result {
-        Ok(file_response) => {
-            debug!("prepare success");
-            upload(
-                &base_api,
-                &path,
-                &file_response.session_id,
-                &file_id,
-                &file_response.files[&file_id],
-            );
-        }
-        Err(err) => {
-            debug!("prepare error: {:?}", err)
-        }
-    }
-}
-
-// prepare transfer
-// POST /api/localsend/v2/prepare-upload
-//optional query("pin", "123456")
-fn prepare(base_api: &str, req: FileRequest) -> Result<FileResponse, String> {
-    let data = serde_json::to_string(&req).unwrap();
-    let api = format!("{}prepare-upload", base_api);
-
-    debug!("prepare upload: {}", api);
-
-    match ureq::post(&api).send_string(&data) {
-        Ok(resp) => {
-            let body = resp.into_string().unwrap();
-            let file_resp: FileResponse = serde_json::from_str(&body).unwrap();
-            return Result::Ok(file_resp);
-        }
-        Err(err) => {
-            debug!("prepare error: {:?}", err);
-            return Result::Err(err.to_string());
-        }
-    };
-}
-
-fn upload(base_api: &str, path: &str, session_id: &str, file_id: &str, token: &str) {
-    let f = File::open(path).unwrap();
-    let buffered_reader = BufReader::new(f);
-    let api = format!("{}upload", base_api);
-
-    debug!("upload file: {}", api);
-
-    let r = ureq::post(&api)
-        .query("sessionId", session_id)
-        .query("fileId", file_id)
-        .query("token", token)
-        .send(buffered_reader);
-    match r {
-        Ok(_) => debug!("upload success"),
-        Err(err) => debug!("upload error: {:?}", err),
-    };
 }

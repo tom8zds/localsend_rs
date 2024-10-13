@@ -1,8 +1,10 @@
 use std::{
     net::{IpAddr, Ipv4Addr, SocketAddr},
     str::FromStr as _,
+    sync::Arc,
 };
 
+use flutter_rust_bridge::DartFnFuture;
 use lazy_static::lazy_static;
 use log::debug;
 use tokio::{net::UdpSocket, sync::OnceCell};
@@ -141,7 +143,51 @@ pub async fn announce() {
     }
 }
 
-pub async fn send_file(path: String, node: NodeDevice) {
+pub struct Progress {
+    pub progress: usize,
+    pub total: usize,
+}
+
+pub async fn send_file(path: String, node: NodeDevice, prog_sink: StreamSink<Progress>) {
     let current_node = _get_core().device.get_current_device().await;
-    api::client::send(path, node, current_node);
+    let client = api::client::Client::new(node, current_node);
+    let file_map = api::client::read_file_info_map(vec![path.clone()]);
+    let result = client.prepare_upload(file_map.clone());
+    match result {
+        Ok(response) => {
+            let token_map = response.files;
+            let sink = Arc::new(prog_sink);
+
+            for (file_id, token) in token_map.iter() {
+                let file_info = file_map.get(file_id).unwrap();
+                let total_size = file_info.size;
+                let client = client.clone();
+                let file_id = file_id.clone();
+                let token = token.clone();
+                let session_id = response.session_id.clone();
+                let path = path.clone();
+                let (tx, mut rx) = tokio::sync::watch::channel(0);
+                let sink = sink.clone();
+                tokio::spawn(async move {
+                    loop {
+                        let _ = rx.changed().await;
+                        let progress = rx.borrow().clone();
+                        let _ = sink.add(Progress {
+                            progress,
+                            total: total_size as usize,
+                        });
+                        if progress == total_size as usize {
+                            break;
+                        }
+                    }
+                });
+                let _ = tokio::spawn(async move {
+                    let _ =
+                        client.upload_file(session_id, path, file_id.clone(), token.clone(), tx);
+                })
+                .await;
+            }
+        }
+        Err(_) => todo!(),
+    }
 }

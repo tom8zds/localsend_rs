@@ -31,6 +31,9 @@ class _HomePageState extends State<HomePage> {
   List<File> selectedFiles = [];
   int selectedFileSize = 0;
 
+  BigInt total = BigInt.from(10);
+  BigInt progress = BigInt.from(10);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -78,6 +81,10 @@ class _HomePageState extends State<HomePage> {
                         child: const Text("Send Folder")),
                   ],
                 ),
+              ),
+              LinearProgressIndicator(
+                value: progress / total,
+                semanticsLabel: 'Linear progress indicator',
               ),
               SizedBox(
                 height: 120,
@@ -170,7 +177,15 @@ class _HomePageState extends State<HomePage> {
                 ),
               Expanded(child: DiscoverWidget(
                 onDeviceTapped: (device) {
-                  sendFile(path: selectedFiles.first.path, node: device);
+                  Stream<Progress> stream =
+                      sendFile(path: selectedFiles.first.path, node: device);
+                  stream.forEach((progress) async {
+                    print(progress);
+                    setState(() {
+                      this.progress = progress.progress;
+                      this.total = progress.total;
+                    });
+                  });
                 },
               )),
             ],

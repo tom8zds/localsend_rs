@@ -1,4 +1,4 @@
-use std::io::Result;
+use std::io::{Read, Result};
 use std::pin::Pin;
 use std::task::{Context, Poll};
 use std::time::Duration;
@@ -66,7 +66,7 @@ impl<R: AsyncWrite> AsyncWrite for ProgressWriteAdapter<R> {
 }
 
 pin_project! {
-    pub struct ProgressReadAdapter<R: AsyncRead> {
+    pub struct ProgressReadAdapter<R: Read> {
         #[pin]
         inner: R,
         interval: Interval,
@@ -75,7 +75,7 @@ pin_project! {
     }
 }
 
-impl<R: AsyncRead> ProgressReadAdapter<R> {
+impl<R: Read> ProgressReadAdapter<R> {
     pub fn new(inner: R, tx: Sender<usize>) -> Self {
         Self {
             inner,
@@ -86,25 +86,17 @@ impl<R: AsyncRead> ProgressReadAdapter<R> {
     }
 }
 
-impl<R: AsyncRead> AsyncRead for ProgressReadAdapter<R> {
-    fn poll_read(
-        self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
-        buf: &mut ReadBuf<'_>,
-    ) -> Poll<Result<()>> {
-        let this = self.project();
-
-        let before = buf.filled().len();
-        let result = this.inner.poll_read(cx, buf);
-        let after = buf.filled().len();
-        *this.interval_bytes += after - before;
-
-        match this.interval.poll_tick(cx) {
-            Poll::Pending => {}
-            Poll::Ready(_) => {
-                let _ = this.tx.send(*this.interval_bytes);
+impl<R: Read> Read for ProgressReadAdapter<R> {
+    fn read(&mut self, buf: &mut [u8]) -> Result<usize> {
+        let result = self.inner.read(buf);
+        match result {
+            Ok(n) => {
+                self.interval_bytes += n;
             }
-        };
+            Err(_) => {}
+        }
+
+        let _ = self.tx.send(self.interval_bytes);
 
         result
     }

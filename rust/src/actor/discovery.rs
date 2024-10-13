@@ -9,7 +9,7 @@ use tokio::sync::watch;
 
 use tokio::net::UdpSocket;
 
-use crate::core::model::NodeDevice;
+use crate::actor::model::NodeDevice;
 
 use super::core::CoreActorHandle;
 use super::core::CoreConfig;
