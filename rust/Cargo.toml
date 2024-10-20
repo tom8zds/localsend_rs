@@ -8,7 +8,7 @@ crate-type = ["cdylib", "staticlib"]
 
 [dependencies]
 flutter_rust_bridge = "=2.5.0"
-axum = { version = "0.7.7" }
+axum = { version = "0.7.7", features = ["macros"] }
 rand = "0.8.5"
 serde = "1.0.210"
 serde_derive = "1.0.210"

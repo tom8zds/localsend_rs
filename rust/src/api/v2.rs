@@ -1,4 +1,4 @@
-use std::{net::SocketAddr, sync::Arc};
+use std::{net::SocketAddr, result, sync::Arc};
 
 use super::model::{FileRequest, FileResponse, UploadTask};
 use axum::{
@@ -22,8 +22,12 @@ use tokio_util::io::StreamReader;
 use crate::{
     actor::{
         core::CoreActorHandle,
-        mission::FileState,
-        model::{Mission, MissionState, NodeAnnounce, NodeDevice},
+        model::{NodeAnnounce, NodeDevice},
+    },
+    session::{
+        model::{Session, Status},
+        progress::Progress,
+        session::SESSION_HOLDER,
     },
     util::ProgressWriteAdapter,
 };
@@ -59,8 +63,9 @@ impl Drop for Guard {
 async fn stream_to_file<S, E>(
     dir: &str,
     file_name: &str,
+    total_size: usize,
     stream: S,
-    progress: watch::Sender<usize>,
+    progress: watch::Sender<Progress>,
 ) -> Result<(), (StatusCode, String)>
 where
     S: Stream<Item = Result<Bytes, E>>,
@@ -81,7 +86,7 @@ where
         }
 
         let file = BufWriter::new(File::create(file_path).await?);
-        let mut writer = ProgressWriteAdapter::new(file, progress);
+        let mut writer = ProgressWriteAdapter::new(file, total_size, progress);
 
         // Copy the body into the file.
         tokio::io::copy(&mut body_reader, &mut writer).await?;
@@ -100,38 +105,48 @@ async fn handle_upload(
     let task: UploadTask = task.0;
     debug!("handle_upload {:?}", task);
 
-    let handle = state.core.mission.transfer.clone();
     let store_path = state.core.get_config().await.store_path;
 
-    let res = handle.start_task(task.token.clone()).await;
+    let session = SESSION_HOLDER.get().await;
 
-    match res {
-        Ok((tx, file)) => {
-            let file_name = file.file_name.clone();
+    match session {
+        Some(session) => {
+            if !session.file_map.contains_key(&task.file_id) {
+                return Err((StatusCode::CONFLICT, "file not exist".to_string()));
+            }
+
+            let file = session.file_map[&task.file_id].clone();
+            let file_name = file.file_name;
+            let file_size = file.size as usize;
+
             // ...
             let body_stream = request.into_body().into_data_stream();
 
-            let res = stream_to_file(&store_path, &file_name, body_stream, tx).await;
+            let tx = SESSION_HOLDER.start_task(task.file_id).await.unwrap();
+
+            let res = stream_to_file(&store_path, &file_name, file_size, body_stream, tx).await;
 
             match res {
                 Ok(_) => {
-                    handle
-                        .state_task(task.token.clone(), FileState::Finish)
-                        .await;
+                    // handle
+                    //     .state_task(task.token.clone(), FileState::Finish)
+                    //     .await;
                     Ok(())
                 }
                 Err(e) => {
-                    handle
-                        .state_task(task.token, FileState::Fail { msg: e.1.clone() })
-                        .await;
+                    // handle
+                    //     .state_task(task.token, FileState::Fail { msg: e.1.clone() })
+                    //     .await;
                     Err(e)
                 }
             }
         }
-        Err(_) => todo!(),
+        None => {
+            return Err((StatusCode::NOT_FOUND, "session not found".to_string()));
+        }
     }
 }
-
+#[axum::debug_handler]
 async fn prepare_upload(
     State(state): State<Arc<AppState>>,
     Json(payload): Json<FileRequest>,
@@ -154,19 +169,30 @@ async fn prepare_upload(
 
     debug!("mission incoming");
 
-    let mission = Mission::new(payload.files, device.unwrap());
-    let id = mission.id.clone();
+    let session = Session::new_send(device.unwrap(), payload.files);
+
+    let id = session.id.clone();
+
+    let token_map = session.token_map.clone();
+
+    let flag = SESSION_HOLDER.add(session).await;
+
+    if !flag {
+        debug!("core is resolving another mission");
+        return Err((StatusCode::CONFLICT, "mission rejected".to_string()));
+    }
+
+    SESSION_HOLDER.check().await;
 
     let (tx, mut rx) = mpsc::channel(8);
 
     let _guard = Guard { tx: tx.clone() };
-    let state_clone = state.clone();
 
     tokio::spawn(async move {
         while let Some(flag) = rx.recv().await {
             if flag {
                 debug!("client side close");
-                state_clone.core.mission.pending.cancel(id).await;
+                SESSION_HOLDER.clear().await;
             } else {
                 debug!("normal complete");
             }
@@ -174,33 +200,45 @@ async fn prepare_upload(
         }
     });
 
-    let result = pending_mission(state, mission).await;
+    SESSION_HOLDER.check().await;
+
+    let mut listenr = SESSION_HOLDER.listen();
+
+    let result: Result<Json<FileResponse>, (StatusCode, String)>;
+
+    loop {
+        let _ = listenr.changed().await;
+        result = match listenr.borrow().clone() {
+            Some(vm) => match vm.status {
+                Status::Transfer { start_time } => {
+                    let id_token_map = token_map
+                        .iter()
+                        .map(|(k, v)| (k.clone(), v.clone()))
+                        .collect();
+
+                    Ok(Json(FileResponse {
+                        session_id: id.clone(),
+                        files: id_token_map,
+                    }))
+                }
+                Status::Fail { msg } => Err((StatusCode::INTERNAL_SERVER_ERROR, msg)),
+                Status::Pending => {
+                    debug!("mission pending");
+                    continue;
+                }
+                _state => {
+                    debug!("mission rejected {:?}", _state);
+                    Err((StatusCode::FORBIDDEN, "mission rejected".to_string()))
+                }
+            },
+            None => {
+                debug!("mission rejected");
+                Err((StatusCode::FORBIDDEN, "mission rejected".to_string()))
+            }
+        };
+        break;
+    }
     let _ = tx.send(false).await;
-    result
-}
-
-async fn pending_mission(
-    state: Arc<AppState>,
-    mission: Mission,
-) -> Result<Json<FileResponse>, (StatusCode, String)> {
-    let mut state_rx = state.core.mission.pending.add(mission.clone()).await;
-
-    let _ = state_rx.changed().await;
-
-    let result = match *state_rx.borrow_and_update() {
-        MissionState::Transfering => Ok(Json(FileResponse {
-            session_id: mission.id,
-            files: mission.id_token_map,
-        })),
-        MissionState::Busy => {
-            debug!("core is resolving another mission");
-            Err((StatusCode::CONFLICT, "mission rejected".to_string()))
-        }
-        _state => {
-            debug!("mission rejected {:?}", _state);
-            Err((StatusCode::FORBIDDEN, "mission rejected".to_string()))
-        }
-    };
     result
 }
 
@@ -211,8 +249,8 @@ struct SessionId {
 }
 
 async fn cancel(State(state): State<Arc<AppState>>, session_id: Query<SessionId>) {
-    let handle = state.core.mission.transfer.clone();
-    handle.cancel(session_id.id.clone()).await;
+    // let handle = state.core.mission.transfer.clone();
+    // handle.cancel(session_id.id.clone()).await;
 }
 
 struct AppState {

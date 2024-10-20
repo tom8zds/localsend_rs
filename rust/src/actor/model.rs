@@ -110,20 +110,3 @@ impl Mission {
         }
     }
 }
-
-#[derive(Debug, Clone, Copy)]
-pub enum MissionState {
-    Idle,
-    Pending,
-    Transfering,
-    Finished,
-    Failed,
-    Canceled,
-    Busy,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub enum TaskState {
-    Transfering,
-    Finished,
-}

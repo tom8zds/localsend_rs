@@ -3,14 +3,13 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:localsend_rs/core/rust/actor/model.dart';
+import 'package:localsend_rs/core/rust/session/model.dart';
 import 'package:localsend_rs/core/store/config_store.dart';
 import 'package:logger/logger.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:window_manager/window_manager.dart';
 
 import '../core/rust/actor/core.dart';
-import '../core/rust/actor/mission.dart';
 import '../core/rust/bridge.dart';
 import '../i18n/strings.g.dart';
 import 'constants.dart';
@@ -145,41 +144,22 @@ void initLocale() {
   }
 }
 
-extension MissionStateName on MissionState {
+extension StatusName on Status {
   String getName() {
     switch (this) {
-      case MissionState.idle:
-      // TODO: Handle this case.
-      case MissionState.pending:
-        return t.mission.pending;
-      case MissionState.transfering:
-        return t.mission.tranfer;
-      case MissionState.finished:
-        return t.mission.finished;
-      case MissionState.failed:
-        return t.mission.failed;
-      case MissionState.canceled:
-        return t.mission.cancel;
-      case MissionState.busy:
+      case Status_Pending():
+        return t.session.pending;
+      case Status_Transfer():
+        return t.session.tranfer;
+      case Status_Finish():
+        return t.session.finished;
+      case Status_Fail():
+        return t.session.failed;
+      case Status_Cancel():
+        return t.session.cancel;
+      case Status_Rejected():
       // TODO: Handle this case.
     }
     return "unknown";
-  }
-}
-
-extension FileStateName on FileState {
-  String getName() {
-    switch (this) {
-      case FileState_Pending():
-        return t.mission.pending;
-      case FileState_Transfer():
-        return t.mission.tranfer;
-      case FileState_Finish():
-        return t.mission.complete;
-      case FileState_Skip():
-        return t.mission.skip;
-      default:
-        return "unknown";
-    }
   }
 }

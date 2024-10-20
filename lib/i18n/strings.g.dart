@@ -6,7 +6,7 @@
 /// Locales: 2
 /// Strings: 60 (30 per locale)
 ///
-/// Built on 2024-09-22 at 03:03 UTC
+/// Built on 2024-10-20 at 12:43 UTC
 
 // coverage:ignore-file
 // ignore_for_file: type=lint
@@ -150,7 +150,7 @@ class Translations implements BaseTranslations<AppLocale, Translations> {
 	// Translations
 	late final _StringsAppTitleEn appTitle = _StringsAppTitleEn._(_root);
 	late final _StringsHomeEn home = _StringsHomeEn._(_root);
-	late final _StringsMissionEn mission = _StringsMissionEn._(_root);
+	late final _StringsSessionEn session = _StringsSessionEn._(_root);
 	late final _StringsCommonEn common = _StringsCommonEn._(_root);
 	late final _StringsSettingEn setting = _StringsSettingEn._(_root);
 }
@@ -176,9 +176,9 @@ class _StringsHomeEn {
 	String get title => 'Home Page';
 }
 
-// Path: mission
-class _StringsMissionEn {
-	_StringsMissionEn._(this._root);
+// Path: session
+class _StringsSessionEn {
+	_StringsSessionEn._(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -316,7 +316,7 @@ class _StringsZh implements Translations {
 	// Translations
 	@override late final _StringsAppTitleZh appTitle = _StringsAppTitleZh._(_root);
 	@override late final _StringsHomeZh home = _StringsHomeZh._(_root);
-	@override late final _StringsMissionZh mission = _StringsMissionZh._(_root);
+	@override late final _StringsSessionZh session = _StringsSessionZh._(_root);
 	@override late final _StringsCommonZh common = _StringsCommonZh._(_root);
 	@override late final _StringsSettingZh setting = _StringsSettingZh._(_root);
 }
@@ -342,9 +342,9 @@ class _StringsHomeZh implements _StringsHomeEn {
 	@override String get title => '主页';
 }
 
-// Path: mission
-class _StringsMissionZh implements _StringsMissionEn {
-	_StringsMissionZh._(this._root);
+// Path: session
+class _StringsSessionZh implements _StringsSessionEn {
+	_StringsSessionZh._(this._root);
 
 	@override final _StringsZh _root; // ignore: unused_field
 
@@ -465,15 +465,15 @@ extension on Translations {
 			case 'appTitle.parta': return 'LocalSend';
 			case 'appTitle.partb': return '_RS';
 			case 'home.title': return 'Home Page';
-			case 'mission.accept': return 'Accept';
-			case 'mission.cancel': return 'Cancel';
-			case 'mission.complete': return 'Complete';
-			case 'mission.finished': return 'Finished';
-			case 'mission.tranfer': return 'Transfering';
-			case 'mission.pending': return 'Pending';
-			case 'mission.failed': return 'Failed';
-			case 'mission.skip': return 'Skip';
-			case 'mission.advance': return 'Advance';
+			case 'session.accept': return 'Accept';
+			case 'session.cancel': return 'Cancel';
+			case 'session.complete': return 'Complete';
+			case 'session.finished': return 'Finished';
+			case 'session.tranfer': return 'Transfering';
+			case 'session.pending': return 'Pending';
+			case 'session.failed': return 'Failed';
+			case 'session.skip': return 'Skip';
+			case 'session.advance': return 'Advance';
 			case 'common.file': return 'File';
 			case 'common.size': return 'Size';
 			case 'setting.title': return 'Settings';
@@ -503,15 +503,15 @@ extension on _StringsZh {
 			case 'appTitle.parta': return '快传';
 			case 'appTitle.partb': return '锈';
 			case 'home.title': return '主页';
-			case 'mission.accept': return '接收';
-			case 'mission.cancel': return '取消';
-			case 'mission.complete': return '完成';
-			case 'mission.finished': return '已完成';
-			case 'mission.tranfer': return '传输中';
-			case 'mission.pending': return '等待中';
-			case 'mission.failed': return '失败';
-			case 'mission.skip': return '跳过';
-			case 'mission.advance': return '高级';
+			case 'session.accept': return '接收';
+			case 'session.cancel': return '取消';
+			case 'session.complete': return '完成';
+			case 'session.finished': return '已完成';
+			case 'session.tranfer': return '传输中';
+			case 'session.pending': return '等待中';
+			case 'session.failed': return '失败';
+			case 'session.skip': return '跳过';
+			case 'session.advance': return '高级';
 			case 'common.file': return '文件';
 			case 'common.size': return '大小';
 			case 'setting.title': return '设置';

@@ -180,35 +180,39 @@ class LocaleTile extends ConsumerWidget {
   }
 }
 
-class ServerTile extends ConsumerWidget {
+class ServerTile extends StatelessWidget {
   const ServerTile({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final core = ref.watch(coreStateProvider);
-    return ListTile(
-      title: Text(context.t.setting.core.server.title),
-      trailing: OverflowBar(
-        children: [
-          IconButton(
-            onPressed: core.serverState
-                ? null
-                : () async {
-                    await startServer();
-                  },
-            icon: const Icon(Icons.play_arrow),
-          ),
-          IconButton(
-            onPressed: core.serverState
-                ? () async {
-                    await shutdownServer();
-                  }
-                : null,
-            icon: const Icon(Icons.stop),
-          ),
-        ],
-      ),
-    );
+  Widget build(BuildContext context) {
+    final core = RustCoreState.instance();
+    return ListenableBuilder(
+        listenable: core,
+        builder: (context, child) {
+          return ListTile(
+            title: Text(context.t.setting.core.server.title),
+            trailing: OverflowBar(
+              children: [
+                IconButton(
+                  onPressed: core.serverState
+                      ? null
+                      : () async {
+                          await startServer();
+                        },
+                  icon: const Icon(Icons.play_arrow),
+                ),
+                IconButton(
+                  onPressed: core.serverState
+                      ? () async {
+                          await shutdownServer();
+                        }
+                      : null,
+                  icon: const Icon(Icons.stop),
+                ),
+              ],
+            ),
+          );
+        });
   }
 }
 

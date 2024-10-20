@@ -2,11 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:localsend_rs/core/rust/bridge.dart';
 
-class TaskProgress extends StatelessWidget {
-  final progressStream = listenTaskProgress();
-  final int total;
+import '../../core/rust/session/progress.dart';
 
-  TaskProgress({super.key, required this.total});
+class TaskProgress extends StatelessWidget {
+  late final Stream<Progress> progressStream;
+  final String id;
+
+  TaskProgress({super.key, required this.id}) {
+    progressStream = listenProgress(id: id);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -14,9 +18,13 @@ class TaskProgress extends StatelessWidget {
         stream: progressStream,
         builder: (context, snapshot) {
           if (snapshot.hasData) {
-            print("${snapshot.data} / $total");
+            if (snapshot.data == null) {
+              return const LinearProgressIndicator();
+            }
+            final progress = snapshot.data!.progress;
+            final total = snapshot.data!.total;
             return LinearProgressIndicator(
-              value: (snapshot.data?.toDouble() ?? 0) / total,
+              value: progress / total,
             );
           }
           return Container();

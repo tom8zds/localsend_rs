@@ -1,11 +1,7 @@
-use std::{net::Ipv4Addr, str::FromStr};
-
 use log::debug;
 use tokio::sync::{mpsc, oneshot, watch};
 
-use super::{
-    device::DeviceActorHandle, http::HttpServerHandle, mission::MissionHandle, model::NodeDevice,
-};
+use super::{device::DeviceActorHandle, http::HttpServerHandle, model::NodeDevice};
 
 #[derive(Clone)]
 pub struct CoreConfig {
@@ -125,7 +121,6 @@ async fn run_context_actor(mut actor: CoreActor) {
 pub struct CoreActorHandle {
     sender: mpsc::Sender<CoreMessage>,
     pub device: DeviceActorHandle,
-    pub mission: MissionHandle,
 }
 
 impl CoreActorHandle {
@@ -135,13 +130,8 @@ impl CoreActorHandle {
         tokio::spawn(run_context_actor(actor));
 
         let device = DeviceActorHandle::new(device);
-        let mission = MissionHandle::new();
 
-        Self {
-            sender,
-            device,
-            mission,
-        }
+        Self { sender, device }
     }
     pub async fn listen(&self) -> watch::Receiver<bool> {
         let (send, recv) = oneshot::channel();

@@ -5,6 +5,7 @@ import 'package:filesize/filesize.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/rust/bridge.dart';
+import '../../core/rust/session/progress.dart';
 import '../widget/discover_widget.dart';
 
 class HomePage extends StatefulWidget {

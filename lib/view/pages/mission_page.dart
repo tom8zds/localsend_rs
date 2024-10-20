@@ -2,9 +2,10 @@ import 'package:filesize/filesize.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:localsend_rs/common/utils.dart';
-import 'package:localsend_rs/core/rust/actor/mission.dart';
 
-import '../../core/providers/mission_provider.dart';
+import 'package:localsend_rs/core/rust/session/model.dart';
+
+import '../../core/providers/session_provider.dart';
 import '../../core/rust/actor/model.dart';
 import '../../core/rust/bridge.dart';
 import '../../i18n/strings.g.dart';
@@ -31,11 +32,11 @@ class IdlePage extends StatelessWidget {
 }
 
 class TransferPage extends StatefulWidget {
-  final MissionInfo mission;
+  final SessionVm session;
   final bool isParalle;
 
   const TransferPage(
-      {super.key, required this.mission, required this.isParalle});
+      {super.key, required this.session, required this.isParalle});
 
   @override
   State<TransferPage> createState() => _TransferPageState();
@@ -48,16 +49,16 @@ class _TransferPageState extends State<TransferPage> {
 
   bool showAdvaned = false;
 
-  List<Widget> advanceMessage(MissionInfo mission) {
-    int totalNum = mission.files.length;
-    int totalSize = 0;
+  List<Widget> advanceMessage(SessionVm session) {
+    int totalNum = session.tasks.length;
+    BigInt totalSize = BigInt.from(0);
     int finishedNum = 0;
-    int finishedSize = 0;
-    for (var file in mission.files) {
-      totalSize += file.info.size;
-      if (file.state == const FileState.finish()) {
+    BigInt finishedSize = BigInt.from(0);
+    for (var task in session.tasks) {
+      totalSize += task.size;
+      if (task.status == const Status_Finish()) {
         finishedNum += 1;
-        finishedSize += file.info.size;
+        finishedSize += task.size;
       }
     }
     return [
@@ -75,9 +76,9 @@ class _TransferPageState extends State<TransferPage> {
         children: [
           Expanded(
               child: ListView.builder(
-                  itemCount: widget.mission.files.length,
+                  itemCount: widget.session.tasks.length,
                   itemBuilder: (context, index) {
-                    final file = widget.mission.files.elementAt(index);
+                    final task = widget.session.tasks.elementAt(index);
                     return Padding(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 8),
@@ -111,19 +112,18 @@ class _TransferPageState extends State<TransferPage> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
+                                  Text("${task.name} (${filesize(task.size)})"),
                                   Text(
-                                      "${file.info.fileName} (${filesize(file.info.size)})"),
-                                  Text(
-                                    file.state.getName(),
+                                    task.status.getName(),
                                     style: TextStyle(
                                       color: Theme.of(context)
                                           .colorScheme
                                           .secondary,
                                     ),
                                   ),
-                                  if (file.state == const FileState.transfer())
+                                  if (task.status == const Status_Finish())
                                     TaskProgress(
-                                      total: file.info.size,
+                                      id: task.id,
                                     ),
                                 ],
                               ),
@@ -158,13 +158,13 @@ class _TransferPageState extends State<TransferPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        widget.mission.state.getName(),
+                        widget.session.status.getName(),
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                       const SizedBox(
                         height: 8,
                       ),
-                      if (widget.mission.state == MissionState.finished)
+                      if (widget.session.status == const Status_Finish())
                         LinearProgressIndicator(
                           value: 1,
                           minHeight: 8,
@@ -183,7 +183,7 @@ class _TransferPageState extends State<TransferPage> {
                         height: 48,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          children: advanceMessage(widget.mission),
+                          children: advanceMessage(widget.session),
                         ),
                       ),
                     ],
@@ -209,15 +209,15 @@ class _TransferPageState extends State<TransferPage> {
                               showAdvaned = !showAdvaned;
                             });
                           },
-                          label: Text(context.t.mission.advance),
+                          label: Text(context.t.session.advance),
                           icon: const Icon(Icons.info),
                         ),
-                        if (widget.mission.state == MissionState.finished)
+                        if (widget.session.status == const Status_Finish())
                           FilledButton.icon(
                             onPressed: () {
                               clearMission();
                             },
-                            label: Text(context.t.mission.complete),
+                            label: Text(context.t.session.complete),
                             icon: const Icon(Icons.info),
                           )
                         else
@@ -225,7 +225,7 @@ class _TransferPageState extends State<TransferPage> {
                             onPressed: () {
                               clearMission();
                             },
-                            label: Text(context.t.mission.cancel),
+                            label: Text(context.t.session.cancel),
                             icon: const Icon(Icons.cancel),
                           )
                       ],
@@ -245,10 +245,10 @@ class _TransferPageState extends State<TransferPage> {
 }
 
 class PendingPage extends StatelessWidget {
-  final MissionInfo mission;
+  final SessionVm session;
   final bool isParalle;
 
-  PendingPage({super.key, required this.mission, required this.isParalle});
+  PendingPage({super.key, required this.session, required this.isParalle});
 
   final ButtonStyle style = ElevatedButton.styleFrom(
     padding: const EdgeInsets.fromLTRB(16, 16, 24, 16),
@@ -262,11 +262,11 @@ class PendingPage extends StatelessWidget {
         children: [
           Expanded(
               child: Center(
-            child: DeviceWidgetLarge(device: mission.sender),
+            child: DeviceWidgetLarge(device: session.node),
           )),
           SizedBox(
             height: kToolbarHeight,
-            child: mission.state == MissionState.canceled
+            child: session.status == const Status_Cancel()
                 ? Center(
                     child: Text(
                       "请求已取消。",
@@ -277,7 +277,7 @@ class PendingPage extends StatelessWidget {
                   )
                 : null,
           ),
-          mission.state != MissionState.pending
+          session.status != const Status_Pending()
               ? ElevatedButton.icon(
                   onPressed: () {
                     clearMission();
@@ -291,7 +291,7 @@ class PendingPage extends StatelessWidget {
                   children: [
                     ElevatedButton.icon(
                       onPressed: () {
-                        cancelPending(id: mission.id);
+                        cancelPending();
                         if (!isParalle) {
                           clearMission();
                         }
@@ -309,7 +309,7 @@ class PendingPage extends StatelessWidget {
                     ),
                     ElevatedButton.icon(
                       onPressed: () {
-                        acceptPending(id: mission.id);
+                        acceptPending();
                       },
                       style: style.copyWith(
                         backgroundColor: WidgetStatePropertyAll(
@@ -333,27 +333,32 @@ class PendingPage extends StatelessWidget {
   }
 }
 
-class MissionPendingPage extends ConsumerWidget {
+class MissionPendingPage extends StatelessWidget {
   final bool isParalle;
 
   const MissionPendingPage({super.key, this.isParalle = false});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final data = ref.watch(coreMissionProvider);
-    if (data != null) {
-      switch (data.state) {
-        case MissionState.pending:
-        case MissionState.canceled:
-          return PendingPage(mission: data, isParalle: isParalle);
-        case MissionState.transfering:
-        case MissionState.failed:
-        case MissionState.finished:
-          return TransferPage(mission: data, isParalle: isParalle);
-        default:
+  Widget build(BuildContext context) {
+    final session = SessionState.instance();
+    return ListenableBuilder(
+        listenable: session,
+        builder: (context, child) {
+          final data = session.session;
+          if (data != null) {
+            switch (data.status) {
+              case Status_Pending():
+              case Status_Cancel():
+                return PendingPage(session: data, isParalle: isParalle);
+              case Status_Transfer():
+              case Status_Fail():
+              case Status_Finish():
+                return TransferPage(session: data, isParalle: isParalle);
+              default:
+                return const IdlePage();
+            }
+          }
           return const IdlePage();
-      }
-    }
-    return const IdlePage();
+        });
   }
 }

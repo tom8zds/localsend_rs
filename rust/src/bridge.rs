@@ -4,7 +4,6 @@ use std::{
     sync::Arc,
 };
 
-use flutter_rust_bridge::DartFnFuture;
 use lazy_static::lazy_static;
 use log::debug;
 use tokio::{net::UdpSocket, sync::OnceCell};
@@ -12,12 +11,16 @@ use tokio::{net::UdpSocket, sync::OnceCell};
 use crate::{
     actor::{
         core::{CoreActorHandle, CoreConfig},
-        mission::{MissionInfo, MISSION_NOTIFY},
         model::NodeDevice,
     },
     api,
     frb_generated::StreamSink,
     logger::{self, LogEntry},
+    session::{
+        model::SessionVm,
+        progress::{get_progress, Progress},
+        session::SESSION_HOLDER,
+    },
 };
 
 lazy_static! {
@@ -73,8 +76,8 @@ pub async fn listen_device(s: StreamSink<Vec<NodeDevice>>) {
     }
 }
 
-pub async fn listen_mission(s: StreamSink<Option<MissionInfo>>) {
-    let mut rx = MISSION_NOTIFY.listen().await;
+pub async fn listen_session(s: StreamSink<Option<SessionVm>>) {
+    let mut rx = SESSION_HOLDER.listen();
     loop {
         let _ = rx.changed().await;
         debug!("mission change");
@@ -83,30 +86,29 @@ pub async fn listen_mission(s: StreamSink<Option<MissionInfo>>) {
     }
 }
 
-pub async fn listen_task_progress(s: StreamSink<usize>) {
-    let mut rx = _get_core()
-        .mission
-        .transfer
-        .listen_task_progress()
-        .await
-        .unwrap();
-    loop {
-        let _ = rx.changed().await;
-        let data = rx.borrow().clone();
-        let _ = s.add(data);
+pub async fn listen_progress(id: String, s: StreamSink<Progress>) {
+    let rx = get_progress(id);
+    match rx {
+        Ok(mut rx) => loop {
+            let _ = rx.changed().await;
+            let data = rx.borrow().clone();
+            let _ = s.add(data);
+        },
+        Err(_) => {}
     }
 }
 
 pub async fn clear_mission() {
-    MISSION_NOTIFY.clear().await;
+    SESSION_HOLDER.clear().await;
 }
 
-pub async fn cancel_pending(id: String) {
-    _get_core().mission.pending.cancel(id).await;
+pub async fn cancel_pending() {
+    SESSION_HOLDER.clear().await;
 }
 
-pub async fn accept_pending(id: String) {
-    _get_core().mission.pending.accept(id).await;
+pub async fn accept_pending() {
+    debug!("session agree");
+    SESSION_HOLDER.agree().await;
 }
 
 pub fn create_log_stream(s: StreamSink<LogEntry>) {
@@ -141,11 +143,6 @@ pub async fn announce() {
             )
             .await;
     }
-}
-
-pub struct Progress {
-    pub progress: usize,
-    pub total: usize,
 }
 
 pub async fn send_file(path: String, node: NodeDevice, prog_sink: StreamSink<Progress>) {

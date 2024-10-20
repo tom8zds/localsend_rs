@@ -4,9 +4,7 @@
 // ignore_for_file: unused_import, unused_element, unnecessary_import, duplicate_ignore, invalid_use_of_internal_member, annotate_overrides, non_constant_identifier_names, curly_braces_in_flow_control_structures, prefer_const_literals_to_create_immutables, unused_field
 
 import 'actor/core.dart';
-import 'actor/mission.dart';
 import 'actor/model.dart';
-import 'api/model.dart';
 import 'bridge.dart';
 import 'dart:async';
 import 'dart:convert';
@@ -15,6 +13,8 @@ import 'frb_generated.io.dart'
     if (dart.library.js_interop) 'frb_generated.web.dart';
 import 'logger.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
+import 'session/model.dart';
+import 'session/progress.dart';
 
 /// Main entrypoint of the Rust API
 class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
@@ -71,7 +71,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.5.0';
 
   @override
-  int get rustContentHash => 1936224693;
+  int get rustContentHash => 1098754419;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -82,11 +82,11 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
 }
 
 abstract class RustLibApi extends BaseApi {
-  Future<void> crateBridgeAcceptPending({required String id});
+  Future<void> crateBridgeAcceptPending();
 
   Future<void> crateBridgeAnnounce();
 
-  Future<void> crateBridgeCancelPending({required String id});
+  Future<void> crateBridgeCancelPending();
 
   Future<void> crateBridgeChangeConfig({required CoreConfig config});
 
@@ -98,11 +98,11 @@ abstract class RustLibApi extends BaseApi {
 
   Stream<List<NodeDevice>> crateBridgeListenDevice();
 
-  Stream<MissionInfo?> crateBridgeListenMission();
+  Stream<Progress> crateBridgeListenProgress({required String id});
 
   Stream<bool> crateBridgeListenServerState();
 
-  Stream<BigInt> crateBridgeListenTaskProgress();
+  Stream<SessionVm?> crateBridgeListenSession();
 
   Future<void> crateBridgeRestartServer();
 
@@ -126,11 +126,10 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   });
 
   @override
-  Future<void> crateBridgeAcceptPending({required String id}) {
+  Future<void> crateBridgeAcceptPending() {
     return handler.executeNormal(NormalTask(
       callFfi: (port_) {
         final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_String(id, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
             funcId: 1, port: port_);
       },
@@ -139,14 +138,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         decodeErrorData: null,
       ),
       constMeta: kCrateBridgeAcceptPendingConstMeta,
-      argValues: [id],
+      argValues: [],
       apiImpl: this,
     ));
   }
 
   TaskConstMeta get kCrateBridgeAcceptPendingConstMeta => const TaskConstMeta(
         debugName: "accept_pending",
-        argNames: ["id"],
+        argNames: [],
       );
 
   @override
@@ -173,11 +172,10 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Future<void> crateBridgeCancelPending({required String id}) {
+  Future<void> crateBridgeCancelPending() {
     return handler.executeNormal(NormalTask(
       callFfi: (port_) {
         final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_String(id, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
             funcId: 3, port: port_);
       },
@@ -186,14 +184,14 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         decodeErrorData: null,
       ),
       constMeta: kCrateBridgeCancelPendingConstMeta,
-      argValues: [id],
+      argValues: [],
       apiImpl: this,
     ));
   }
 
   TaskConstMeta get kCrateBridgeCancelPendingConstMeta => const TaskConstMeta(
         debugName: "cancel_pending",
-        argNames: ["id"],
+        argNames: [],
       );
 
   @override
@@ -320,12 +318,13 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Stream<MissionInfo?> crateBridgeListenMission() {
-    final s = RustStreamSink<MissionInfo?>();
+  Stream<Progress> crateBridgeListenProgress({required String id}) {
+    final s = RustStreamSink<Progress>();
     unawaited(handler.executeNormal(NormalTask(
       callFfi: (port_) {
         final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_StreamSink_opt_box_autoadd_mission_info_Sse(s, serializer);
+        sse_encode_String(id, serializer);
+        sse_encode_StreamSink_progress_Sse(s, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
             funcId: 9, port: port_);
       },
@@ -333,16 +332,16 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         decodeSuccessData: sse_decode_unit,
         decodeErrorData: null,
       ),
-      constMeta: kCrateBridgeListenMissionConstMeta,
-      argValues: [s],
+      constMeta: kCrateBridgeListenProgressConstMeta,
+      argValues: [id, s],
       apiImpl: this,
     )));
     return s.stream;
   }
 
-  TaskConstMeta get kCrateBridgeListenMissionConstMeta => const TaskConstMeta(
-        debugName: "listen_mission",
-        argNames: ["s"],
+  TaskConstMeta get kCrateBridgeListenProgressConstMeta => const TaskConstMeta(
+        debugName: "listen_progress",
+        argNames: ["id", "s"],
       );
 
   @override
@@ -373,12 +372,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Stream<BigInt> crateBridgeListenTaskProgress() {
-    final s = RustStreamSink<BigInt>();
+  Stream<SessionVm?> crateBridgeListenSession() {
+    final s = RustStreamSink<SessionVm?>();
     unawaited(handler.executeNormal(NormalTask(
       callFfi: (port_) {
         final serializer = SseSerializer(generalizedFrbRustBinding);
-        sse_encode_StreamSink_usize_Sse(s, serializer);
+        sse_encode_StreamSink_opt_box_autoadd_session_vm_Sse(s, serializer);
         pdeCallFfi(generalizedFrbRustBinding, serializer,
             funcId: 11, port: port_);
       },
@@ -386,16 +385,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         decodeSuccessData: sse_decode_unit,
         decodeErrorData: null,
       ),
-      constMeta: kCrateBridgeListenTaskProgressConstMeta,
+      constMeta: kCrateBridgeListenSessionConstMeta,
       argValues: [s],
       apiImpl: this,
     )));
     return s.stream;
   }
 
-  TaskConstMeta get kCrateBridgeListenTaskProgressConstMeta =>
-      const TaskConstMeta(
-        debugName: "listen_task_progress",
+  TaskConstMeta get kCrateBridgeListenSessionConstMeta => const TaskConstMeta(
+        debugName: "listen_session",
         argNames: ["s"],
       );
 
@@ -549,8 +547,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  RustStreamSink<MissionInfo?>
-      dco_decode_StreamSink_opt_box_autoadd_mission_info_Sse(dynamic raw) {
+  RustStreamSink<SessionVm?>
+      dco_decode_StreamSink_opt_box_autoadd_session_vm_Sse(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     throw UnimplementedError();
   }
@@ -562,15 +560,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  RustStreamSink<BigInt> dco_decode_StreamSink_usize_Sse(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    throw UnimplementedError();
-  }
-
-  @protected
   String dco_decode_String(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as String;
+  }
+
+  @protected
+  BigInt dco_decode_U128(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return BigInt.parse(raw);
   }
 
   @protected
@@ -586,15 +584,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  MissionInfo dco_decode_box_autoadd_mission_info(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return dco_decode_mission_info(raw);
-  }
-
-  @protected
   NodeDevice dco_decode_box_autoadd_node_device(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return dco_decode_node_device(raw);
+  }
+
+  @protected
+  SessionVm dco_decode_box_autoadd_session_vm(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return dco_decode_session_vm(raw);
   }
 
   @protected
@@ -613,43 +611,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  FileInfo dco_decode_file_info(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    final arr = raw as List<dynamic>;
-    if (arr.length != 6)
-      throw Exception('unexpected arr length: expect 6 but see ${arr.length}');
-    return FileInfo(
-      id: dco_decode_String(arr[0]),
-      fileName: dco_decode_String(arr[1]),
-      size: dco_decode_i_64(arr[2]),
-      fileType: dco_decode_String(arr[3]),
-      sha256: dco_decode_opt_String(arr[4]),
-      preview: dco_decode_opt_list_prim_u_8_strict(arr[5]),
-    );
-  }
-
-  @protected
-  FileState dco_decode_file_state(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    switch (raw[0]) {
-      case 0:
-        return const FileState_Pending();
-      case 1:
-        return const FileState_Transfer();
-      case 2:
-        return const FileState_Finish();
-      case 3:
-        return const FileState_Skip();
-      case 4:
-        return FileState_Fail(
-          msg: dco_decode_String(raw[1]),
-        );
-      default:
-        throw Exception("unreachable");
-    }
-  }
-
-  @protected
   int dco_decode_i_32(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as int;
@@ -659,12 +620,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   PlatformInt64 dco_decode_i_64(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return dcoDecodeI64(raw);
-  }
-
-  @protected
-  List<MissionFileInfo> dco_decode_list_mission_file_info(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return (raw as List<dynamic>).map(dco_decode_mission_file_info).toList();
   }
 
   @protected
@@ -680,6 +635,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  List<TaskVm> dco_decode_list_task_vm(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_task_vm).toList();
+  }
+
+  @protected
   LogEntry dco_decode_log_entry(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
@@ -691,38 +652,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       tag: dco_decode_String(arr[2]),
       msg: dco_decode_String(arr[3]),
     );
-  }
-
-  @protected
-  MissionFileInfo dco_decode_mission_file_info(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    final arr = raw as List<dynamic>;
-    if (arr.length != 2)
-      throw Exception('unexpected arr length: expect 2 but see ${arr.length}');
-    return MissionFileInfo(
-      info: dco_decode_file_info(arr[0]),
-      state: dco_decode_file_state(arr[1]),
-    );
-  }
-
-  @protected
-  MissionInfo dco_decode_mission_info(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    final arr = raw as List<dynamic>;
-    if (arr.length != 4)
-      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
-    return MissionInfo(
-      id: dco_decode_String(arr[0]),
-      sender: dco_decode_node_device(arr[1]),
-      files: dco_decode_list_mission_file_info(arr[2]),
-      state: dco_decode_mission_state(arr[3]),
-    );
-  }
-
-  @protected
-  MissionState dco_decode_mission_state(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return MissionState.values[raw as int];
   }
 
   @protected
@@ -747,21 +676,9 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  String? dco_decode_opt_String(dynamic raw) {
+  SessionVm? dco_decode_opt_box_autoadd_session_vm(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
-    return raw == null ? null : dco_decode_String(raw);
-  }
-
-  @protected
-  MissionInfo? dco_decode_opt_box_autoadd_mission_info(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return raw == null ? null : dco_decode_box_autoadd_mission_info(raw);
-  }
-
-  @protected
-  Uint8List? dco_decode_opt_list_prim_u_8_strict(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    return raw == null ? null : dco_decode_list_prim_u_8_strict(raw);
+    return raw == null ? null : dco_decode_box_autoadd_session_vm(raw);
   }
 
   @protected
@@ -773,6 +690,59 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     return Progress(
       progress: dco_decode_usize(arr[0]),
       total: dco_decode_usize(arr[1]),
+    );
+  }
+
+  @protected
+  SessionVm dco_decode_session_vm(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 4)
+      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    return SessionVm(
+      id: dco_decode_String(arr[0]),
+      node: dco_decode_node_device(arr[1]),
+      tasks: dco_decode_list_task_vm(arr[2]),
+      status: dco_decode_status(arr[3]),
+    );
+  }
+
+  @protected
+  Status dco_decode_status(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    switch (raw[0]) {
+      case 0:
+        return const Status_Pending();
+      case 1:
+        return Status_Transfer(
+          startTime: dco_decode_U128(raw[1]),
+        );
+      case 2:
+        return const Status_Finish();
+      case 3:
+        return Status_Fail(
+          msg: dco_decode_String(raw[1]),
+        );
+      case 4:
+        return const Status_Cancel();
+      case 5:
+        return const Status_Rejected();
+      default:
+        throw Exception("unreachable");
+    }
+  }
+
+  @protected
+  TaskVm dco_decode_task_vm(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 4)
+      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    return TaskVm(
+      id: dco_decode_String(arr[0]),
+      name: dco_decode_String(arr[1]),
+      size: dco_decode_usize(arr[2]),
+      status: dco_decode_status(arr[3]),
     );
   }
 
@@ -829,8 +799,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  RustStreamSink<MissionInfo?>
-      sse_decode_StreamSink_opt_box_autoadd_mission_info_Sse(
+  RustStreamSink<SessionVm?>
+      sse_decode_StreamSink_opt_box_autoadd_session_vm_Sse(
           SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     throw UnimplementedError('Unreachable ()');
@@ -844,17 +814,17 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  RustStreamSink<BigInt> sse_decode_StreamSink_usize_Sse(
-      SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    throw UnimplementedError('Unreachable ()');
-  }
-
-  @protected
   String sse_decode_String(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var inner = sse_decode_list_prim_u_8_strict(deserializer);
     return utf8.decoder.convert(inner);
+  }
+
+  @protected
+  BigInt sse_decode_U128(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var inner = sse_decode_String(deserializer);
+    return BigInt.parse(inner);
   }
 
   @protected
@@ -870,16 +840,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  MissionInfo sse_decode_box_autoadd_mission_info(
-      SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    return (sse_decode_mission_info(deserializer));
-  }
-
-  @protected
   NodeDevice sse_decode_box_autoadd_node_device(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return (sse_decode_node_device(deserializer));
+  }
+
+  @protected
+  SessionVm sse_decode_box_autoadd_session_vm(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_session_vm(deserializer));
   }
 
   @protected
@@ -899,46 +868,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  FileInfo sse_decode_file_info(SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    var var_id = sse_decode_String(deserializer);
-    var var_fileName = sse_decode_String(deserializer);
-    var var_size = sse_decode_i_64(deserializer);
-    var var_fileType = sse_decode_String(deserializer);
-    var var_sha256 = sse_decode_opt_String(deserializer);
-    var var_preview = sse_decode_opt_list_prim_u_8_strict(deserializer);
-    return FileInfo(
-        id: var_id,
-        fileName: var_fileName,
-        size: var_size,
-        fileType: var_fileType,
-        sha256: var_sha256,
-        preview: var_preview);
-  }
-
-  @protected
-  FileState sse_decode_file_state(SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-
-    var tag_ = sse_decode_i_32(deserializer);
-    switch (tag_) {
-      case 0:
-        return const FileState_Pending();
-      case 1:
-        return const FileState_Transfer();
-      case 2:
-        return const FileState_Finish();
-      case 3:
-        return const FileState_Skip();
-      case 4:
-        var var_msg = sse_decode_String(deserializer);
-        return FileState_Fail(msg: var_msg);
-      default:
-        throw UnimplementedError('');
-    }
-  }
-
-  @protected
   int sse_decode_i_32(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return deserializer.buffer.getInt32();
@@ -948,19 +877,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   PlatformInt64 sse_decode_i_64(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return deserializer.buffer.getPlatformInt64();
-  }
-
-  @protected
-  List<MissionFileInfo> sse_decode_list_mission_file_info(
-      SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-
-    var len_ = sse_decode_i_32(deserializer);
-    var ans_ = <MissionFileInfo>[];
-    for (var idx_ = 0; idx_ < len_; ++idx_) {
-      ans_.add(sse_decode_mission_file_info(deserializer));
-    }
-    return ans_;
   }
 
   @protected
@@ -983,6 +899,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  List<TaskVm> sse_decode_list_task_vm(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <TaskVm>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_task_vm(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
   LogEntry sse_decode_log_entry(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var var_timeMillis = sse_decode_i_64(deserializer);
@@ -994,32 +922,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         level: var_level,
         tag: var_tag,
         msg: var_msg);
-  }
-
-  @protected
-  MissionFileInfo sse_decode_mission_file_info(SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    var var_info = sse_decode_file_info(deserializer);
-    var var_state = sse_decode_file_state(deserializer);
-    return MissionFileInfo(info: var_info, state: var_state);
-  }
-
-  @protected
-  MissionInfo sse_decode_mission_info(SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    var var_id = sse_decode_String(deserializer);
-    var var_sender = sse_decode_node_device(deserializer);
-    var var_files = sse_decode_list_mission_file_info(deserializer);
-    var var_state = sse_decode_mission_state(deserializer);
-    return MissionInfo(
-        id: var_id, sender: var_sender, files: var_files, state: var_state);
-  }
-
-  @protected
-  MissionState sse_decode_mission_state(SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    var inner = sse_decode_i_32(deserializer);
-    return MissionState.values[inner];
   }
 
   @protected
@@ -1051,34 +953,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  String? sse_decode_opt_String(SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-
-    if (sse_decode_bool(deserializer)) {
-      return (sse_decode_String(deserializer));
-    } else {
-      return null;
-    }
-  }
-
-  @protected
-  MissionInfo? sse_decode_opt_box_autoadd_mission_info(
+  SessionVm? sse_decode_opt_box_autoadd_session_vm(
       SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
 
     if (sse_decode_bool(deserializer)) {
-      return (sse_decode_box_autoadd_mission_info(deserializer));
-    } else {
-      return null;
-    }
-  }
-
-  @protected
-  Uint8List? sse_decode_opt_list_prim_u_8_strict(SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-
-    if (sse_decode_bool(deserializer)) {
-      return (sse_decode_list_prim_u_8_strict(deserializer));
+      return (sse_decode_box_autoadd_session_vm(deserializer));
     } else {
       return null;
     }
@@ -1090,6 +970,53 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_progress = sse_decode_usize(deserializer);
     var var_total = sse_decode_usize(deserializer);
     return Progress(progress: var_progress, total: var_total);
+  }
+
+  @protected
+  SessionVm sse_decode_session_vm(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_id = sse_decode_String(deserializer);
+    var var_node = sse_decode_node_device(deserializer);
+    var var_tasks = sse_decode_list_task_vm(deserializer);
+    var var_status = sse_decode_status(deserializer);
+    return SessionVm(
+        id: var_id, node: var_node, tasks: var_tasks, status: var_status);
+  }
+
+  @protected
+  Status sse_decode_status(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var tag_ = sse_decode_i_32(deserializer);
+    switch (tag_) {
+      case 0:
+        return const Status_Pending();
+      case 1:
+        var var_startTime = sse_decode_U128(deserializer);
+        return Status_Transfer(startTime: var_startTime);
+      case 2:
+        return const Status_Finish();
+      case 3:
+        var var_msg = sse_decode_String(deserializer);
+        return Status_Fail(msg: var_msg);
+      case 4:
+        return const Status_Cancel();
+      case 5:
+        return const Status_Rejected();
+      default:
+        throw UnimplementedError('');
+    }
+  }
+
+  @protected
+  TaskVm sse_decode_task_vm(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_id = sse_decode_String(deserializer);
+    var var_name = sse_decode_String(deserializer);
+    var var_size = sse_decode_usize(deserializer);
+    var var_status = sse_decode_status(deserializer);
+    return TaskVm(
+        id: var_id, name: var_name, size: var_size, status: var_status);
   }
 
   @protected
@@ -1162,13 +1089,13 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  void sse_encode_StreamSink_opt_box_autoadd_mission_info_Sse(
-      RustStreamSink<MissionInfo?> self, SseSerializer serializer) {
+  void sse_encode_StreamSink_opt_box_autoadd_session_vm_Sse(
+      RustStreamSink<SessionVm?> self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_String(
         self.setupAndSerialize(
             codec: SseCodec(
-          decodeSuccessData: sse_decode_opt_box_autoadd_mission_info,
+          decodeSuccessData: sse_decode_opt_box_autoadd_session_vm,
           decodeErrorData: sse_decode_AnyhowException,
         )),
         serializer);
@@ -1188,22 +1115,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  void sse_encode_StreamSink_usize_Sse(
-      RustStreamSink<BigInt> self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_String(
-        self.setupAndSerialize(
-            codec: SseCodec(
-          decodeSuccessData: sse_decode_usize,
-          decodeErrorData: sse_decode_AnyhowException,
-        )),
-        serializer);
-  }
-
-  @protected
   void sse_encode_String(String self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_list_prim_u_8_strict(utf8.encoder.convert(self), serializer);
+  }
+
+  @protected
+  void sse_encode_U128(BigInt self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.toString(), serializer);
   }
 
   @protected
@@ -1220,17 +1140,17 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  void sse_encode_box_autoadd_mission_info(
-      MissionInfo self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_mission_info(self, serializer);
-  }
-
-  @protected
   void sse_encode_box_autoadd_node_device(
       NodeDevice self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_node_device(self, serializer);
+  }
+
+  @protected
+  void sse_encode_box_autoadd_session_vm(
+      SessionVm self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_session_vm(self, serializer);
   }
 
   @protected
@@ -1244,37 +1164,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  void sse_encode_file_info(FileInfo self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_String(self.id, serializer);
-    sse_encode_String(self.fileName, serializer);
-    sse_encode_i_64(self.size, serializer);
-    sse_encode_String(self.fileType, serializer);
-    sse_encode_opt_String(self.sha256, serializer);
-    sse_encode_opt_list_prim_u_8_strict(self.preview, serializer);
-  }
-
-  @protected
-  void sse_encode_file_state(FileState self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    switch (self) {
-      case FileState_Pending():
-        sse_encode_i_32(0, serializer);
-      case FileState_Transfer():
-        sse_encode_i_32(1, serializer);
-      case FileState_Finish():
-        sse_encode_i_32(2, serializer);
-      case FileState_Skip():
-        sse_encode_i_32(3, serializer);
-      case FileState_Fail(msg: final msg):
-        sse_encode_i_32(4, serializer);
-        sse_encode_String(msg, serializer);
-      default:
-        throw UnimplementedError('');
-    }
-  }
-
-  @protected
   void sse_encode_i_32(int self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     serializer.buffer.putInt32(self);
@@ -1284,16 +1173,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   void sse_encode_i_64(PlatformInt64 self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     serializer.buffer.putPlatformInt64(self);
-  }
-
-  @protected
-  void sse_encode_list_mission_file_info(
-      List<MissionFileInfo> self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_i_32(self.length, serializer);
-    for (final item in self) {
-      sse_encode_mission_file_info(item, serializer);
-    }
   }
 
   @protected
@@ -1315,35 +1194,21 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_list_task_vm(List<TaskVm> self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_task_vm(item, serializer);
+    }
+  }
+
+  @protected
   void sse_encode_log_entry(LogEntry self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_i_64(self.timeMillis, serializer);
     sse_encode_i_32(self.level, serializer);
     sse_encode_String(self.tag, serializer);
     sse_encode_String(self.msg, serializer);
-  }
-
-  @protected
-  void sse_encode_mission_file_info(
-      MissionFileInfo self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_file_info(self.info, serializer);
-    sse_encode_file_state(self.state, serializer);
-  }
-
-  @protected
-  void sse_encode_mission_info(MissionInfo self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_String(self.id, serializer);
-    sse_encode_node_device(self.sender, serializer);
-    sse_encode_list_mission_file_info(self.files, serializer);
-    sse_encode_mission_state(self.state, serializer);
-  }
-
-  @protected
-  void sse_encode_mission_state(MissionState self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_i_32(self.index, serializer);
   }
 
   @protected
@@ -1363,34 +1228,13 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  void sse_encode_opt_String(String? self, SseSerializer serializer) {
+  void sse_encode_opt_box_autoadd_session_vm(
+      SessionVm? self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
 
     sse_encode_bool(self != null, serializer);
     if (self != null) {
-      sse_encode_String(self, serializer);
-    }
-  }
-
-  @protected
-  void sse_encode_opt_box_autoadd_mission_info(
-      MissionInfo? self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-
-    sse_encode_bool(self != null, serializer);
-    if (self != null) {
-      sse_encode_box_autoadd_mission_info(self, serializer);
-    }
-  }
-
-  @protected
-  void sse_encode_opt_list_prim_u_8_strict(
-      Uint8List? self, SseSerializer serializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-
-    sse_encode_bool(self != null, serializer);
-    if (self != null) {
-      sse_encode_list_prim_u_8_strict(self, serializer);
+      sse_encode_box_autoadd_session_vm(self, serializer);
     }
   }
 
@@ -1399,6 +1243,47 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_usize(self.progress, serializer);
     sse_encode_usize(self.total, serializer);
+  }
+
+  @protected
+  void sse_encode_session_vm(SessionVm self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.id, serializer);
+    sse_encode_node_device(self.node, serializer);
+    sse_encode_list_task_vm(self.tasks, serializer);
+    sse_encode_status(self.status, serializer);
+  }
+
+  @protected
+  void sse_encode_status(Status self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    switch (self) {
+      case Status_Pending():
+        sse_encode_i_32(0, serializer);
+      case Status_Transfer(startTime: final startTime):
+        sse_encode_i_32(1, serializer);
+        sse_encode_U128(startTime, serializer);
+      case Status_Finish():
+        sse_encode_i_32(2, serializer);
+      case Status_Fail(msg: final msg):
+        sse_encode_i_32(3, serializer);
+        sse_encode_String(msg, serializer);
+      case Status_Cancel():
+        sse_encode_i_32(4, serializer);
+      case Status_Rejected():
+        sse_encode_i_32(5, serializer);
+      default:
+        throw UnimplementedError('');
+    }
+  }
+
+  @protected
+  void sse_encode_task_vm(TaskVm self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.id, serializer);
+    sse_encode_String(self.name, serializer);
+    sse_encode_usize(self.size, serializer);
+    sse_encode_status(self.status, serializer);
   }
 
   @protected

@@ -4,12 +4,12 @@
 // ignore_for_file: invalid_use_of_internal_member, unused_import, unnecessary_import
 
 import 'actor/core.dart';
-import 'actor/mission.dart';
 import 'actor/model.dart';
-import 'api/model.dart';
 import 'frb_generated.dart';
 import 'logger.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
+import 'session/model.dart';
+import 'session/progress.dart';
 
 // These functions are ignored because they are not marked as `pub`: `_get_core`
 // These types are ignored because they are not used by any `pub` functions: `CORE`
@@ -37,19 +37,17 @@ Future<void> changeConfig({required CoreConfig config}) =>
 Stream<List<NodeDevice>> listenDevice() =>
     RustLib.instance.api.crateBridgeListenDevice();
 
-Stream<MissionInfo?> listenMission() =>
-    RustLib.instance.api.crateBridgeListenMission();
+Stream<SessionVm?> listenSession() =>
+    RustLib.instance.api.crateBridgeListenSession();
 
-Stream<BigInt> listenTaskProgress() =>
-    RustLib.instance.api.crateBridgeListenTaskProgress();
+Stream<Progress> listenProgress({required String id}) =>
+    RustLib.instance.api.crateBridgeListenProgress(id: id);
 
 Future<void> clearMission() => RustLib.instance.api.crateBridgeClearMission();
 
-Future<void> cancelPending({required String id}) =>
-    RustLib.instance.api.crateBridgeCancelPending(id: id);
+Future<void> cancelPending() => RustLib.instance.api.crateBridgeCancelPending();
 
-Future<void> acceptPending({required String id}) =>
-    RustLib.instance.api.crateBridgeAcceptPending(id: id);
+Future<void> acceptPending() => RustLib.instance.api.crateBridgeAcceptPending();
 
 Stream<LogEntry> createLogStream() =>
     RustLib.instance.api.crateBridgeCreateLogStream();
@@ -58,24 +56,3 @@ Future<void> announce() => RustLib.instance.api.crateBridgeAnnounce();
 
 Stream<Progress> sendFile({required String path, required NodeDevice node}) =>
     RustLib.instance.api.crateBridgeSendFile(path: path, node: node);
-
-class Progress {
-  final BigInt progress;
-  final BigInt total;
-
-  const Progress({
-    required this.progress,
-    required this.total,
-  });
-
-  @override
-  int get hashCode => progress.hashCode ^ total.hashCode;
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is Progress &&
-          runtimeType == other.runtimeType &&
-          progress == other.progress &&
-          total == other.total;
-}

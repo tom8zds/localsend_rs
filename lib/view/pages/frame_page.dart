@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:localsend_rs/view/pages/mission_page.dart';
 
 import '../../common/utils.dart';
-import '../../core/providers/mission_provider.dart';
+import '../../core/providers/session_provider.dart';
 import '../../i18n/strings.g.dart';
 import '../widget/common_widget.dart';
 import 'home_page.dart';
@@ -67,7 +67,7 @@ class _FramePageState extends ConsumerState<FramePage> {
       final brightness = Theme.of(context).brightness;
       initOverlay(brightness);
     }
-    final data = ref.watch(coreMissionProvider);
+    final data = SessionState.instance().session;
 
     final width = MediaQuery.of(context).size.width;
     final frameType = getFrameType(width);
@@ -76,27 +76,31 @@ class _FramePageState extends ConsumerState<FramePage> {
         isParalle: false,
       );
     }
-    return Scaffold(
-      body: SafeArea(child: getView(frameType)),
-      bottomNavigationBar: frameType == FrameType.compact
-          ? NavigationBar(
-              selectedIndex: index,
-              onDestinationSelected: changeIndex,
-              destinations: [
-                NavigationDestination(
-                  icon: const Icon(Icons.home_outlined),
-                  selectedIcon: const Icon(Icons.home),
-                  label: context.t.home.title,
-                ),
-                NavigationDestination(
-                  icon: const Icon(Icons.settings_outlined),
-                  selectedIcon: const Icon(Icons.settings),
-                  label: context.t.setting.title,
-                ),
-              ],
-            )
-          : null,
-    );
+    return ListenableBuilder(
+        listenable: SessionState.instance(),
+        builder: (context, child) {
+          return Scaffold(
+            body: SafeArea(child: getView(frameType)),
+            bottomNavigationBar: frameType == FrameType.compact
+                ? NavigationBar(
+                    selectedIndex: index,
+                    onDestinationSelected: changeIndex,
+                    destinations: [
+                      NavigationDestination(
+                        icon: const Icon(Icons.home_outlined),
+                        selectedIcon: const Icon(Icons.home),
+                        label: context.t.home.title,
+                      ),
+                      NavigationDestination(
+                        icon: const Icon(Icons.settings_outlined),
+                        selectedIcon: const Icon(Icons.settings),
+                        label: context.t.setting.title,
+                      ),
+                    ],
+                  )
+                : null,
+          );
+        });
   }
 
   Widget getSideNavigation(FrameType frameType) {

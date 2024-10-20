@@ -8,21 +8,25 @@ use tokio::io::{AsyncRead, AsyncWrite, ReadBuf};
 use tokio::sync::watch::Sender;
 use tokio::time::{interval, Interval};
 
+use crate::session::progress::Progress;
+
 pin_project! {
     pub struct ProgressWriteAdapter<R: AsyncWrite> {
         #[pin]
         inner: R,
         interval: Interval,
         interval_bytes: usize,
-        tx: Sender<usize>
+        total_size: usize,
+        tx: Sender<Progress>
     }
 }
 
 impl<R: AsyncWrite> ProgressWriteAdapter<R> {
-    pub fn new(inner: R, tx: Sender<usize>) -> Self {
+    pub fn new(inner: R, total_size: usize, tx: Sender<Progress>) -> Self {
         Self {
             inner,
             interval: interval(Duration::from_millis(100)),
+            total_size,
             interval_bytes: 0,
             tx,
         }
@@ -46,7 +50,10 @@ impl<R: AsyncWrite> AsyncWrite for ProgressWriteAdapter<R> {
         match this.interval.poll_tick(cx) {
             Poll::Pending => {}
             Poll::Ready(_) => {
-                let _ = this.tx.send(*this.interval_bytes);
+                let _ = this.tx.send(Progress {
+                    progress: *this.interval_bytes,
+                    total: this.total_size.clone(),
+                });
             }
         };
 
