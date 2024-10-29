@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:localsend_rs/core/rust/actor/model.dart';
 import 'package:localsend_rs/core/rust/session/model.dart';
 import 'package:localsend_rs/core/store/config_store.dart';
 import 'package:logger/logger.dart';
@@ -161,5 +162,13 @@ extension StatusName on Status {
       // TODO: Handle this case.
     }
     return "unknown";
+  }
+}
+
+class DeviceHolder {
+  static late NodeDevice device;
+
+  static void setDevice(NodeDevice device) {
+    DeviceHolder.device = device;
   }
 }

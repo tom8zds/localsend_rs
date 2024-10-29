@@ -121,7 +121,7 @@ class _TransferPageState extends State<TransferPage> {
                                           .secondary,
                                     ),
                                   ),
-                                  if (task.status == const Status_Finish())
+                                  if (task.status is Status_Transfer)
                                     TaskProgress(
                                       id: task.id,
                                     ),

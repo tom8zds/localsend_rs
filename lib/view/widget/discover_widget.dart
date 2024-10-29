@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:localsend_rs/core/rust/actor/model.dart';
+import 'package:localsend_rs/view/pages/send_page.dart';
 import 'package:localsend_rs/view/widget/device_widget.dart';
 
 import '../../core/providers/core_provider.dart';
@@ -33,7 +34,22 @@ class DiscoverWidget extends StatelessWidget {
                 return ListView.builder(
                   itemBuilder: (context, index) {
                     final item = data.elementAt(index);
-                    return DeviceWidget(device: item, onTap: onDeviceTapped);
+                    return Hero(
+                      tag: item.fingerprint,
+                      child: DeviceWidget(
+                        device: item,
+                        actions: [
+                          IconButton(
+                            onPressed: () {
+                              Navigator.of(context).push(MaterialPageRoute(
+                                  builder: (context) =>
+                                      SendPage(target: item)));
+                            },
+                            icon: const Icon(Icons.send),
+                          ),
+                        ],
+                      ),
+                    );
                   },
                   itemCount: data.length,
                 );

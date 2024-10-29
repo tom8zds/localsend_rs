@@ -36,3 +36,14 @@ extension DeviceTypeExt on DeviceType {
     };
   }
 }
+
+DeviceType deviceTypeFromString(String type) {
+  return switch (type) {
+    "mobile" => DeviceType.mobile,
+    "desktop" => DeviceType.desktop,
+    "web" => DeviceType.web,
+    "headless" => DeviceType.headless,
+    "server" => DeviceType.server,
+    _ => DeviceType.server,
+  };
+}

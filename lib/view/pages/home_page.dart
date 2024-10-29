@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:filesize/filesize.dart';
 import 'package:flutter/material.dart';
+import 'package:localsend_rs/view/widget/file_widget.dart';
+import 'package:path/path.dart';
 
 import '../../core/rust/bridge.dart';
 import '../../core/rust/session/progress.dart';
@@ -97,22 +99,12 @@ class _HomePageState extends State<HomePage> {
                     const SizedBox(
                       height: 8,
                     ),
-                    Row(
+                    Column(
                       children: [
-                        for (final (index, file) in selectedFiles.indexed)
-                          Padding(
-                            padding: const EdgeInsets.all(4.0),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .secondaryContainer,
-                                  borderRadius: BorderRadius.circular(12)),
-                              height: 40,
-                              width: 40,
-                              child: const Icon(Icons.file_present),
-                            ),
-                          )
+                        for (final file in selectedFiles)
+                          FileWidget(
+                              name: basename(file.path),
+                              size: file.lengthSync())
                       ],
                     ),
                     const SizedBox(

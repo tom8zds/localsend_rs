@@ -25,6 +25,7 @@ Future<void> main() async {
   await ConfigStore.ensureInitialized();
 
   final device = await getDevice();
+  DeviceHolder.setDevice(device);
   final config = await getConfig(device.port);
   await setup(device: device, config: config);
 

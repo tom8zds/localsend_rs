@@ -94,7 +94,7 @@ pub async fn listen_progress(id: String, s: StreamSink<Progress>) {
             let data = rx.borrow().clone();
             let _ = s.add(data);
         },
-        Err(_) => {}
+        Err(_) => debug!("progress not found"),
     }
 }
 
