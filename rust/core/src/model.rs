@@ -220,22 +220,12 @@ impl FileState {
     }
 }
 
-/// Per-file view of a session, used by the compatibility mission stream
-/// and by [`SessionSummary`] for per-file progress rendering.
+/// Per-file view of a session, used by [`SessionSummary`] for per-file
+/// progress rendering.
 #[derive(Debug, Clone, PartialEq)]
 pub struct MissionFileInfo {
     pub info: FileInfo,
     pub state: FileState,
-}
-
-/// Compatibility view of the most recent receive session, consumed by
-/// the current Flutter UI through the ffi crate.
-#[derive(Clone)]
-pub struct MissionInfo {
-    pub id: String,
-    pub sender: NodeDevice,
-    pub files: Vec<MissionFileInfo>,
-    pub state: MissionState,
 }
 
 // ---------------------------------------------------------------------------

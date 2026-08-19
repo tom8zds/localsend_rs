@@ -20,8 +20,8 @@ pub use config::CoreConfig;
 pub use device::DeviceActorHandle;
 pub use handle::{CoreHandle, CoreOptions};
 pub use model::{
-    FileInfo, FileRequest, FileResponse, FileState, MissionFileInfo, MissionInfo, MissionState,
-    NodeAnnounce, NodeDevice, SenderInfo, SessionDirection, SessionEvent, SessionSummary,
-    UploadTask, PROTOCOL_VERSION,
+    FileInfo, FileRequest, FileResponse, FileState, MissionFileInfo, MissionState, NodeAnnounce,
+    NodeDevice, SenderInfo, SessionDirection, SessionEvent, SessionSummary, UploadTask,
+    PROTOCOL_VERSION,
 };
 pub use session::{Decision, FileTask, SessionError, SessionHandle, DEFAULT_MAX_RECV_SESSIONS};

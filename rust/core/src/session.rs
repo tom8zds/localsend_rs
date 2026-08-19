@@ -12,10 +12,7 @@
 //!   `prepare-upload` request through a stored oneshot channel,
 //! * observers use [`SessionHandle::session_index`] (low-frequency
 //!   snapshots) and [`SessionHandle::session_events`] (per-session
-//!   event stream),
-//! * a compatibility layer keeps the legacy single-mission
-//!   `watch<Option<MissionInfo>>` and per-task progress feeds alive for
-//!   the current Flutter UI.
+//!   event stream).
 
 use std::collections::HashMap;
 
@@ -25,7 +22,7 @@ use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
 
 use crate::model::{
-    FileInfo, FileState, MissionFileInfo, MissionInfo, MissionState, NodeDevice, SessionDirection,
+    FileInfo, FileState, MissionFileInfo, MissionState, NodeDevice, SessionDirection,
     SessionEvent, SessionSummary,
 };
 
@@ -132,15 +129,6 @@ impl Session {
         }
     }
 
-    fn mission_info(&self) -> MissionInfo {
-        MissionInfo {
-            id: self.id.clone(),
-            sender: self.peer.clone(),
-            files: self.file_infos(),
-            state: self.state,
-        }
-    }
-
     fn is_active(&self) -> bool {
         matches!(self.state, MissionState::Pending | MissionState::Transfering)
     }
@@ -217,15 +205,6 @@ enum Message {
     ListenIndex {
         respond_to: oneshot::Sender<watch::Receiver<Vec<SessionSummary>>>,
     },
-    MissionListen {
-        respond_to: oneshot::Sender<watch::Receiver<Option<MissionInfo>>>,
-    },
-    MissionClear {
-        respond_to: oneshot::Sender<()>,
-    },
-    TaskProgressListen {
-        respond_to: oneshot::Sender<watch::Receiver<usize>>,
-    },
 }
 
 struct Actor {
@@ -235,12 +214,6 @@ struct Actor {
     max_recv_sessions: usize,
     index_tx: watch::Sender<Vec<SessionSummary>>,
     index_rx: watch::Receiver<Vec<SessionSummary>>,
-    // Compatibility layer (legacy single-mission Flutter UI).
-    latest_recv: Option<String>,
-    mission_tx: watch::Sender<Option<MissionInfo>>,
-    mission_rx: watch::Receiver<Option<MissionInfo>>,
-    task_progress_tx: watch::Sender<usize>,
-    task_progress_rx: watch::Receiver<usize>,
 }
 
 impl Actor {
@@ -250,8 +223,6 @@ impl Actor {
         max_recv_sessions: usize,
     ) -> Self {
         let (index_tx, index_rx) = watch::channel(Vec::new());
-        let (mission_tx, mission_rx) = watch::channel(None);
-        let (task_progress_tx, task_progress_rx) = watch::channel(0);
         Actor {
             receiver,
             sender,
@@ -259,11 +230,6 @@ impl Actor {
             max_recv_sessions,
             index_tx,
             index_rx,
-            latest_recv: None,
-            mission_tx,
-            mission_rx,
-            task_progress_tx,
-            task_progress_rx,
         }
     }
 
@@ -274,14 +240,6 @@ impl Actor {
         let _ = self.index_tx.send(list);
     }
 
-    fn notify_compat(&self, id: &str) {
-        if self.latest_recv.as_deref() == Some(id) {
-            if let Some(session) = self.sessions.get(id) {
-                let _ = self.mission_tx.send(Some(session.mission_info()));
-            }
-        }
-    }
-
     fn set_state(&mut self, id: &str, state: MissionState) {
         if let Some(session) = self.sessions.get_mut(id) {
             if !session.is_active() {
@@ -290,7 +248,6 @@ impl Actor {
             session.state = state;
             let _ = session.events_tx.send(SessionEvent::StateChanged(state));
         }
-        self.notify_compat(id);
         self.broadcast_index();
     }
 
@@ -316,7 +273,6 @@ impl Actor {
             return;
         }
         self.check_finish(id);
-        self.notify_compat(id);
         self.broadcast_index();
     }
 
@@ -358,7 +314,6 @@ impl Actor {
                 let _ = decision.send(Decision::Canceled);
             }
         }
-        self.notify_compat(id);
         self.broadcast_index();
     }
 
@@ -376,7 +331,6 @@ impl Actor {
                 let _ = decision.send(Decision::Canceled);
             }
         }
-        self.notify_compat(id);
         self.broadcast_index();
     }
 
@@ -433,8 +387,6 @@ impl Actor {
                 };
                 debug!("receive session created: {id}");
                 self.sessions.insert(id.clone(), session);
-                self.latest_recv = Some(id.clone());
-                self.notify_compat(&id);
                 self.broadcast_index();
                 let _ = respond_to.send(Ok(RecvPending {
                     session_id: id,
@@ -526,7 +478,6 @@ impl Actor {
                     }
                     Ok(())
                 })();
-                self.notify_compat(&id);
                 self.broadcast_index();
                 // A session where nothing was accepted finishes right away.
                 self.check_finish(&id);
@@ -550,7 +501,6 @@ impl Actor {
                     }
                     Ok(())
                 })();
-                self.notify_compat(&id);
                 self.broadcast_index();
                 let _ = respond_to.send(result);
             }
@@ -590,8 +540,7 @@ impl Actor {
                     });
                     let (progress_tx, progress_rx) = watch::channel(0usize);
                     // Forward per-file progress back into the actor,
-                    // which fans it out to the session event stream and
-                    // the legacy task progress feed.
+                    // which fans it out to the session event stream.
                     let forward_tx = self.sender.clone();
                     let forward_id = id.clone();
                     let forward_file = file_id.clone();
@@ -619,7 +568,6 @@ impl Actor {
                         cancel: session.cancel_token.clone(),
                     })
                 })();
-                self.notify_compat(&id);
                 self.broadcast_index();
                 let _ = respond_to.send(result);
             }
@@ -648,9 +596,6 @@ impl Actor {
                     let _ = session
                         .events_tx
                         .send(SessionEvent::Progress { file_id, bytes });
-                }
-                if self.latest_recv.as_deref() == Some(id.as_str()) {
-                    let _ = self.task_progress_tx.send(bytes);
                 }
             }
             Message::ReportFileState {
@@ -689,16 +634,6 @@ impl Actor {
             }
             Message::ListenIndex { respond_to } => {
                 let _ = respond_to.send(self.index_rx.clone());
-            }
-            Message::MissionListen { respond_to } => {
-                let _ = respond_to.send(self.mission_rx.clone());
-            }
-            Message::MissionClear { respond_to } => {
-                let _ = self.mission_tx.send(None);
-                let _ = respond_to.send(());
-            }
-            Message::TaskProgressListen { respond_to } => {
-                let _ = respond_to.send(self.task_progress_rx.clone());
             }
         }
     }
@@ -925,35 +860,6 @@ impl SessionHandle {
     pub async fn session_index(&self) -> watch::Receiver<Vec<SessionSummary>> {
         let (send, recv) = oneshot::channel();
         let _ = self.sender.send(Message::ListenIndex { respond_to: send }).await;
-        recv.await.expect("Actor task has been killed")
-    }
-
-    // --- legacy compatibility feeds -------------------------------------
-
-    pub async fn mission_listen(&self) -> watch::Receiver<Option<MissionInfo>> {
-        let (send, recv) = oneshot::channel();
-        let _ = self
-            .sender
-            .send(Message::MissionListen { respond_to: send })
-            .await;
-        recv.await.expect("Actor task has been killed")
-    }
-
-    pub async fn mission_clear(&self) {
-        let (send, recv) = oneshot::channel();
-        let _ = self
-            .sender
-            .send(Message::MissionClear { respond_to: send })
-            .await;
-        recv.await.expect("Actor task has been killed")
-    }
-
-    pub async fn task_progress_listen(&self) -> watch::Receiver<usize> {
-        let (send, recv) = oneshot::channel();
-        let _ = self
-            .sender
-            .send(Message::TaskProgressListen { respond_to: send })
-            .await;
         recv.await.expect("Actor task has been killed")
     }
 }

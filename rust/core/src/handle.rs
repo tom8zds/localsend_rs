@@ -14,8 +14,8 @@ use crate::client::{Client, SendError};
 use crate::config::CoreConfig;
 use crate::device::DeviceActorHandle;
 use crate::model::{
-    FileInfo, FileRequest, FileState, MissionInfo, MissionState, NodeDevice, SenderInfo,
-    SessionEvent, SessionSummary,
+    FileInfo, FileRequest, FileState, MissionState, NodeDevice, SenderInfo, SessionEvent,
+    SessionSummary,
 };
 use crate::server::HttpServerHandle;
 use crate::session::{SessionError, SessionHandle, DEFAULT_MAX_RECV_SESSIONS};
@@ -326,20 +326,6 @@ impl CoreHandle {
         session_id: &str,
     ) -> Option<watch::Receiver<SessionEvent>> {
         self.inner.sessions.session_events(session_id).await
-    }
-
-    // --- legacy compatibility feeds (for the current Flutter UI) --------------
-
-    pub async fn mission_listen(&self) -> watch::Receiver<Option<MissionInfo>> {
-        self.inner.sessions.mission_listen().await
-    }
-
-    pub async fn mission_clear(&self) {
-        self.inner.sessions.mission_clear().await
-    }
-
-    pub async fn task_progress_listen(&self) -> watch::Receiver<usize> {
-        self.inner.sessions.task_progress_listen().await
     }
 
     // --- sending --------------------------------------------------------------
