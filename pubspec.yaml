@@ -1,8 +1,8 @@
 name: 'localsend_rs'
 version: '1.0.0+1'
 publish_to: none
-environment: 
-  sdk: '>=3.2.0 <4.0.0'
+environment:
+  sdk: '>=3.4.0 <4.0.0'
 description: A Rust Implementation of LocalSend protocl v2 for better performance
 dependencies: 
   animations: ^2.0.11
