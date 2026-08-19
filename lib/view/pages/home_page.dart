@@ -46,13 +46,12 @@ class _HomePageState extends State<HomePage> {
                   children: [
                     ElevatedButton(
                         onPressed: () async {
-                          FilePickerResult? result = await FilePicker.platform
-                              .pickFiles(allowMultiple: true);
+                          final result = await FilePicker.pickFiles();
 
-                          if (result != null) {
+                          if (result.isNotEmpty) {
                             setState(() {
-                              selectedFiles = result.paths
-                                  .map((path) => File(path!))
+                              selectedFiles = result
+                                  .map((file) => File(file.path!))
                                   .toList();
                               for (var element in selectedFiles) {
                                 selectedFileSize += element.lengthSync();
@@ -69,7 +68,7 @@ class _HomePageState extends State<HomePage> {
                     ElevatedButton(
                         onPressed: () async {
                           String? selectedDirectory =
-                              await FilePicker.platform.getDirectoryPath();
+                              await FilePicker.getDirectoryPath();
 
                           if (selectedDirectory == null) {
                             // User canceled the picker

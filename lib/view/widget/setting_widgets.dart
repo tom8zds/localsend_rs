@@ -256,7 +256,7 @@ class _StorePathWIdgetState extends State<StorePathWIdget> {
       trailing: FilledButton(
         onPressed: () async {
           String? selectedDirectory =
-              await FilePicker.platform.getDirectoryPath();
+              await FilePicker.getDirectoryPath();
 
           if (selectedDirectory != null) {
             ConfigStore().setStorePath(selectedDirectory);

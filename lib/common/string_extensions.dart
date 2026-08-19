@@ -1,6 +1,10 @@
 // ignore: depend_on_referenced_packages
 import 'package:collection/collection.dart';
-import 'package:slang/builder/model/enums.dart';
+
+/// String case styles used by [StringExtensions.toCase].
+/// (Previously borrowed from slang's builder internals, which are no
+/// longer part of slang's public API since slang 4.)
+enum CaseStyle { camel, pascal, snake }
 
 extension StringExtensions on String {
   /// capitalizes a given string
