@@ -1,4 +1,4 @@
 rust_input: crate::bridge
-rust_root: rust/
+rust_root: rust/ffi/
 dart_output: lib/core/rust
 web: false

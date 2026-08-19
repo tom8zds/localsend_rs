@@ -1,14 +1,12 @@
-[package]
-name = "rust_lib"
-version = "0.1.0"
-edition = "2018"
+[workspace]
+resolver = "2"
+members = ["core", "ffi", "cli"]
 
-[lib]
-crate-type = ["cdylib", "staticlib"]
+[workspace.dependencies]
+localsend_core = { path = "core" }
 
-[dependencies]
 flutter_rust_bridge = "=2.4.0"
-axum = { version = "0.7.6" }
+axum = "0.7.6"
 rand = "0.8.5"
 serde = "1.0.210"
 serde_derive = "1.0.210"
