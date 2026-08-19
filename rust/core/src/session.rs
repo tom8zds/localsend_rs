@@ -107,6 +107,20 @@ struct Session {
 }
 
 impl Session {
+    /// Per-file view, sorted by file name for a stable display order.
+    fn file_infos(&self) -> Vec<MissionFileInfo> {
+        let mut files: Vec<MissionFileInfo> = self
+            .files
+            .values()
+            .map(|f| MissionFileInfo {
+                info: f.info.clone(),
+                state: f.state.clone(),
+            })
+            .collect();
+        files.sort_by(|a, b| a.info.file_name.cmp(&b.info.file_name));
+        files
+    }
+
     fn summary(&self) -> SessionSummary {
         SessionSummary {
             id: self.id.clone(),
@@ -114,6 +128,7 @@ impl Session {
             peer: self.peer.clone(),
             file_count: self.files.len(),
             state: self.state,
+            files: self.file_infos(),
         }
     }
 
@@ -121,14 +136,7 @@ impl Session {
         MissionInfo {
             id: self.id.clone(),
             sender: self.peer.clone(),
-            files: self
-                .files
-                .values()
-                .map(|f| MissionFileInfo {
-                    info: f.info.clone(),
-                    state: f.state.clone(),
-                })
-                .collect(),
+            files: self.file_infos(),
             state: self.state,
         }
     }

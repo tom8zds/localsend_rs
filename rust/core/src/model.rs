@@ -220,8 +220,9 @@ impl FileState {
     }
 }
 
-/// Per-file view of a session, used by the compatibility mission stream.
-#[derive(Debug, Clone)]
+/// Per-file view of a session, used by the compatibility mission stream
+/// and by [`SessionSummary`] for per-file progress rendering.
+#[derive(Debug, Clone, PartialEq)]
 pub struct MissionFileInfo {
     pub info: FileInfo,
     pub state: FileState,
@@ -255,6 +256,10 @@ pub struct SessionSummary {
     pub peer: NodeDevice,
     pub file_count: usize,
     pub state: MissionState,
+    /// Per-file metadata and state, sorted by file name. Live byte
+    /// counters are not included; subscribe to
+    /// [`crate::CoreHandle::session_events`] for those.
+    pub files: Vec<MissionFileInfo>,
 }
 
 /// Per-session event stream item, see [`crate::CoreHandle::session_events`].
