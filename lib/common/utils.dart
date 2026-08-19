@@ -10,7 +10,6 @@ import 'package:path_provider/path_provider.dart';
 import 'package:window_manager/window_manager.dart';
 
 import '../core/rust/actor/core.dart';
-import '../core/rust/actor/mission.dart';
 import '../core/rust/bridge.dart';
 import '../i18n/strings.g.dart';
 import 'constants.dart';
@@ -147,39 +146,26 @@ void initLocale() {
 
 extension MissionStateName on MissionState {
   String getName() {
-    switch (this) {
-      case MissionState.idle:
-      // TODO: Handle this case.
-      case MissionState.pending:
-        return t.mission.pending;
-      case MissionState.transfering:
-        return t.mission.tranfer;
-      case MissionState.finished:
-        return t.mission.finished;
-      case MissionState.failed:
-        return t.mission.failed;
-      case MissionState.canceled:
-        return t.mission.cancel;
-      case MissionState.busy:
-      // TODO: Handle this case.
-    }
-    return "unknown";
+    return switch (this) {
+      MissionState.idle => t.mission.pending,
+      MissionState.pending => t.mission.pending,
+      MissionState.transfering => t.mission.tranfer,
+      MissionState.finished => t.mission.finished,
+      MissionState.failed => t.mission.failed,
+      MissionState.canceled => t.mission.cancel,
+      MissionState.busy => t.mission.busy,
+    };
   }
 }
 
 extension FileStateName on FileState {
   String getName() {
-    switch (this) {
-      case FileState_Pending():
-        return t.mission.pending;
-      case FileState_Transfer():
-        return t.mission.tranfer;
-      case FileState_Finish():
-        return t.mission.complete;
-      case FileState_Skip():
-        return t.mission.skip;
-      default:
-        return "unknown";
-    }
+    return switch (this) {
+      FileState_Pending() => t.mission.pending,
+      FileState_Transfer() => t.mission.tranfer,
+      FileState_Finish() => t.mission.complete,
+      FileState_Skip() => t.mission.skip,
+      FileState_Fail() => t.mission.failed,
+    };
   }
 }

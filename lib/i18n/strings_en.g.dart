@@ -42,6 +42,8 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	// Translations
 	late final Translations$appTitle$en appTitle = Translations$appTitle$en._(_root);
 	late final Translations$home$en home = Translations$home$en._(_root);
+	late final Translations$send$en send = Translations$send$en._(_root);
+	late final Translations$transfers$en transfers = Translations$transfers$en._(_root);
 	late final Translations$mission$en mission = Translations$mission$en._(_root);
 	late final Translations$common$en common = Translations$common$en._(_root);
 	late final Translations$setting$en setting = Translations$setting$en._(_root);
@@ -72,6 +74,120 @@ class Translations$home$en {
 
 	/// en: 'Home Page'
 	String get title => 'Home Page';
+
+	/// en: 'Send File'
+	String get sendFile => 'Send File';
+
+	/// en: 'Send Folder'
+	String get sendFolder => 'Send Folder';
+
+	/// en: 'Next'
+	String get next => 'Next';
+
+	/// en: 'Add'
+	String get add => 'Add';
+
+	/// en: 'Clear'
+	String get clear => 'Clear';
+
+	/// en: 'Nearby Devices'
+	String get nearbyDevices => 'Nearby Devices';
+
+	/// en: 'Tap a device to send the selected files'
+	String get tapToSend => 'Tap a device to send the selected files';
+
+	/// en: 'Files: $count Size: $size'
+	String filesSummary({required Object count, required Object size}) => 'Files: ${count}  Size: ${size}';
+}
+
+// Path: send
+class Translations$send$en {
+	Translations$send$en._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Send'
+	String get title => 'Send';
+
+	/// en: 'No files selected'
+	String get noFiles => 'No files selected';
+
+	/// en: 'Select targets'
+	String get selectTargets => 'Select targets';
+
+	/// en: 'Manual target'
+	String get manualTarget => 'Manual target';
+
+	/// en: 'IP or IP:port'
+	String get manualTargetHint => 'IP or IP:port';
+
+	/// en: 'Invalid address'
+	String get invalidAddress => 'Invalid address';
+
+	/// en: 'Add'
+	String get addTarget => 'Add';
+
+	/// en: 'Send to $count device(s)'
+	String confirm({required Object count}) => 'Send to ${count} device(s)';
+
+	/// en: 'Sending $count file(s) to $alias'
+	String sentTo({required Object count, required Object alias}) => 'Sending ${count} file(s) to ${alias}';
+
+	/// en: 'Started sending $count file(s) to $devices device(s)'
+	String sentToDevices({required Object count, required Object devices}) => 'Started sending ${count} file(s) to ${devices} device(s)';
+
+	/// en: 'Send to $alias failed: $reason'
+	String sendFailed({required Object alias, required Object reason}) => 'Send to ${alias} failed: ${reason}';
+
+	/// en: 'Remove'
+	String get removeFile => 'Remove';
+}
+
+// Path: transfers
+class Translations$transfers$en {
+	Translations$transfers$en._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Transfers'
+	String get title => 'Transfers';
+
+	/// en: 'No transfers yet'
+	String get empty => 'No transfers yet';
+
+	/// en: 'Incoming'
+	String get incoming => 'Incoming';
+
+	/// en: 'Outgoing'
+	String get outgoing => 'Outgoing';
+
+	/// en: 'Accept'
+	String get accept => 'Accept';
+
+	/// en: 'Decline'
+	String get decline => 'Decline';
+
+	/// en: 'Cancel'
+	String get cancel => 'Cancel';
+
+	/// en: '$alias wants to send you $count file(s)'
+	String peerWantsToSend({required Object alias, required Object count}) => '${alias} wants to send you ${count} file(s)';
+
+	/// en: 'To $alias'
+	String toPeer({required Object alias}) => 'To ${alias}';
+
+	/// en: 'Failed: $reason'
+	String failedReason({required Object reason}) => 'Failed: ${reason}';
+
+	/// en: 'All'
+	String get selectAll => 'All';
+
+	/// en: 'None'
+	String get selectNone => 'None';
 }
 
 // Path: mission
@@ -105,6 +221,9 @@ class Translations$mission$en {
 
 	/// en: 'Skip'
 	String get skip => 'Skip';
+
+	/// en: 'Busy'
+	String get busy => 'Busy';
 
 	/// en: 'Advance'
 	String get advance => 'Advance';
@@ -256,6 +375,38 @@ extension on Translations {
 			'appTitle.parta' => 'LocalSend',
 			'appTitle.partb' => '_RS',
 			'home.title' => 'Home Page',
+			'home.sendFile' => 'Send File',
+			'home.sendFolder' => 'Send Folder',
+			'home.next' => 'Next',
+			'home.add' => 'Add',
+			'home.clear' => 'Clear',
+			'home.nearbyDevices' => 'Nearby Devices',
+			'home.tapToSend' => 'Tap a device to send the selected files',
+			'home.filesSummary' => ({required Object count, required Object size}) => 'Files: ${count}  Size: ${size}',
+			'send.title' => 'Send',
+			'send.noFiles' => 'No files selected',
+			'send.selectTargets' => 'Select targets',
+			'send.manualTarget' => 'Manual target',
+			'send.manualTargetHint' => 'IP or IP:port',
+			'send.invalidAddress' => 'Invalid address',
+			'send.addTarget' => 'Add',
+			'send.confirm' => ({required Object count}) => 'Send to ${count} device(s)',
+			'send.sentTo' => ({required Object count, required Object alias}) => 'Sending ${count} file(s) to ${alias}',
+			'send.sentToDevices' => ({required Object count, required Object devices}) => 'Started sending ${count} file(s) to ${devices} device(s)',
+			'send.sendFailed' => ({required Object alias, required Object reason}) => 'Send to ${alias} failed: ${reason}',
+			'send.removeFile' => 'Remove',
+			'transfers.title' => 'Transfers',
+			'transfers.empty' => 'No transfers yet',
+			'transfers.incoming' => 'Incoming',
+			'transfers.outgoing' => 'Outgoing',
+			'transfers.accept' => 'Accept',
+			'transfers.decline' => 'Decline',
+			'transfers.cancel' => 'Cancel',
+			'transfers.peerWantsToSend' => ({required Object alias, required Object count}) => '${alias} wants to send you ${count} file(s)',
+			'transfers.toPeer' => ({required Object alias}) => 'To ${alias}',
+			'transfers.failedReason' => ({required Object reason}) => 'Failed: ${reason}',
+			'transfers.selectAll' => 'All',
+			'transfers.selectNone' => 'None',
 			'mission.accept' => 'Accept',
 			'mission.cancel' => 'Cancel',
 			'mission.complete' => 'Complete',
@@ -264,6 +415,7 @@ extension on Translations {
 			'mission.pending' => 'Pending',
 			'mission.failed' => 'Failed',
 			'mission.skip' => 'Skip',
+			'mission.busy' => 'Busy',
 			'mission.advance' => 'Advance',
 			'common.file' => 'File',
 			'common.size' => 'Size',

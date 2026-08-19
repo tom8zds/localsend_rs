@@ -8,6 +8,7 @@ import '../../common/constants.dart';
 import '../../common/utils.dart';
 import '../../core/providers/core_provider.dart';
 import '../../core/providers/locale_provider.dart';
+import '../../core/providers/session_providers.dart';
 import '../../core/providers/theme_provider.dart';
 import '../../core/rust/bridge.dart';
 import '../../core/store/config_store.dart';
@@ -185,13 +186,13 @@ class ServerTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final core = ref.watch(coreStateProvider);
+    final serverState = ref.watch(serverStateProvider).value ?? false;
     return ListTile(
       title: Text(context.t.setting.core.server.title),
       trailing: OverflowBar(
         children: [
           IconButton(
-            onPressed: core.serverState
+            onPressed: serverState
                 ? null
                 : () async {
                     await startServer();
@@ -199,7 +200,7 @@ class ServerTile extends ConsumerWidget {
             icon: const Icon(Icons.play_arrow),
           ),
           IconButton(
-            onPressed: core.serverState
+            onPressed: serverState
                 ? () async {
                     await shutdownServer();
                   }
@@ -212,27 +213,22 @@ class ServerTile extends ConsumerWidget {
   }
 }
 
-class QuickSaveWidget extends StatefulWidget {
+class QuickSaveWidget extends ConsumerWidget {
   const QuickSaveWidget({
     super.key,
   });
 
   @override
-  State<QuickSaveWidget> createState() => _QuickSaveWidgetState();
-}
-
-class _QuickSaveWidgetState extends State<QuickSaveWidget> {
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final quickSave = ref.watch(quickSaveProvider);
     return ListTile(
       title: Text(context.t.setting.receive.quickSave),
       subtitle: Text(context.t.setting.receive.quickSaveHint),
       trailing: Switch(
         onChanged: (value) {
-          ConfigStore().setQuickSave(value);
-          setState(() {});
+          ref.read(quickSaveProvider.notifier).set(value);
         },
-        value: ConfigStore().quickSave(),
+        value: quickSave,
       ),
     );
   }
