@@ -226,7 +226,7 @@ pub fn app(core: CoreActorHandle) -> Router {
         .route("/register", post(handle_register))
         .route("/prepare-upload", post(prepare_upload))
         .route("/upload", post(handle_upload))
-        .route("/cancel/:session_id", post(cancel))
+        .route("/cancel/{session_id}", post(cancel))
         .with_state(shared_state);
 
     let app = Router::new().nest("/v2", api_v2);
