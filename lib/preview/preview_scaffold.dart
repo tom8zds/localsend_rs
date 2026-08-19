@@ -161,10 +161,18 @@ Widget previewShell({
         overrides: overrides,
         child: MaterialApp(
           debugShowCheckedModeBanner: false,
+          // Both themes + ThemeMode.system so the previewer's
+          // night-mode toggle (platform brightness) takes effect.
           theme: ThemeData(
             useMaterial3: true,
             colorSchemeSeed: const Color(0xfff74c00),
           ),
+          darkTheme: ThemeData(
+            useMaterial3: true,
+            colorSchemeSeed: const Color(0xfff74c00),
+            brightness: Brightness.dark,
+          ),
+          themeMode: ThemeMode.system,
           home: Scaffold(
             body: Center(
               child: SizedBox(width: width, height: height, child: child),
