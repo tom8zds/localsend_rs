@@ -1,25 +1,6 @@
-use std::collections::HashMap;
+//! FRB boundary mirror of `localsend_core::FileInfo`.
 
 use serde_derive::{Deserialize, Serialize};
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct SenderInfo {
-    pub alias: String,
-    pub version: String,
-    pub device_model: String,
-    pub device_type: String,
-    pub fingerprint: String,
-    pub port: i64,
-    pub protocol: String,
-    pub download: bool,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct FileRequest {
-    pub info: SenderInfo,
-    pub files: HashMap<String, FileInfo>,
-}
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -32,17 +13,15 @@ pub struct FileInfo {
     pub preview: Option<Vec<u8>>,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct FileResponse {
-    pub session_id: String,
-    pub files: HashMap<String, String>,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct UploadTask {
-    pub session_id: String,
-    pub file_id: String,
-    pub token: String,
+impl From<localsend_core::FileInfo> for FileInfo {
+    fn from(f: localsend_core::FileInfo) -> Self {
+        FileInfo {
+            id: f.id,
+            file_name: f.file_name,
+            size: f.size,
+            file_type: f.file_type,
+            sha256: f.sha256,
+            preview: f.preview,
+        }
+    }
 }

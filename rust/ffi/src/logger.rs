@@ -38,7 +38,7 @@ pub fn init_logger(is_debug: bool) {
             // #[cfg(not(any(target_os = "android", target_os = "ios")))]
             TermLogger::new(
                 level,
-                ConfigBuilder::new().add_filter_ignore_str("ureq").build(),
+                Config::default(),
                 TerminalMode::Mixed,
                 ColorChoice::Auto,
             ),

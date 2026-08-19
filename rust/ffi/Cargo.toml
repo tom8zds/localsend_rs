@@ -9,20 +9,10 @@ crate-type = ["cdylib", "staticlib"]
 [dependencies]
 localsend_core = { workspace = true }
 flutter_rust_bridge = { workspace = true }
-axum = { workspace = true }
-rand = { workspace = true }
 serde = { workspace = true }
 serde_derive = { workspace = true }
-serde_json = { workspace = true }
 tokio = { workspace = true }
-tokio-util = { workspace = true }
-futures = { workspace = true }
 log = { workspace = true }
 lazy_static = { workspace = true }
 simplelog = { workspace = true }
-pin-project-lite = { workspace = true }
-uuid = { workspace = true }
-ureq = { workspace = true }
-socket2 = { workspace = true }
 parking_lot = { workspace = true }
-once_cell = { workspace = true }

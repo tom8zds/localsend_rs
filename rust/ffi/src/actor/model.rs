@@ -1,8 +1,7 @@
-use std::collections::HashMap;
+//! FRB boundary mirror of `localsend_core` device/session-state types.
+//! See `actor/core.rs` for why these stay in this crate.
 
 use serde_derive::{Deserialize, Serialize};
-
-use crate::api::model::FileInfo;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -20,45 +19,15 @@ pub struct NodeDevice {
     pub announce: bool,
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct NodeAnnounce {
-    pub alias: String,
-    pub version: String,
-    pub device_model: String,
-    pub device_type: String,
-    pub fingerprint: String,
-    pub port: u16,
-    pub protocol: String,
-    pub download: bool,
-    pub announcement: bool,
-    pub announce: bool,
-}
-
 impl NodeDevice {
-    pub fn from_announce(announce: &NodeAnnounce, address: &str) -> NodeDevice {
-        NodeDevice {
-            alias: announce.alias.clone(),
-            version: announce.version.clone(),
-            device_model: announce.device_model.clone(),
-            device_type: announce.device_type.clone(),
-            fingerprint: announce.fingerprint.clone(),
-            address: address.to_string(),
-            port: announce.port,
-            protocol: announce.protocol.clone(),
-            download: announce.download,
-            announcement: announce.announcement,
-            announce: announce.announce,
-        }
-    }
-
-    pub fn to_announce(&self) -> NodeAnnounce {
-        NodeAnnounce {
+    pub fn to_core(&self) -> localsend_core::NodeDevice {
+        localsend_core::NodeDevice {
             alias: self.alias.clone(),
             version: self.version.clone(),
             device_model: self.device_model.clone(),
             device_type: self.device_type.clone(),
             fingerprint: self.fingerprint.clone(),
+            address: self.address.clone(),
             port: self.port,
             protocol: self.protocol.clone(),
             download: self.download,
@@ -68,36 +37,25 @@ impl NodeDevice {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct Mission {
-    pub id: String,
-    pub sender: NodeDevice,
-    pub id_token_map: HashMap<String, String>,
-    pub token_id_map: HashMap<String, String>,
-    pub info_map: HashMap<String, FileInfo>,
-}
-
-impl Mission {
-    pub fn new(info_map: HashMap<String, FileInfo>, sender: NodeDevice) -> Self {
-        let id = uuid::Uuid::new_v4().to_string();
-        let mut id_token_map = HashMap::new();
-        let mut token_id_map = HashMap::new();
-        info_map.iter().for_each(|(id, _value)| {
-            let token = uuid::Uuid::new_v4().to_string();
-            id_token_map.insert(id.clone(), token.clone());
-            token_id_map.insert(token.clone(), id.clone());
-        });
-
-        Mission {
-            id: id.clone(),
-            sender,
-            id_token_map,
-            token_id_map,
-            info_map: info_map.clone(),
+impl From<localsend_core::NodeDevice> for NodeDevice {
+    fn from(d: localsend_core::NodeDevice) -> Self {
+        NodeDevice {
+            alias: d.alias,
+            version: d.version,
+            device_model: d.device_model,
+            device_type: d.device_type,
+            fingerprint: d.fingerprint,
+            address: d.address,
+            port: d.port,
+            protocol: d.protocol,
+            download: d.download,
+            announcement: d.announcement,
+            announce: d.announce,
         }
     }
 }
 
+/// NOTE: variant order is the FRB wire index; do not reorder.
 #[derive(Debug, Clone, Copy)]
 pub enum MissionState {
     Idle,
@@ -109,8 +67,16 @@ pub enum MissionState {
     Busy,
 }
 
-#[derive(Debug, Clone, Copy)]
-pub enum TaskState {
-    Transfering,
-    Finished,
+impl From<localsend_core::MissionState> for MissionState {
+    fn from(s: localsend_core::MissionState) -> Self {
+        match s {
+            localsend_core::MissionState::Idle => MissionState::Idle,
+            localsend_core::MissionState::Pending => MissionState::Pending,
+            localsend_core::MissionState::Transfering => MissionState::Transfering,
+            localsend_core::MissionState::Finished => MissionState::Finished,
+            localsend_core::MissionState::Failed => MissionState::Failed,
+            localsend_core::MissionState::Canceled => MissionState::Canceled,
+            localsend_core::MissionState::Busy => MissionState::Busy,
+        }
+    }
 }
