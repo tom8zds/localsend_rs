@@ -376,7 +376,14 @@ fn human_size(bytes: i64) -> String {
 
 fn progress_bar(f: &crate::state::FileView, width: usize) -> String {
     let width = width.max(4);
-    match f.progress_ratio() {
+    // A finished file may have skipped progress events entirely (tiny
+    // files, fast links); render it as a full bar.
+    let ratio = if matches!(f.state, FileState::Finish) {
+        Some(1.0)
+    } else {
+        f.progress_ratio()
+    };
+    match ratio {
         Some(ratio) if matches!(f.state, FileState::Transfer | FileState::Finish) => {
             let filled = (ratio * width as f64).round() as usize;
             let pct = (ratio * 100.0).round() as i64;

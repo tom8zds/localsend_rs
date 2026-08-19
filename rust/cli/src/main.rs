@@ -69,8 +69,8 @@ enum Command {
 }
 
 fn init_logging() -> Result<()> {
-    // Bridge `log` records (core uses the `log` facade) into tracing.
-    tracing_log::LogTracer::init().context("failed to init log bridge")?;
+    // tracing_subscriber's global default installs a `log` bridge
+    // (tracing-log feature), so core's `log` records land in the file.
     let log_path = std::env::var("LOCALSEND_CLI_LOG")
         .map(PathBuf::from)
         .unwrap_or_else(|_| PathBuf::from("/tmp/localsend-cli.log"));
