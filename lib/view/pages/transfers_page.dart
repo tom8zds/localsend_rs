@@ -1,11 +1,27 @@
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
+import 'package:filesize/filesize.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/providers/selection_providers.dart';
 import '../../core/providers/session_providers.dart';
 import '../../core/rust/actor/model.dart';
+import '../../core/rust/bridge.dart';
 import '../../i18n/strings.g.dart';
 import '../widget/common_widget.dart';
+import '../widget/discover_widget.dart';
 import '../widget/session_card.dart';
+import 'send_page.dart';
+
+int _fileSize(String path) {
+  try {
+    return File(path).lengthSync();
+  } catch (_) {
+    return 0;
+  }
+}
 
 /// Placeholder shown while there is nothing to transfer.
 class IdlePage extends StatelessWidget {
@@ -13,30 +29,31 @@ class IdlePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        SizedBox(
-          height: 200,
-          child: Image.asset("assets/icon/logo_512.png"),
-        ),
-        const AppTitle(),
-        const SizedBox(height: 8),
-        Text(context.t.transfers.empty),
-      ],
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            height: 200,
+            child: Image.asset("assets/icon/logo_512.png"),
+          ),
+          const AppTitle(),
+          const SizedBox(height: 8),
+          Text(context.t.transfers.empty),
+        ],
+      ),
     );
   }
 }
 
-/// Aggregate progress page: every send/receive session as a card with
-/// per-file progress, state, failure reason and actions. Replaces the
-/// old single-mission page.
-class TransfersPage extends ConsumerWidget {
-  /// True when rendered inside the side pane of the wide layout
-  /// (transparent background, no back button).
-  final bool embedded;
-
-  const TransfersPage({super.key, this.embedded = false});
+/// Main page: file staging + nearby devices on top (former HomePage),
+/// with every send/receive session as a card below/beside it.
+///
+/// Narrow layouts get a single scrollable column (send area, then
+/// devices, then sessions); wide layouts split into a left column
+/// (send area + device list) and a right session list.
+class TransfersPage extends ConsumerStatefulWidget {
+  const TransfersPage({super.key});
 
   /// Pending receive sessions first (they need a decision), then
   /// active transfers, then everything else; stable by id within a
@@ -63,27 +80,315 @@ class TransfersPage extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<TransfersPage> createState() => _TransfersPageState();
+}
+
+class _TransfersPageState extends ConsumerState<TransfersPage> {
+  bool refreshing = false;
+
+  Future<void> refresh() async {
+    setState(() {
+      refreshing = true;
+    });
+    await announce();
+    await Future.delayed(const Duration(seconds: 4));
+    if (mounted) {
+      setState(() {
+        refreshing = false;
+      });
+    }
+  }
+
+  Future<void> pickFiles() async {
+    final result = await FilePicker.pickFiles();
+    final paths = result.map((file) => file.path).whereType<String>();
+    if (paths.isNotEmpty) {
+      ref.read(selectedFilesProvider.notifier).addAll(paths);
+    }
+  }
+
+  Future<void> pickFolder() async {
+    final selectedDirectory = await FilePicker.getDirectoryPath();
+    if (selectedDirectory == null) {
+      return;
+    }
+    final files = Directory(selectedDirectory)
+        .listSync(recursive: true)
+        .whereType<File>()
+        .map((f) => f.path)
+        .toList();
+    if (files.isNotEmpty) {
+      ref.read(selectedFilesProvider.notifier).addAll(files);
+    }
+  }
+
+  /// Quick single-send: tapping a device while files are staged sends
+  /// them straight away.
+  Future<void> quickSend(NodeDevice device) async {
+    final files = ref.read(selectedFilesProvider);
+    if (files.isEmpty) {
+      return;
+    }
+    final failures =
+        await sendFilesToTargets(targets: [device], files: files);
+    if (!mounted) {
+      return;
+    }
+    final t = context.t;
+    final messenger = ScaffoldMessenger.of(context);
+    final failure = failures[device];
+    if (failure != null) {
+      messenger.showSnackBar(
+        SnackBar(
+          content:
+              Text(t.send.sendFailed(alias: device.alias, reason: '$failure')),
+        ),
+      );
+    } else {
+      messenger.showSnackBar(
+        SnackBar(
+          content:
+              Text(t.send.sentTo(count: files.length, alias: device.alias)),
+        ),
+      );
+      ref.read(selectedFilesProvider.notifier).clear();
+    }
+  }
+
+  Widget _sendButtons(BuildContext context) {
+    final t = context.t;
+    return SizedBox(
+      height: kToolbarHeight,
+      child: Row(
+        children: [
+          ElevatedButton(
+            onPressed: pickFiles,
+            child: Text(t.home.sendFile),
+          ),
+          const SizedBox(width: 8),
+          ElevatedButton(
+            onPressed: pickFolder,
+            child: Text(t.home.sendFolder),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _filesSummary(BuildContext context, List<String> selectedFiles) {
+    final t = context.t;
+    final selectedFileSize =
+        selectedFiles.fold<int>(0, (sum, path) => sum + _fileSize(path));
+    return SizedBox(
+      height: 120,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            t.home.filesSummary(
+              count: selectedFiles.length,
+              size: filesize(selectedFileSize),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Expanded(
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              children: [
+                for (final path in selectedFiles)
+                  Padding(
+                    padding: const EdgeInsets.all(4.0),
+                    child: Tooltip(
+                      message: fileBaseName(path),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color:
+                              Theme.of(context).colorScheme.secondaryContainer,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        height: 40,
+                        width: 40,
+                        child: const Icon(Icons.file_present),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton.icon(
+                onPressed: selectedFiles.isEmpty
+                    ? null
+                    : () =>
+                        ref.read(selectedFilesProvider.notifier).clear(),
+                icon: const Icon(Icons.clear_all),
+                label: Text(t.home.clear),
+              ),
+              const SizedBox(width: 8),
+              FilledButton.icon(
+                onPressed: selectedFiles.isEmpty
+                    ? null
+                    : () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const SendPage(),
+                          ),
+                        );
+                      },
+                icon: const Icon(Icons.navigate_next),
+                label: Text(t.home.next),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _devicesHeader(BuildContext context, List<String> selectedFiles) {
+    final t = context.t;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      child: Row(
+        children: [
+          Text(
+            t.home.nearbyDevices,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(width: 8),
+          IconButton(
+            style: const ButtonStyle(
+              iconSize: WidgetStatePropertyAll(20),
+              padding: WidgetStatePropertyAll(EdgeInsets.all(8)),
+              minimumSize: WidgetStatePropertyAll(Size(16, 16)),
+              maximumSize: WidgetStatePropertyAll(Size(36, 36)),
+            ),
+            onPressed: () {
+              refresh();
+            },
+            icon: const Icon(Icons.sync),
+          ),
+          if (selectedFiles.isNotEmpty)
+            Expanded(
+              child: Text(
+                t.home.tapToSend,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.secondary,
+                  fontSize: 12,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _sessionsHeader(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+      child: Text(
+        context.t.transfers.title,
+        style: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final selectedFiles = ref.watch(selectedFilesProvider);
     final sessions = ref.watch(sessionIndexProvider);
 
-    final body = switch (sessions) {
-      AsyncData(:final value) when value.isNotEmpty => ListView(
-          children: [
-            for (final summary in sortSessions(value))
-              SessionCard(key: ValueKey(summary.id), summary: summary),
-            const SizedBox(height: 16),
-          ],
-        ),
-      AsyncError(:final error) => Center(child: Text('$error')),
-      _ => const IdlePage(),
+    final sessionCards = switch (sessions) {
+      AsyncData(:final value) when value.isNotEmpty => [
+          for (final summary in TransfersPage.sortSessions(value))
+            SessionCard(key: ValueKey(summary.id), summary: summary),
+        ],
+      AsyncError(:final error) => [
+          Center(child: Text('$error')),
+        ],
+      _ => null,
     };
 
+    final sendArea = [
+      _sendButtons(context),
+      _filesSummary(context, selectedFiles),
+      const SizedBox(height: 8),
+      _devicesHeader(context, selectedFiles),
+      if (refreshing)
+        const Padding(
+          padding: EdgeInsets.all(8.0),
+          child: LinearProgressIndicator(),
+        ),
+    ];
+
     return Scaffold(
-      backgroundColor: embedded ? Colors.transparent : null,
-      appBar: embedded
-          ? null
-          : AppBar(title: Text(context.t.transfers.title)),
-      body: SafeArea(child: body),
+      // LayoutBuilder (not MediaQuery): the split decision follows the
+      // space actually given to this page, so it stays correct inside
+      // panes and the fixed-size widget previews.
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final wide = constraints.maxWidth >= 800;
+            if (wide) {
+              // Two panes: send area + device list on the left, session
+              // cards on the right.
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Column(
+                        children: [
+                          ...sendArea,
+                          Expanded(
+                            child: DiscoverWidget(onDeviceTap: quickSend),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const VerticalDivider(width: 1),
+                  Expanded(
+                    child: ListView(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      children: [
+                        _sessionsHeader(context),
+                        ...(sessionCards ?? [const IdlePage()]),
+                        const SizedBox(height: 16),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            }
+            // Single scrollable column: send area, devices, sessions.
+            return ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              children: [
+                ...sendArea,
+                SizedBox(
+                  height: 280,
+                  child: DiscoverWidget(onDeviceTap: quickSend),
+                ),
+                _sessionsHeader(context),
+                ...(sessionCards ?? [const IdlePage()]),
+                const SizedBox(height: 16),
+              ],
+            );
+          },
+        ),
+      ),
     );
   }
 }

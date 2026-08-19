@@ -6,7 +6,6 @@ import '../../common/utils.dart';
 import '../../core/providers/session_providers.dart';
 import '../../i18n/strings.g.dart';
 import '../widget/common_widget.dart';
-import 'home_page.dart';
 import 'setting_page.dart';
 import 'transfers_page.dart';
 
@@ -65,29 +64,24 @@ class _FramePageState extends ConsumerState<FramePage> {
     // Keeps the quick-save auto-accept listener alive.
     ref.watch(autoAcceptProvider);
     // Jump to the transfers tab when someone sends us files (compact
-    // layout only; wide layouts always show the transfers pane).
+    // layout only; wider layouts surface sessions on the transfers
+    // page itself).
     ref.listen(pendingReceiveSessionsProvider, (previous, next) {
       if (next.isNotEmpty &&
           getFrameType(MediaQuery.of(context).size.width) ==
               FrameType.compact) {
-        changeIndex(1);
+        changeIndex(0);
       }
     });
 
     final pages = [
-      const HomePage(),
-      const TransfersPage(embedded: true),
+      const TransfersPage(),
       const SettingPage(),
     ];
 
     final width = MediaQuery.of(context).size.width;
     final frameType = getFrameType(width);
     final destinations = [
-      (
-        icon: Icons.home_outlined,
-        selectedIcon: Icons.home,
-        label: context.t.home.title,
-      ),
       (
         icon: Icons.swap_vert_outlined,
         selectedIcon: Icons.swap_vert,
@@ -187,10 +181,6 @@ class _FramePageState extends ConsumerState<FramePage> {
     if (frameType == FrameType.compact) {
       return transition(pages.elementAt(index));
     }
-    // Wide layouts: navigation + current page + persistent transfers
-    // pane. When the transfers tab itself is selected it takes the
-    // full width instead of the split view.
-    final leftIndex = index;
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainerLow,
@@ -201,29 +191,9 @@ class _FramePageState extends ConsumerState<FramePage> {
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(8.0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(24),
-                      child: transition(pages.elementAt(leftIndex)),
-                    ),
-                  ),
-                  if (index != 1) ...[
-                    const SizedBox(
-                      width: 8,
-                    ),
-                    Expanded(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surface,
-                          borderRadius: BorderRadius.circular(24),
-                        ),
-                        child: const TransfersPage(embedded: true),
-                      ),
-                    ),
-                  ],
-                ],
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(24),
+                child: transition(pages.elementAt(index)),
               ),
             ),
           ),
