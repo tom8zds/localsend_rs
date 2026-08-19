@@ -53,7 +53,7 @@ Future<NodeDevice> getDevice() async {
       "${deviceInfo.deviceModel ?? "unknown"}#${addressList[0].split(".")[3]}";
   return NodeDevice(
     alias: alias,
-    version: "2.0",
+    version: "2.2",
     deviceModel: deviceInfo.deviceModel ?? "unknown",
     deviceType: deviceInfo.deviceType.name,
     fingerprint: ConfigStore().deviceId(),
