@@ -89,9 +89,6 @@ class _$FileStateCopyWithImpl<$Res, $Val extends FileState>
   final $Val _value;
   // ignore: unused_field
   final $Res Function($Val) _then;
-
-  /// Create a copy of FileState
-  /// with the given fields replaced by the non-null parameter values.
 }
 
 /// @nodoc
@@ -108,9 +105,6 @@ class __$$FileState_PendingImplCopyWithImpl<$Res>
   __$$FileState_PendingImplCopyWithImpl(_$FileState_PendingImpl _value,
       $Res Function(_$FileState_PendingImpl) _then)
       : super(_value, _then);
-
-  /// Create a copy of FileState
-  /// with the given fields replaced by the non-null parameter values.
 }
 
 /// @nodoc
@@ -232,9 +226,6 @@ class __$$FileState_TransferImplCopyWithImpl<$Res>
   __$$FileState_TransferImplCopyWithImpl(_$FileState_TransferImpl _value,
       $Res Function(_$FileState_TransferImpl) _then)
       : super(_value, _then);
-
-  /// Create a copy of FileState
-  /// with the given fields replaced by the non-null parameter values.
 }
 
 /// @nodoc
@@ -356,9 +347,6 @@ class __$$FileState_FinishImplCopyWithImpl<$Res>
   __$$FileState_FinishImplCopyWithImpl(_$FileState_FinishImpl _value,
       $Res Function(_$FileState_FinishImpl) _then)
       : super(_value, _then);
-
-  /// Create a copy of FileState
-  /// with the given fields replaced by the non-null parameter values.
 }
 
 /// @nodoc
@@ -480,9 +468,6 @@ class __$$FileState_SkipImplCopyWithImpl<$Res>
   __$$FileState_SkipImplCopyWithImpl(
       _$FileState_SkipImpl _value, $Res Function(_$FileState_SkipImpl) _then)
       : super(_value, _then);
-
-  /// Create a copy of FileState
-  /// with the given fields replaced by the non-null parameter values.
 }
 
 /// @nodoc
@@ -607,8 +592,6 @@ class __$$FileState_FailImplCopyWithImpl<$Res>
       _$FileState_FailImpl _value, $Res Function(_$FileState_FailImpl) _then)
       : super(_value, _then);
 
-  /// Create a copy of FileState
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -647,9 +630,7 @@ class _$FileState_FailImpl extends FileState_Fail {
   @override
   int get hashCode => Object.hash(runtimeType, msg);
 
-  /// Create a copy of FileState
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
   _$$FileState_FailImplCopyWith<_$FileState_FailImpl> get copyWith =>
@@ -743,10 +724,7 @@ abstract class FileState_Fail extends FileState {
   const FileState_Fail._() : super._();
 
   String get msg;
-
-  /// Create a copy of FileState
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   _$$FileState_FailImplCopyWith<_$FileState_FailImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }

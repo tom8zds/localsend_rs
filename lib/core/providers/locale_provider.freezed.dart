@@ -19,9 +19,7 @@ mixin _$LocaleConfig {
   LocaleMode get mode => throw _privateConstructorUsedError;
   Locale get customLocale => throw _privateConstructorUsedError;
 
-  /// Create a copy of LocaleConfig
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   $LocaleConfigCopyWith<LocaleConfig> get copyWith =>
       throw _privateConstructorUsedError;
 }
@@ -45,8 +43,6 @@ class _$LocaleConfigCopyWithImpl<$Res, $Val extends LocaleConfig>
   // ignore: unused_field
   final $Res Function($Val) _then;
 
-  /// Create a copy of LocaleConfig
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -85,8 +81,6 @@ class __$$LocaleConfigImplCopyWithImpl<$Res>
       _$LocaleConfigImpl _value, $Res Function(_$LocaleConfigImpl) _then)
       : super(_value, _then);
 
-  /// Create a copy of LocaleConfig
-  /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
   $Res call({
@@ -134,9 +128,7 @@ class _$LocaleConfigImpl implements _LocaleConfig {
   @override
   int get hashCode => Object.hash(runtimeType, mode, customLocale);
 
-  /// Create a copy of LocaleConfig
-  /// with the given fields replaced by the non-null parameter values.
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   @override
   @pragma('vm:prefer-inline')
   _$$LocaleConfigImplCopyWith<_$LocaleConfigImpl> get copyWith =>
@@ -152,11 +144,8 @@ abstract class _LocaleConfig implements LocaleConfig {
   LocaleMode get mode;
   @override
   Locale get customLocale;
-
-  /// Create a copy of LocaleConfig
-  /// with the given fields replaced by the non-null parameter values.
   @override
-  @JsonKey(includeFromJson: false, includeToJson: false)
+  @JsonKey(ignore: true)
   _$$LocaleConfigImplCopyWith<_$LocaleConfigImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
