@@ -21,6 +21,10 @@ int safeFileSize(String path) {
   }
 }
 
+/// File name without any directory components; handles both `/` and
+/// `\` separators without dart:io so previews can run on the web.
+String fileBaseName(String path) => path.split(RegExp(r'[\\/]')).last;
+
 /// Send page: review the staged files, pick any number of discovered
 /// devices and/or add manual `ip[:port]` targets, then dispatch one
 /// send session per target.
@@ -137,7 +141,7 @@ class _SendPageState extends ConsumerState<SendPage> {
                 dense: true,
                 leading: const Icon(Icons.file_present),
                 title: Text(
-                  path.split(Platform.pathSeparator).last,
+                  fileBaseName(path),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),

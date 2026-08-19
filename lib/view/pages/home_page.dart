@@ -153,8 +153,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                             Padding(
                               padding: const EdgeInsets.all(4.0),
                               child: Tooltip(
-                                message:
-                                    path.split(Platform.pathSeparator).last,
+                                message: fileBaseName(path),
                                 child: Container(
                                   decoration: BoxDecoration(
                                       color: Theme.of(context)

@@ -66,13 +66,13 @@ class SessionFileTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${file.info.fileName} (${filesize(file.info.size)})',
+                  '${file.info.fileName} (${filesize(file.info.size.toInt())})',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 if (transferring) ...[
                   const SizedBox(height: 4),
-                  FileProgressBar(bytes: bytes, total: file.info.size),
+                  FileProgressBar(bytes: bytes, total: file.info.size.toInt()),
                 ] else
                   Text(
                     file.state.getName(),

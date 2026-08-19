@@ -8,6 +8,7 @@ import 'preview_scaffold.dart';
 
 @Preview(name: 'Progress bar')
 Widget fileProgressBarPreview() => previewShell(
+      name: 'fileProgressBar',
       height: 60,
       child: const Padding(
         padding: EdgeInsets.all(16),
@@ -19,6 +20,7 @@ Widget fileProgressBarPreview() => previewShell(
 /// selection and accept/decline actions.
 @Preview(name: 'Session card (pending receive)')
 Widget sessionCardPendingReceivePreview() => previewShell(
+      name: 'sessionCardPendingReceive',
       child: SingleChildScrollView(
         child: SessionCard(
           summary: mockSession(
@@ -42,6 +44,7 @@ Widget sessionCardTransferringSendPreview() {
     ],
   );
   return previewShell(
+    name: 'sessionCardTransferring',
     overrides: previewOverrides(
       extras: {
         'preview-sending': const SessionExtras(
@@ -69,6 +72,7 @@ Widget sessionCardFailedPreview() {
     ],
   );
   return previewShell(
+    name: 'sessionCardFailed',
     overrides: previewOverrides(
       extras: {
         'preview-failed':

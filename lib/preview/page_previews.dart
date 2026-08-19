@@ -12,6 +12,7 @@ import 'preview_scaffold.dart';
 /// receive first, then active, then terminal).
 @Preview(name: 'Transfers page')
 Widget transfersPagePreview() => previewShell(
+      name: 'transfersPage',
       width: 460,
       height: 760,
       overrides: previewOverrides(
@@ -52,6 +53,7 @@ Widget transfersPagePreview() => previewShell(
 
 @Preview(name: 'Transfers page (empty)')
 Widget transfersPageEmptyPreview() => previewShell(
+      name: 'transfersPageEmpty',
       overrides: previewOverrides(),
       child: const TransfersPage(embedded: true),
     );
@@ -60,6 +62,7 @@ Widget transfersPageEmptyPreview() => previewShell(
 /// overrides supply both).
 @Preview(name: 'Send page')
 Widget sendPagePreview() => previewShell(
+      name: 'sendPage',
       width: 460,
       height: 760,
       overrides: previewOverrides(
@@ -70,6 +73,7 @@ Widget sendPagePreview() => previewShell(
 
 @Preview(name: 'Home page')
 Widget homePagePreview() => previewShell(
+      name: 'homePage',
       width: 460,
       height: 760,
       overrides: previewOverrides(

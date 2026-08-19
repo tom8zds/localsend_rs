@@ -122,7 +122,7 @@ void initLogger() {
         logger.log(
           levelList[event.level],
           event.msg,
-          time: DateTime.fromMillisecondsSinceEpoch(event.timeMillis),
+          time: DateTime.fromMillisecondsSinceEpoch(event.timeMillis.toInt()),
         );
       });
     }
