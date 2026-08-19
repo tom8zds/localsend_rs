@@ -163,14 +163,13 @@ async fn prepare_upload(
     let state_clone = state.clone();
 
     tokio::spawn(async move {
-        while let Some(flag) = rx.recv().await {
+        if let Some(flag) = rx.recv().await {
             if flag {
                 debug!("client side close");
                 state_clone.core.mission.pending.cancel(id).await;
             } else {
                 debug!("normal complete");
             }
-            break;
         }
     });
 
