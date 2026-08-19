@@ -4,7 +4,6 @@
 // ignore_for_file: unused_import, unused_element, unnecessary_import, duplicate_ignore, invalid_use_of_internal_member, annotate_overrides, non_constant_identifier_names, curly_braces_in_flow_control_structures, prefer_const_literals_to_create_immutables, unused_field
 
 import 'actor/core.dart';
-import 'actor/mission.dart';
 import 'actor/model.dart';
 import 'api/model.dart';
 import 'bridge.dart';
@@ -34,14 +33,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
       dynamic raw);
 
   @protected
+  RustStreamSink<List<SessionSummary>>
+      dco_decode_StreamSink_list_session_summary_Sse(dynamic raw);
+
+  @protected
   RustStreamSink<LogEntry> dco_decode_StreamSink_log_entry_Sse(dynamic raw);
 
   @protected
-  RustStreamSink<MissionInfo?>
-      dco_decode_StreamSink_opt_box_autoadd_mission_info_Sse(dynamic raw);
+  RustStreamSink<String?> dco_decode_StreamSink_opt_String_Sse(dynamic raw);
 
   @protected
-  RustStreamSink<BigInt> dco_decode_StreamSink_usize_Sse(dynamic raw);
+  RustStreamSink<SessionEvent> dco_decode_StreamSink_session_event_Sse(
+      dynamic raw);
 
   @protected
   String dco_decode_String(dynamic raw);
@@ -53,7 +56,7 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   CoreConfig dco_decode_box_autoadd_core_config(dynamic raw);
 
   @protected
-  MissionInfo dco_decode_box_autoadd_mission_info(dynamic raw);
+  FileState dco_decode_box_autoadd_file_state(dynamic raw);
 
   @protected
   NodeDevice dco_decode_box_autoadd_node_device(dynamic raw);
@@ -74,6 +77,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   PlatformInt64 dco_decode_i_64(dynamic raw);
 
   @protected
+  List<String> dco_decode_list_String(dynamic raw);
+
+  @protected
   List<MissionFileInfo> dco_decode_list_mission_file_info(dynamic raw);
 
   @protected
@@ -83,13 +89,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   Uint8List dco_decode_list_prim_u_8_strict(dynamic raw);
 
   @protected
+  List<SessionSummary> dco_decode_list_session_summary(dynamic raw);
+
+  @protected
   LogEntry dco_decode_log_entry(dynamic raw);
 
   @protected
   MissionFileInfo dco_decode_mission_file_info(dynamic raw);
-
-  @protected
-  MissionInfo dco_decode_mission_info(dynamic raw);
 
   @protected
   MissionState dco_decode_mission_state(dynamic raw);
@@ -101,22 +107,34 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   String? dco_decode_opt_String(dynamic raw);
 
   @protected
-  MissionInfo? dco_decode_opt_box_autoadd_mission_info(dynamic raw);
+  NodeDevice? dco_decode_opt_box_autoadd_node_device(dynamic raw);
+
+  @protected
+  List<String>? dco_decode_opt_list_String(dynamic raw);
 
   @protected
   Uint8List? dco_decode_opt_list_prim_u_8_strict(dynamic raw);
 
   @protected
+  SessionDirection dco_decode_session_direction(dynamic raw);
+
+  @protected
+  SessionEvent dco_decode_session_event(dynamic raw);
+
+  @protected
+  SessionSummary dco_decode_session_summary(dynamic raw);
+
+  @protected
   int dco_decode_u_16(dynamic raw);
+
+  @protected
+  int dco_decode_u_32(dynamic raw);
 
   @protected
   int dco_decode_u_8(dynamic raw);
 
   @protected
   void dco_decode_unit(dynamic raw);
-
-  @protected
-  BigInt dco_decode_usize(dynamic raw);
 
   @protected
   AnyhowException sse_decode_AnyhowException(SseDeserializer deserializer);
@@ -130,16 +148,20 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
       SseDeserializer deserializer);
 
   @protected
+  RustStreamSink<List<SessionSummary>>
+      sse_decode_StreamSink_list_session_summary_Sse(
+          SseDeserializer deserializer);
+
+  @protected
   RustStreamSink<LogEntry> sse_decode_StreamSink_log_entry_Sse(
       SseDeserializer deserializer);
 
   @protected
-  RustStreamSink<MissionInfo?>
-      sse_decode_StreamSink_opt_box_autoadd_mission_info_Sse(
-          SseDeserializer deserializer);
+  RustStreamSink<String?> sse_decode_StreamSink_opt_String_Sse(
+      SseDeserializer deserializer);
 
   @protected
-  RustStreamSink<BigInt> sse_decode_StreamSink_usize_Sse(
+  RustStreamSink<SessionEvent> sse_decode_StreamSink_session_event_Sse(
       SseDeserializer deserializer);
 
   @protected
@@ -152,7 +174,7 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   CoreConfig sse_decode_box_autoadd_core_config(SseDeserializer deserializer);
 
   @protected
-  MissionInfo sse_decode_box_autoadd_mission_info(SseDeserializer deserializer);
+  FileState sse_decode_box_autoadd_file_state(SseDeserializer deserializer);
 
   @protected
   NodeDevice sse_decode_box_autoadd_node_device(SseDeserializer deserializer);
@@ -173,6 +195,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   PlatformInt64 sse_decode_i_64(SseDeserializer deserializer);
 
   @protected
+  List<String> sse_decode_list_String(SseDeserializer deserializer);
+
+  @protected
   List<MissionFileInfo> sse_decode_list_mission_file_info(
       SseDeserializer deserializer);
 
@@ -183,13 +208,14 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer);
 
   @protected
+  List<SessionSummary> sse_decode_list_session_summary(
+      SseDeserializer deserializer);
+
+  @protected
   LogEntry sse_decode_log_entry(SseDeserializer deserializer);
 
   @protected
   MissionFileInfo sse_decode_mission_file_info(SseDeserializer deserializer);
-
-  @protected
-  MissionInfo sse_decode_mission_info(SseDeserializer deserializer);
 
   @protected
   MissionState sse_decode_mission_state(SseDeserializer deserializer);
@@ -201,23 +227,35 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   String? sse_decode_opt_String(SseDeserializer deserializer);
 
   @protected
-  MissionInfo? sse_decode_opt_box_autoadd_mission_info(
+  NodeDevice? sse_decode_opt_box_autoadd_node_device(
       SseDeserializer deserializer);
+
+  @protected
+  List<String>? sse_decode_opt_list_String(SseDeserializer deserializer);
 
   @protected
   Uint8List? sse_decode_opt_list_prim_u_8_strict(SseDeserializer deserializer);
 
   @protected
+  SessionDirection sse_decode_session_direction(SseDeserializer deserializer);
+
+  @protected
+  SessionEvent sse_decode_session_event(SseDeserializer deserializer);
+
+  @protected
+  SessionSummary sse_decode_session_summary(SseDeserializer deserializer);
+
+  @protected
   int sse_decode_u_16(SseDeserializer deserializer);
+
+  @protected
+  int sse_decode_u_32(SseDeserializer deserializer);
 
   @protected
   int sse_decode_u_8(SseDeserializer deserializer);
 
   @protected
   void sse_decode_unit(SseDeserializer deserializer);
-
-  @protected
-  BigInt sse_decode_usize(SseDeserializer deserializer);
 
   @protected
   void sse_encode_AnyhowException(
@@ -232,16 +270,20 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
       RustStreamSink<List<NodeDevice>> self, SseSerializer serializer);
 
   @protected
+  void sse_encode_StreamSink_list_session_summary_Sse(
+      RustStreamSink<List<SessionSummary>> self, SseSerializer serializer);
+
+  @protected
   void sse_encode_StreamSink_log_entry_Sse(
       RustStreamSink<LogEntry> self, SseSerializer serializer);
 
   @protected
-  void sse_encode_StreamSink_opt_box_autoadd_mission_info_Sse(
-      RustStreamSink<MissionInfo?> self, SseSerializer serializer);
+  void sse_encode_StreamSink_opt_String_Sse(
+      RustStreamSink<String?> self, SseSerializer serializer);
 
   @protected
-  void sse_encode_StreamSink_usize_Sse(
-      RustStreamSink<BigInt> self, SseSerializer serializer);
+  void sse_encode_StreamSink_session_event_Sse(
+      RustStreamSink<SessionEvent> self, SseSerializer serializer);
 
   @protected
   void sse_encode_String(String self, SseSerializer serializer);
@@ -254,8 +296,8 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
       CoreConfig self, SseSerializer serializer);
 
   @protected
-  void sse_encode_box_autoadd_mission_info(
-      MissionInfo self, SseSerializer serializer);
+  void sse_encode_box_autoadd_file_state(
+      FileState self, SseSerializer serializer);
 
   @protected
   void sse_encode_box_autoadd_node_device(
@@ -277,6 +319,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_i_64(PlatformInt64 self, SseSerializer serializer);
 
   @protected
+  void sse_encode_list_String(List<String> self, SseSerializer serializer);
+
+  @protected
   void sse_encode_list_mission_file_info(
       List<MissionFileInfo> self, SseSerializer serializer);
 
@@ -289,14 +334,15 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
       Uint8List self, SseSerializer serializer);
 
   @protected
+  void sse_encode_list_session_summary(
+      List<SessionSummary> self, SseSerializer serializer);
+
+  @protected
   void sse_encode_log_entry(LogEntry self, SseSerializer serializer);
 
   @protected
   void sse_encode_mission_file_info(
       MissionFileInfo self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_mission_info(MissionInfo self, SseSerializer serializer);
 
   @protected
   void sse_encode_mission_state(MissionState self, SseSerializer serializer);
@@ -308,24 +354,38 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_opt_String(String? self, SseSerializer serializer);
 
   @protected
-  void sse_encode_opt_box_autoadd_mission_info(
-      MissionInfo? self, SseSerializer serializer);
+  void sse_encode_opt_box_autoadd_node_device(
+      NodeDevice? self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_opt_list_String(List<String>? self, SseSerializer serializer);
 
   @protected
   void sse_encode_opt_list_prim_u_8_strict(
       Uint8List? self, SseSerializer serializer);
 
   @protected
+  void sse_encode_session_direction(
+      SessionDirection self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_session_event(SessionEvent self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_session_summary(
+      SessionSummary self, SseSerializer serializer);
+
+  @protected
   void sse_encode_u_16(int self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_u_32(int self, SseSerializer serializer);
 
   @protected
   void sse_encode_u_8(int self, SseSerializer serializer);
 
   @protected
   void sse_encode_unit(void self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_usize(BigInt self, SseSerializer serializer);
 }
 
 // Section: wire_class

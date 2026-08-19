@@ -4,22 +4,16 @@
 // ignore_for_file: invalid_use_of_internal_member, unused_import, unnecessary_import
 
 import 'actor/core.dart';
-import 'actor/mission.dart';
 import 'actor/model.dart';
 import 'api/model.dart';
 import 'frb_generated.dart';
 import 'logger.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `_get_core`
-// These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `CORE`
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `deref`, `initialize`
+// These functions are ignored because they are not marked as `pub`: `forward_watch`, `get_core`
 
 Future<void> setup({required NodeDevice device, required CoreConfig config}) =>
     RustLib.instance.api.crateBridgeSetup(device: device, config: config);
-
-Stream<bool> listenServerState() =>
-    RustLib.instance.api.crateBridgeListenServerState();
 
 Future<void> startServer() => RustLib.instance.api.crateBridgeStartServer();
 
@@ -34,24 +28,55 @@ Future<void> changePath({required String path}) =>
 Future<void> changeConfig({required CoreConfig config}) =>
     RustLib.instance.api.crateBridgeChangeConfig(config: config);
 
+/// Announce this device on the multicast group.
+Future<void> announce() => RustLib.instance.api.crateBridgeAnnounce();
+
+/// Build a send target directly from an `address[:port]` string, for
+/// peers that were never discovered via multicast. A missing port
+/// defaults to the LocalSend default (53317).
+Future<NodeDevice?> manualDevice({required String addr}) =>
+    RustLib.instance.api.crateBridgeManualDevice(addr: addr);
+
+Stream<bool> listenServerState() =>
+    RustLib.instance.api.crateBridgeListenServerState();
+
+/// Last server startup error, if any (`None` once the server binds).
+Stream<String?> listenServerError() =>
+    RustLib.instance.api.crateBridgeListenServerError();
+
 Stream<List<NodeDevice>> listenDevice() =>
     RustLib.instance.api.crateBridgeListenDevice();
 
-Stream<MissionInfo?> listenMission() =>
-    RustLib.instance.api.crateBridgeListenMission();
+/// Low-frequency full snapshot of all sessions (both directions).
+Stream<List<SessionSummary>> listenSessionIndex() =>
+    RustLib.instance.api.crateBridgeListenSessionIndex();
 
-Stream<BigInt> listenTaskProgress() =>
-    RustLib.instance.api.crateBridgeListenTaskProgress();
+/// Per-session event stream. Unknown session ids are reported on the
+/// stream as an error.
+Stream<SessionEvent> listenSession({required String sessionId}) =>
+    RustLib.instance.api.crateBridgeListenSession(sessionId: sessionId);
 
-Future<void> clearMission() => RustLib.instance.api.crateBridgeClearMission();
+/// Accept a pending receive session. `file_ids == None` accepts all
+/// files; `Some(ids)` accepts only that subset.
+Future<void> acceptSession(
+        {required String sessionId, List<String>? fileIds}) =>
+    RustLib.instance.api
+        .crateBridgeAcceptSession(sessionId: sessionId, fileIds: fileIds);
 
-Future<void> cancelPending({required String id}) =>
-    RustLib.instance.api.crateBridgeCancelPending(id: id);
+Future<void> declineSession({required String sessionId}) =>
+    RustLib.instance.api.crateBridgeDeclineSession(sessionId: sessionId);
 
-Future<void> acceptPending({required String id}) =>
-    RustLib.instance.api.crateBridgeAcceptPending(id: id);
+/// Cancel any active session (send or receive).
+Future<void> cancelSession({required String sessionId}) =>
+    RustLib.instance.api.crateBridgeCancelSession(sessionId: sessionId);
+
+/// Send files to a target device. Returns the new session id
+/// immediately; progress is reported through `listen_session_index` /
+/// `listen_session`. Sessions to the same target are serialized by the
+/// core.
+Future<String> sendFiles(
+        {required NodeDevice target, required List<String> files}) =>
+    RustLib.instance.api.crateBridgeSendFiles(target: target, files: files);
 
 Stream<LogEntry> createLogStream() =>
     RustLib.instance.api.crateBridgeCreateLogStream();
-
-Future<void> announce() => RustLib.instance.api.crateBridgeAnnounce();
