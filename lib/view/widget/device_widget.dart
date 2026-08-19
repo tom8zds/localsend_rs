@@ -37,23 +37,29 @@ class DeviceWidgetLarge extends StatelessWidget {
               Tag(title: device.deviceModel),
             ],
           ),
-          const SizedBox(
-            height: 24,
-          ),
-          Text(
-            "想要发送给你一个文件。",
-            style: Theme.of(context).textTheme.bodyLarge,
-          ),
         ],
       ),
     );
   }
 }
 
+/// Discovered (or manually added) device row. Taps are handled by the
+/// caller: quick-send when files are staged, target toggling on the
+/// send page. [selected] shows a check indicator; [onRemove] adds a
+/// trailing remove button (manual targets).
 class DeviceWidget extends StatelessWidget {
   final NodeDevice device;
+  final VoidCallback? onTap;
+  final bool selected;
+  final VoidCallback? onRemove;
 
-  const DeviceWidget({super.key, required this.device});
+  const DeviceWidget({
+    super.key,
+    required this.device,
+    this.onTap,
+    this.selected = false,
+    this.onRemove,
+  });
 
   Widget getDeviceBadge(BuildContext context) {
     IconData? icon;
@@ -88,52 +94,73 @@ class DeviceWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(8.0),
-      child: Container(
-        decoration: BoxDecoration(
+      child: Material(
+        borderRadius: BorderRadius.circular(12),
+        color: selected
+            ? Theme.of(context).colorScheme.primaryContainer
+            : Theme.of(context).colorScheme.secondaryContainer,
+        child: InkWell(
           borderRadius: BorderRadius.circular(12),
-          color: Theme.of(context).colorScheme.secondaryContainer,
-        ),
-        height: 80,
-        child: Row(
-          children: [
-            SizedBox(
-              height: 80,
-              width: 80,
-              child: Stack(
-                children: [
-                  const Align(
-                    alignment: Alignment.center,
+          onTap: onTap,
+          child: SizedBox(
+            height: 80,
+            child: Row(
+              children: [
+                SizedBox(
+                  height: 80,
+                  width: 80,
+                  child: Stack(
+                    children: [
+                      const Align(
+                        alignment: Alignment.center,
+                        child: Icon(
+                          Icons.smartphone,
+                          size: 48,
+                        ),
+                      ),
+                      getDeviceBadge(context),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        device.alias,
+                        style: const TextStyle(
+                          fontSize: 20,
+                        ),
+                      ),
+                      const SizedBox(
+                        height: 4,
+                      ),
+                      Row(
+                        children: [
+                          Tag(title: device.address),
+                          Tag(title: device.deviceModel),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                if (selected)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
                     child: Icon(
-                      Icons.smartphone,
-                      size: 48,
+                      Icons.check_circle,
+                      color: Theme.of(context).colorScheme.primary,
                     ),
                   ),
-                  getDeviceBadge(context),
-                ],
-              ),
-            ),
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  device.alias,
-                  style: const TextStyle(
-                    fontSize: 20,
+                if (onRemove != null)
+                  IconButton(
+                    onPressed: onRemove,
+                    icon: const Icon(Icons.remove_circle_outline),
                   ),
-                ),
-                const SizedBox(
-                  height: 4,
-                ),
-                Row(
-                  children: [
-                    Tag(title: device.address),
-                    Tag(title: device.deviceModel),
-                  ],
-                ),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );

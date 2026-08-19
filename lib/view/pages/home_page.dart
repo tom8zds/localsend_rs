@@ -3,18 +3,31 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:filesize/filesize.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/providers/selection_providers.dart';
+import '../../core/rust/actor/model.dart';
 import '../../core/rust/bridge.dart';
+import '../../i18n/strings.g.dart';
 import '../widget/discover_widget.dart';
+import 'send_page.dart';
 
-class HomePage extends StatefulWidget {
+int _fileSize(String path) {
+  try {
+    return File(path).lengthSync();
+  } catch (_) {
+    return 0;
+  }
+}
+
+class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  ConsumerState<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends ConsumerState<HomePage> {
   bool refreshing = false;
 
   Future<void> refresh() async {
@@ -23,16 +36,76 @@ class _HomePageState extends State<HomePage> {
     });
     await announce();
     await Future.delayed(const Duration(seconds: 4));
-    setState(() {
-      refreshing = false;
-    });
+    if (mounted) {
+      setState(() {
+        refreshing = false;
+      });
+    }
   }
 
-  List<File> selectedFiles = [];
-  int selectedFileSize = 0;
+  Future<void> pickFiles() async {
+    final result = await FilePicker.pickFiles();
+    final paths = result.map((file) => file.path).whereType<String>();
+    if (paths.isNotEmpty) {
+      ref.read(selectedFilesProvider.notifier).addAll(paths);
+    }
+  }
+
+  Future<void> pickFolder() async {
+    final selectedDirectory = await FilePicker.getDirectoryPath();
+    if (selectedDirectory == null) {
+      return;
+    }
+    final files = Directory(selectedDirectory)
+        .listSync(recursive: true)
+        .whereType<File>()
+        .map((f) => f.path)
+        .toList();
+    if (files.isNotEmpty) {
+      ref.read(selectedFilesProvider.notifier).addAll(files);
+    }
+  }
+
+  /// Quick single-send: tapping a device while files are staged sends
+  /// them straight away.
+  Future<void> quickSend(NodeDevice device) async {
+    final files = ref.read(selectedFilesProvider);
+    if (files.isEmpty) {
+      return;
+    }
+    final failures =
+        await sendFilesToTargets(targets: [device], files: files);
+    if (!mounted) {
+      return;
+    }
+    final t = context.t;
+    final messenger = ScaffoldMessenger.of(context);
+    final failure = failures[device];
+    if (failure != null) {
+      messenger.showSnackBar(
+        SnackBar(
+          content:
+              Text(t.send.sendFailed(alias: device.alias, reason: '$failure')),
+        ),
+      );
+    } else {
+      messenger.showSnackBar(
+        SnackBar(
+          content:
+              Text(t.send.sentTo(count: files.length, alias: device.alias)),
+        ),
+      );
+      ref.read(selectedFilesProvider.notifier).clear();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final selectedFiles = ref.watch(selectedFilesProvider);
+    final selectedFileSize =
+        selectedFiles.fold<int>(0, (sum, path) => sum + _fileSize(path));
+    final t = context.t;
+
     return Scaffold(
       body: Center(
         child: Container(
@@ -45,36 +118,16 @@ class _HomePageState extends State<HomePage> {
                 child: Row(
                   children: [
                     ElevatedButton(
-                        onPressed: () async {
-                          final result = await FilePicker.pickFiles();
-
-                          if (result.isNotEmpty) {
-                            setState(() {
-                              selectedFiles = result
-                                  .map((file) => File(file.path!))
-                                  .toList();
-                              for (var element in selectedFiles) {
-                                selectedFileSize += element.lengthSync();
-                              }
-                            });
-                          } else {
-                            // User canceled the picker
-                          }
-                        },
-                        child: const Text("Send File")),
+                      onPressed: pickFiles,
+                      child: Text(t.home.sendFile),
+                    ),
                     const SizedBox(
                       width: 8,
                     ),
                     ElevatedButton(
-                        onPressed: () async {
-                          String? selectedDirectory =
-                              await FilePicker.getDirectoryPath();
-
-                          if (selectedDirectory == null) {
-                            // User canceled the picker
-                          }
-                        },
-                        child: const Text("Send Folder")),
+                      onPressed: pickFolder,
+                      child: Text(t.home.sendFolder),
+                    ),
                   ],
                 ),
               ),
@@ -84,27 +137,38 @@ class _HomePageState extends State<HomePage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                        '文件: ${selectedFiles.length} 大小: ${filesize(selectedFileSize)}'),
+                      t.home.filesSummary(
+                        count: selectedFiles.length,
+                        size: filesize(selectedFileSize),
+                      ),
+                    ),
                     const SizedBox(
                       height: 8,
                     ),
-                    Row(
-                      children: [
-                        for (final (index, file) in selectedFiles.indexed)
-                          Padding(
-                            padding: const EdgeInsets.all(4.0),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .secondaryContainer,
-                                  borderRadius: BorderRadius.circular(12)),
-                              height: 40,
-                              width: 40,
-                              child: const Icon(Icons.file_present),
+                    Expanded(
+                      child: ListView(
+                        scrollDirection: Axis.horizontal,
+                        children: [
+                          for (final path in selectedFiles)
+                            Padding(
+                              padding: const EdgeInsets.all(4.0),
+                              child: Tooltip(
+                                message:
+                                    path.split(Platform.pathSeparator).last,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .secondaryContainer,
+                                      borderRadius: BorderRadius.circular(12)),
+                                  height: 40,
+                                  width: 40,
+                                  child: const Icon(Icons.file_present),
+                                ),
+                              ),
                             ),
-                          )
-                      ],
+                        ],
+                      ),
                     ),
                     const SizedBox(
                       height: 12,
@@ -113,16 +177,29 @@ class _HomePageState extends State<HomePage> {
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         TextButton.icon(
-                            onPressed: () {},
-                            icon: const Icon(Icons.info_outline),
-                            label: const Text("详情")),
+                          onPressed: selectedFiles.isEmpty
+                              ? null
+                              : () => ref
+                                  .read(selectedFilesProvider.notifier)
+                                  .clear(),
+                          icon: const Icon(Icons.clear_all),
+                          label: Text(t.home.clear),
+                        ),
                         const SizedBox(
                           width: 8,
                         ),
                         FilledButton.icon(
-                          onPressed: () {},
-                          icon: const Icon(Icons.add),
-                          label: const Text("添加"),
+                          onPressed: selectedFiles.isEmpty
+                              ? null
+                              : () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (context) => const SendPage(),
+                                    ),
+                                  );
+                                },
+                          icon: const Icon(Icons.navigate_next),
+                          label: Text(t.home.next),
                         ),
                       ],
                     ),
@@ -136,9 +213,9 @@ class _HomePageState extends State<HomePage> {
                 padding: const EdgeInsets.symmetric(horizontal: 8.0),
                 child: Row(
                   children: [
-                    const Text(
-                      "附近的设备",
-                      style: TextStyle(
+                    Text(
+                      t.home.nearbyDevices,
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
@@ -158,7 +235,18 @@ class _HomePageState extends State<HomePage> {
                         },
                         icon: const Icon(
                           Icons.sync,
-                        ))
+                        )),
+                    if (selectedFiles.isNotEmpty)
+                      Expanded(
+                        child: Text(
+                          t.home.tapToSend,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.secondary,
+                            fontSize: 12,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -167,7 +255,7 @@ class _HomePageState extends State<HomePage> {
                   padding: EdgeInsets.all(8.0),
                   child: LinearProgressIndicator(),
                 ),
-              const Expanded(child: DiscoverWidget()),
+              Expanded(child: DiscoverWidget(onDeviceTap: quickSend)),
             ],
           ),
         ),
