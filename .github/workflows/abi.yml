@@ -16,13 +16,13 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
 
     # Set up Android NDK and Cargo toolchain for cross-compiling to Android
     - name: Set up environment
-      uses: actions-rs/toolchain@v1
+      uses: dtolnay/rust-toolchain@stable
       with:
-        toolchain: stable
+        targets: aarch64-linux-android,armv7-linux-androideabi
 
     # Download Android NDK for cross-compiling
     - name: Download Android NDK
@@ -35,14 +35,15 @@ jobs:
     - name: Setup cargo ndk
       run: |
         cargo install cargo-ndk
-        rustup target add aarch64-linux-android armv7-linux-androideabi
-        rustup target list
+        rustup target list --installed
 
-    # Install Cargo target for Android
+    # Build only the FFI crate (the one the app loads); the workspace
+    # also hosts the CLI, which has no business being cross-compiled
+    # to Android.
     - name: Build
       run: |
-        mkdir output 
-        cargo ndk -o ./output -t arm64-v8a -t armeabi-v7a --manifest-path ./Cargo.toml build --release
+        mkdir output
+        cargo ndk -o ./output -t arm64-v8a -t armeabi-v7a --manifest-path ./ffi/Cargo.toml build --release
         ls ./output
 
     # Upload the built artifacts as an artifact

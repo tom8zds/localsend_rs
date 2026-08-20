@@ -5,6 +5,7 @@ on:
     push:
         branches:
             - main
+            - 'refactor/**'
 
 jobs:
     build-apk:
@@ -21,20 +22,19 @@ jobs:
                   cache: false
 
             - name: Set up rust
-              uses: actions-rs/toolchain@v1
+              uses: dtolnay/rust-toolchain@stable
               with:
-                  toolchain: stable
+                  targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
 
             - name: Set up java 17
               uses: actions/setup-java@v4
               with:
-                  distribution: "zulu" # See 'Supported distributions' for available options
+                  distribution: "zulu" # See "Supported distributions" for available options.
                   java-version: "17"
 
             - name: Build Prepare
               run: |
                   flutter pub get
-                  chmod +x ./rust_builder
                   flutter doctor -v
 
             - name: Build APK
@@ -42,12 +42,6 @@ jobs:
                   flutter build apk
                   ls -alh ./build/app/outputs/flutter-apk/*.apk
                   cp -r ./build/app/outputs/flutter-apk /tmp/flutter-apk
-
-            # - name: Build Linux
-            #   run: |
-            #     flutter build linux --release
-            #     ls -alh ./build/linux/x64/release/bundle/*
-            #     cp -r ./build/linux/x64/release/bundle /tmp/linux-bundle
 
             - name: Upload Android
               uses: actions/upload-artifact@v4.3.3
@@ -69,14 +63,14 @@ jobs:
                   cache: true
 
             - name: Set up rust
-              uses: actions-rs/toolchain@v1
-              with:
-                  toolchain: stable
+              uses: dtolnay/rust-toolchain@stable
+
+            # setup.dart shells out to `iscc` (package:innosetup).
+            - name: Install Inno Setup
+              run: choco install innosetup --no-progress -y
 
             - name: Build Prepare
-              run: |
-                  flutter pub get
-                  flutter config --enable-native-assets
+              run: flutter pub get
 
             - name: Build Windows
               run: |
