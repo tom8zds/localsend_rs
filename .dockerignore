@@ -1,0 +1,18 @@
+# Build context is the repo root (see compose.yaml); exclude the
+# 1.7G flutter build tree so the context upload stays small.
+build/
+linux/
+android/
+ios/
+macos/
+windows/
+.dart_tool/
+.idea/
+.vscode/
+.git/
+test_driver/
+integration_test/
+screenshots/
+assets/
+*.log
+devtools_options.yaml

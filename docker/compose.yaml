@@ -1,0 +1,36 @@
+# Multi-instance CLI transfer smoke test.
+#
+#   docker compose up -d --build rx1 rx2   # start the two receivers
+#   docker compose run --rm tx send ...    # one-shot sender
+#
+# docker/smoke.sh drives the full matrix (discovery, parallel
+# multi-receiver sends, checksum verification).
+name: localsend-cli-test
+
+networks:
+  lsnet:
+    driver: bridge
+
+services:
+  rx1:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.cli
+    command: ["receive", "--alias", "rx1", "--destination", "/inbox"]
+    networks: [lsnet]
+
+  rx2:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.cli
+    command: ["receive", "--alias", "rx2", "--destination", "/inbox"]
+    networks: [lsnet]
+
+  # One-shot sender container; only started explicitly via
+  # `docker compose run --rm tx ...` (hence the sender profile).
+  tx:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.cli
+    profiles: ["sender"]
+    networks: [lsnet]

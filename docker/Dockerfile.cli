@@ -1,0 +1,19 @@
+# Smoke-test image for the headless CLI: multi-stage build so the
+# runtime image carries a single static-ish binary on debian-slim
+# instead of the whole rust toolchain.
+FROM rust:1-bookworm AS builder
+WORKDIR /build
+COPY rust/ .
+# Cache mounts keep the cargo registry and target dir across rebuilds;
+# the binary is copied out because the target mount is not persistent.
+RUN --mount=type=cache,target=/build/target \
+    --mount=type=cache,target=/usr/local/cargo/registry \
+    cargo build --release -p localsend-cli \
+    && cp target/release/localsend-cli /usr/local/bin/localsend-cli
+
+FROM debian:bookworm-slim
+COPY --from=builder /usr/local/bin/localsend-cli /usr/local/bin/localsend-cli
+# LOCALSEND_CLI_LOG is read by the CLI itself (tracing file target).
+ENV LOCALSEND_CLI_LOG=/tmp/localsend-cli.log
+WORKDIR /data
+ENTRYPOINT ["localsend-cli"]
