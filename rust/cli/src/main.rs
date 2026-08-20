@@ -139,6 +139,23 @@ async fn main() -> Result<()> {
         anyhow::bail!("server failed to start: {err}");
     }
 
+    // Periodic self-announce: discovery only reacts to incoming
+    // announcements, so an all-CLI fleet never learns about its peers
+    // unless somebody speaks first. Official apps multicast regularly;
+    // mirror that so CLI-only networks (e.g. container swarms)
+    // discover each other.
+    {
+        let core = core.clone();
+        tokio::spawn(async move {
+            let mut tick =
+                tokio::time::interval(std::time::Duration::from_secs(5));
+            loop {
+                tick.tick().await;
+                core.announce().await;
+            }
+        });
+    }
+
     let result = match (&cli.command, &cli.common.to) {
         (Some(Command::Send), _) => {
             let to = cli
