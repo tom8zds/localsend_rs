@@ -4,6 +4,7 @@ import 'package:filesize/filesize.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../common/spacing.dart';
 import '../../core/providers/core_provider.dart';
 import '../../core/providers/selection_providers.dart';
 import '../../core/rust/actor/model.dart';
@@ -128,11 +129,11 @@ class _SendPageState extends ConsumerState<SendPage> {
     return Scaffold(
       appBar: AppBar(title: Text(t.send.title)),
       body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.x16),
         children: [
           if (files.isEmpty)
             Padding(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(AppSpacing.x24),
               child: Center(child: Text(t.send.noFiles)),
             )
           else
@@ -160,7 +161,7 @@ class _SendPageState extends ConsumerState<SendPage> {
               ),
           const Divider(),
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.x8),
             child: Text(
               t.send.selectTargets,
               style: Theme.of(context).textTheme.titleMedium,
@@ -179,7 +180,7 @@ class _SendPageState extends ConsumerState<SendPage> {
                 });
               },
             ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.x8),
           Row(
             children: [
               Expanded(
@@ -195,7 +196,7 @@ class _SendPageState extends ConsumerState<SendPage> {
                   onSubmitted: (_) => _addManualTarget(),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.x8),
               IconButton.filled(
                 onPressed: _addManualTarget,
                 icon: const Icon(Icons.add),
@@ -228,7 +229,7 @@ class _SendPageState extends ConsumerState<SendPage> {
       ),
       bottomSheet: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.x16),
           child: FilledButton.icon(
             onPressed: files.isEmpty || _selectedTargets.isEmpty || _sending
                 ? null

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../common/constants.dart';
+import '../../common/spacing.dart';
 import '../../common/utils.dart';
 import '../../core/providers/core_provider.dart';
 import '../../core/providers/locale_provider.dart';
@@ -24,18 +25,22 @@ class SettingTileGroup extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.x8),
       child: Container(
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.secondaryContainer,
-          borderRadius: BorderRadius.circular(8),
+          // Neutral filled group: low surface container (not the
+          // secondary/selection container), M3 card corner (12dp).
+          color: Theme.of(context).colorScheme.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(AppSpacing.x12),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.x16,
+                vertical: AppSpacing.x8,
+              ),
               child: Text(
                 title,
                 style: Theme.of(context).textTheme.titleMedium,
@@ -82,12 +87,11 @@ class ThemeTile extends ConsumerWidget {
           context.t.setting.brightness.subTitle(mode: getThemeName(themeMode))),
       trailing: OverflowBar(
         children: [
+          // Selected state is conveyed by IconButton's built-in M3
+          // isSelected treatment (primary), not a hand-picked accent.
           IconButton(
             isSelected: themeMode == ThemeMode.system,
-            selectedIcon: Icon(
-              Icons.brightness_auto,
-              color: Theme.of(context).colorScheme.secondary,
-            ),
+            selectedIcon: const Icon(Icons.brightness_auto),
             onPressed: () {
               setTheme(ref, context, ThemeMode.system);
             },
@@ -95,10 +99,7 @@ class ThemeTile extends ConsumerWidget {
           ),
           IconButton(
             isSelected: themeMode == ThemeMode.light,
-            selectedIcon: Icon(
-              Icons.brightness_5,
-              color: Theme.of(context).colorScheme.secondary,
-            ),
+            selectedIcon: const Icon(Icons.brightness_5),
             onPressed: () {
               setTheme(ref, context, ThemeMode.light);
             },
@@ -106,10 +107,7 @@ class ThemeTile extends ConsumerWidget {
           ),
           IconButton(
             isSelected: themeMode == ThemeMode.dark,
-            selectedIcon: Icon(
-              Icons.brightness_2,
-              color: Theme.of(context).colorScheme.secondary,
-            ),
+            selectedIcon: const Icon(Icons.brightness_2),
             onPressed: () {
               setTheme(ref, context, ThemeMode.dark);
             },

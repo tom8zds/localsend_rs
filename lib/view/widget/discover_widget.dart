@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:localsend_rs/view/widget/device_widget.dart';
 
+import '../../common/spacing.dart';
 import '../../core/providers/core_provider.dart';
 import '../../core/rust/actor/model.dart';
 
@@ -17,8 +18,9 @@ class DiscoverWidget extends ConsumerWidget {
     final devices = ref.watch(devicesProvider);
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        color: Theme.of(context).colorScheme.surface,
+        // Low surface container one step above the page background.
+        borderRadius: BorderRadius.circular(AppSpacing.x12),
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
       ),
       child: switch (devices) {
         AsyncData(:final value) when value.isNotEmpty => ListView.builder(

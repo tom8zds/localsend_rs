@@ -2,6 +2,7 @@ import 'package:filesize/filesize.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../common/spacing.dart';
 import '../../common/utils.dart';
 import '../../core/providers/session_providers.dart';
 import '../../core/rust/actor/model.dart';
@@ -18,11 +19,8 @@ class FileProgressBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final value = total > 0 ? (bytes / total).clamp(0.0, 1.0) : null;
-    return LinearProgressIndicator(
-      value: value,
-      minHeight: 6,
-      borderRadius: BorderRadius.circular(8),
-    );
+    // M3 defaults: 4dp track height, fully rounded ends.
+    return LinearProgressIndicator(value: value);
   }
 }
 
@@ -46,7 +44,7 @@ class SessionFileTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final transferring = file.state == const FileState.transfer();
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.x4),
       child: Row(
         children: [
           if (onSelected != null)
@@ -55,12 +53,13 @@ class SessionFileTile extends StatelessWidget {
               onChanged: onSelected,
             )
           else
-            const SizedBox(width: 12),
+            const SizedBox(width: AppSpacing.x12),
           Icon(
             Icons.file_present,
-            color: Theme.of(context).colorScheme.secondary,
+            // Supporting icon: on-surface-variant, not an accent.
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSpacing.x8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -71,15 +70,15 @@ class SessionFileTile extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 if (transferring) ...[
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AppSpacing.x4),
                   FileProgressBar(bytes: bytes, total: file.info.size.toInt()),
                 ] else
                   Text(
                     file.state.getName(),
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.secondary,
-                      fontSize: 12,
-                    ),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color:
+                              Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                   ),
               ],
             ),
@@ -137,9 +136,12 @@ class _SessionCardState extends ConsumerState<SessionCard> {
     final t = context.t;
 
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      margin: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.x16,
+        vertical: AppSpacing.x4,
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(AppSpacing.x16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -149,7 +151,7 @@ class _SessionCardState extends ConsumerState<SessionCard> {
                   incoming ? Icons.download : Icons.upload,
                   color: Theme.of(context).colorScheme.primary,
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppSpacing.x8),
                 Expanded(
                   child: Text(
                     isPendingReceive
@@ -167,13 +169,13 @@ class _SessionCardState extends ConsumerState<SessionCard> {
                 ),
                 Text(
                   summary.state.getName(),
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.secondary,
-                  ),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.x8),
             for (final file in summary.files)
               SessionFileTile(
                 file: file,
@@ -192,14 +194,17 @@ class _SessionCardState extends ConsumerState<SessionCard> {
                     : null,
               ),
             if (extras.failureReason != null) ...[
-              const SizedBox(height: 4),
+              const SizedBox(height: AppSpacing.x4),
               Text(
                 t.transfers.failedReason(reason: extras.failureReason!),
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(color: Theme.of(context).colorScheme.error),
               ),
             ],
             if (isPendingReceive || isActive) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.x8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
@@ -209,7 +214,7 @@ class _SessionCardState extends ConsumerState<SessionCard> {
                           declineSession(sessionId: summary.id),
                       child: Text(t.transfers.decline),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppSpacing.x8),
                     FilledButton(
                       onPressed: _selected.isEmpty
                           ? null

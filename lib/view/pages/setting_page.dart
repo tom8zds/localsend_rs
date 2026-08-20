@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../common/spacing.dart';
 import '../../i18n/strings.g.dart';
 import '../widget/common_widget.dart';
 import '../widget/setting_widgets.dart';
@@ -16,7 +17,7 @@ class SettingPage extends StatelessWidget {
             child: StaticAppbar(title: context.t.setting.title),
           ),
           SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.x16),
             sliver: SliverList(
               delegate: SliverChildListDelegate(
                 [
@@ -29,7 +30,7 @@ class SettingPage extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(
-                    height: 16,
+                    height: AppSpacing.x16,
                   ),
                   SettingTileGroup(
                     title: t.setting.receive.title,
@@ -39,7 +40,7 @@ class SettingPage extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(
-                    height: 16,
+                    height: AppSpacing.x16,
                   ),
                   SettingTileGroup(
                     title: t.setting.core.title,
@@ -49,7 +50,7 @@ class SettingPage extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(
-                    height: 16,
+                    height: AppSpacing.x16,
                   ),
                   SizedBox(
                     height: 200,
@@ -59,14 +60,14 @@ class SettingPage extends StatelessWidget {
                     children: [
                       AppTitle(),
                       SizedBox(
-                        height: 8,
+                        height: AppSpacing.x8,
                       ),
                       Text("Version: 1.0.0"),
                       Text("by tom8zds @ github")
                     ],
                   ),
                   const SizedBox(
-                    height: 32,
+                    height: AppSpacing.x32,
                   ),
                 ],
               ),

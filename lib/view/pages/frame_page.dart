@@ -2,6 +2,7 @@ import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../common/spacing.dart';
 import '../../common/utils.dart';
 import '../../core/providers/session_providers.dart';
 import '../../i18n/strings.g.dart';
@@ -27,9 +28,11 @@ class _FramePageState extends ConsumerState<FramePage> {
   int lastIndex = 0;
 
   FrameType getFrameType(double width) {
-    if (width < 800) {
+    // M3 window size classes: compact <600 (bottom bar), medium 600–839
+    // (rail), large 1200+ (drawer).
+    if (width < AppBreakpoints.compact) {
       return FrameType.compact;
-    } else if (width < 1200) {
+    } else if (width < AppBreakpoints.large) {
       return FrameType.normal;
     } else {
       return FrameType.wide;
@@ -138,9 +141,9 @@ class _FramePageState extends ConsumerState<FramePage> {
     }
     if (frameType == FrameType.normal) {
       return NavigationRail(
-        backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
+        // M3 rail: default surface colors, labels always shown.
         onDestinationSelected: changeIndex,
-        labelType: NavigationRailLabelType.selected,
+        labelType: NavigationRailLabelType.all,
         destinations: [
           for (final d in destinations)
             NavigationRailDestination(
@@ -190,9 +193,10 @@ class _FramePageState extends ConsumerState<FramePage> {
           getSideNavigation(frameType, destinations),
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.all(8.0),
+              padding: const EdgeInsets.all(AppSpacing.x8),
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(24),
+                // M3 large shape token: 16dp.
+                borderRadius: BorderRadius.circular(AppSpacing.x16),
                 child: transition(pages.elementAt(index)),
               ),
             ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:localsend_rs/core/rust/actor/model.dart';
 import 'package:simple_icons/simple_icons.dart';
 
+import '../../common/spacing.dart';
 import 'common_widget.dart';
 
 class DeviceWidgetLarge extends StatelessWidget {
@@ -21,14 +22,14 @@ class DeviceWidgetLarge extends StatelessWidget {
             size: 64,
           ),
           const SizedBox(
-            height: 16,
+            height: AppSpacing.x16,
           ),
           Text(
             device.alias,
             style: Theme.of(context).textTheme.displayMedium,
           ),
           const SizedBox(
-            height: 16,
+            height: AppSpacing.x16,
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -75,15 +76,17 @@ class DeviceWidget extends StatelessWidget {
         : Align(
             alignment: Alignment.bottomRight,
             child: Container(
-              margin: const EdgeInsets.all(8),
-              padding: const EdgeInsets.all(4),
+              margin: const EdgeInsets.all(AppSpacing.x8),
+              padding: const EdgeInsets.all(AppSpacing.x4),
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(AppSpacing.x12),
               ),
               child: Icon(
                 icon,
-                color: Theme.of(context).colorScheme.primary,
+                // Tonal pairing: on-primary-container on
+                // primary-container.
+                color: Theme.of(context).colorScheme.onPrimaryContainer,
                 size: 18,
               ),
             ),
@@ -93,14 +96,17 @@ class DeviceWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(8.0),
+      padding: const EdgeInsets.all(AppSpacing.x8),
       child: Material(
-        borderRadius: BorderRadius.circular(12),
+        // M3 card corner: medium (12dp).
+        borderRadius: BorderRadius.circular(AppSpacing.x12),
+        // M3 selection: secondary-container marks the selected item;
+        // the resting row is a high surface container, not an accent.
         color: selected
-            ? Theme.of(context).colorScheme.primaryContainer
-            : Theme.of(context).colorScheme.secondaryContainer,
+            ? Theme.of(context).colorScheme.secondaryContainer
+            : Theme.of(context).colorScheme.surfaceContainerHighest,
         child: InkWell(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppSpacing.x12),
           onTap: onTap,
           child: SizedBox(
             height: 80,
@@ -129,12 +135,10 @@ class DeviceWidget extends StatelessWidget {
                     children: [
                       Text(
                         device.alias,
-                        style: const TextStyle(
-                          fontSize: 20,
-                        ),
+                        style: Theme.of(context).textTheme.titleLarge,
                       ),
                       const SizedBox(
-                        height: 4,
+                        height: AppSpacing.x4,
                       ),
                       Row(
                         children: [
@@ -147,7 +151,7 @@ class DeviceWidget extends StatelessWidget {
                 ),
                 if (selected)
                   Padding(
-                    padding: const EdgeInsets.only(right: 8),
+                    padding: const EdgeInsets.only(right: AppSpacing.x8),
                     child: Icon(
                       Icons.check_circle,
                       color: Theme.of(context).colorScheme.primary,

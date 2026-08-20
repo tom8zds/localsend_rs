@@ -5,6 +5,7 @@ import 'package:filesize/filesize.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../common/spacing.dart';
 import '../../core/providers/selection_providers.dart';
 import '../../core/providers/session_providers.dart';
 import '../../core/rust/actor/model.dart';
@@ -38,7 +39,7 @@ class IdlePage extends StatelessWidget {
             child: Image.asset("assets/icon/logo_512.png"),
           ),
           const AppTitle(),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.x8),
           Text(context.t.transfers.empty),
         ],
       ),
@@ -165,7 +166,7 @@ class _TransfersPageState extends ConsumerState<TransfersPage> {
             onPressed: pickFiles,
             child: Text(t.home.sendFile),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSpacing.x8),
           ElevatedButton(
             onPressed: pickFolder,
             child: Text(t.home.sendFolder),
@@ -190,21 +191,22 @@ class _TransfersPageState extends ConsumerState<TransfersPage> {
               size: filesize(selectedFileSize),
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.x8),
           Expanded(
             child: ListView(
               scrollDirection: Axis.horizontal,
               children: [
                 for (final path in selectedFiles)
                   Padding(
-                    padding: const EdgeInsets.all(4.0),
+                    padding: const EdgeInsets.all(AppSpacing.x4),
                     child: Tooltip(
                       message: fileBaseName(path),
                       child: Container(
                         decoration: BoxDecoration(
                           color:
                               Theme.of(context).colorScheme.secondaryContainer,
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius:
+                              BorderRadius.circular(AppSpacing.x12),
                         ),
                         height: 40,
                         width: 40,
@@ -215,7 +217,7 @@ class _TransfersPageState extends ConsumerState<TransfersPage> {
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.x12),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
@@ -227,7 +229,7 @@ class _TransfersPageState extends ConsumerState<TransfersPage> {
                 icon: const Icon(Icons.clear_all),
                 label: Text(t.home.clear),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.x8),
               FilledButton.icon(
                 onPressed: selectedFiles.isEmpty
                     ? null
@@ -251,24 +253,17 @@ class _TransfersPageState extends ConsumerState<TransfersPage> {
   Widget _devicesHeader(BuildContext context, List<String> selectedFiles) {
     final t = context.t;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.x8),
       child: Row(
         children: [
+          // Section header: title-medium per M3 typography scale.
           Text(
             t.home.nearbyDevices,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
+            style: Theme.of(context).textTheme.titleMedium,
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSpacing.x8),
+          // Default IconButton keeps the 48dp minimum touch target.
           IconButton(
-            style: const ButtonStyle(
-              iconSize: WidgetStatePropertyAll(20),
-              padding: WidgetStatePropertyAll(EdgeInsets.all(8)),
-              minimumSize: WidgetStatePropertyAll(Size(16, 16)),
-              maximumSize: WidgetStatePropertyAll(Size(36, 36)),
-            ),
             onPressed: () {
               refresh();
             },
@@ -278,10 +273,9 @@ class _TransfersPageState extends ConsumerState<TransfersPage> {
             Expanded(
               child: Text(
                 t.home.tapToSend,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.secondary,
-                  fontSize: 12,
-                ),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
@@ -292,13 +286,13 @@ class _TransfersPageState extends ConsumerState<TransfersPage> {
 
   Widget _sessionsHeader(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.x8,
+        vertical: AppSpacing.x8,
+      ),
       child: Text(
         context.t.transfers.title,
-        style: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-        ),
+        style: Theme.of(context).textTheme.titleMedium,
       ),
     );
   }
@@ -322,11 +316,11 @@ class _TransfersPageState extends ConsumerState<TransfersPage> {
     final sendArea = [
       _sendButtons(context),
       _filesSummary(context, selectedFiles),
-      const SizedBox(height: 8),
+      const SizedBox(height: AppSpacing.x8),
       _devicesHeader(context, selectedFiles),
       if (refreshing)
         const Padding(
-          padding: EdgeInsets.all(8.0),
+          padding: EdgeInsets.all(AppSpacing.x8),
           child: LinearProgressIndicator(),
         ),
     ];
@@ -338,7 +332,8 @@ class _TransfersPageState extends ConsumerState<TransfersPage> {
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final wide = constraints.maxWidth >= 800;
+            // M3 expanded window class: two panes from 840dp.
+            final wide = constraints.maxWidth >= AppBreakpoints.expanded;
             if (wide) {
               // Two panes: send area + device list on the left, session
               // cards on the right.
@@ -347,7 +342,9 @@ class _TransfersPageState extends ConsumerState<TransfersPage> {
                 children: [
                   Expanded(
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.x16,
+                      ),
                       child: Column(
                         children: [
                           ...sendArea,
@@ -361,11 +358,13 @@ class _TransfersPageState extends ConsumerState<TransfersPage> {
                   const VerticalDivider(width: 1),
                   Expanded(
                     child: ListView(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.x16,
+                      ),
                       children: [
                         _sessionsHeader(context),
                         ...(sessionCards ?? [const IdlePage()]),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: AppSpacing.x16),
                       ],
                     ),
                   ),
@@ -374,7 +373,7 @@ class _TransfersPageState extends ConsumerState<TransfersPage> {
             }
             // Single scrollable column: send area, devices, sessions.
             return ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.x16),
               children: [
                 ...sendArea,
                 SizedBox(
@@ -383,7 +382,7 @@ class _TransfersPageState extends ConsumerState<TransfersPage> {
                 ),
                 _sessionsHeader(context),
                 ...(sessionCards ?? [const IdlePage()]),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.x16),
               ],
             );
           },
