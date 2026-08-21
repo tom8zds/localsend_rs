@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../common/spacing.dart';
 import '../../i18n/strings.g.dart';
 
 class AppTitle extends StatelessWidget {
@@ -32,18 +33,23 @@ class Tag extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(right: 8.0),
+      padding: const EdgeInsets.only(right: AppSpacing.x8),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.x8,
+          vertical: AppSpacing.x4,
+        ),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(6),
+          // M3 chip corner: small (8dp).
+          borderRadius: BorderRadius.circular(AppSpacing.x8),
           color: Theme.of(context).colorScheme.primaryContainer,
         ),
         child: Text(
           title,
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.primary,
-          ),
+          // Tonal pairing: on-primary-container on primary-container.
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                color: Theme.of(context).colorScheme.onPrimaryContainer,
+              ),
         ),
       ),
     );

@@ -4,7 +4,6 @@ import 'dart:math';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:localsend_rs/core/store/config_store.dart';
-import 'package:slang/builder/model/enums.dart';
 
 import '../core/rust/actor/model.dart';
 import 'constants.dart';
@@ -54,7 +53,7 @@ Future<NodeDevice> getDevice() async {
       "${deviceInfo.deviceModel ?? "unknown"}#${addressList[0].split(".")[3]}";
   return NodeDevice(
     alias: alias,
-    version: "2.0",
+    version: "2.2",
     deviceModel: deviceInfo.deviceModel ?? "unknown",
     deviceType: deviceInfo.deviceType.name,
     fingerprint: ConfigStore().deviceId(),

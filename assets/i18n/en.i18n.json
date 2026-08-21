@@ -1,0 +1,91 @@
+{
+    "appTitle": {
+        "parta": "LocalSend",
+        "partb": "_RS"
+    },
+    "home": {
+        "title": "Home Page",
+        "sendFile": "Send File",
+        "sendFolder": "Send Folder",
+        "next": "Next",
+        "add": "Add",
+        "clear": "Clear",
+        "nearbyDevices": "Nearby Devices",
+        "tapToSend": "Tap a device to send the selected files",
+        "filesSummary": "Files: $count  Size: $size"
+    },
+    "send": {
+        "title": "Send",
+        "noFiles": "No files selected",
+        "selectTargets": "Select targets",
+        "manualTarget": "Manual target",
+        "manualTargetHint": "IP or IP:port",
+        "invalidAddress": "Invalid address",
+        "addTarget": "Add",
+        "confirm": "Send to $count device(s)",
+        "sentTo": "Sending $count file(s) to $alias",
+        "sentToDevices": "Started sending $count file(s) to $devices device(s)",
+        "sendFailed": "Send to $alias failed: $reason",
+        "removeFile": "Remove"
+    },
+    "transfers": {
+        "title": "Transfers",
+        "empty": "No transfers yet",
+        "incoming": "Incoming",
+        "outgoing": "Outgoing",
+        "accept": "Accept",
+        "decline": "Decline",
+        "cancel": "Cancel",
+        "peerWantsToSend": "$alias wants to send you $count file(s)",
+        "toPeer": "To $alias",
+        "failedReason": "Failed: $reason",
+        "selectAll": "All",
+        "selectNone": "None"
+    },
+    "mission": {
+        "accept": "Accept",
+        "cancel": "Cancel",
+        "complete": "Complete",
+        "finished": "Finished",
+        "tranfer": "Transfering",
+        "pending": "Pending",
+        "failed": "Failed",
+        "skip": "Skip",
+        "busy": "Busy",
+        "advance": "Advance"
+    },
+    "common": {
+        "file": "File",
+        "size": "Size"
+    },
+    "setting": {
+        "title": "Settings",
+        "common": "Common",
+        "brightness": {
+            "title": "Brightness",
+            "subTitle": "Current mode: $mode",
+            "themeMode": {
+                "system": "Follow system",
+                "light": "Light mode",
+                "dark": "Dark mode"
+            }
+        },
+        "language": {
+            "title": "Language",
+            "subTitle": "Current language: $language"
+        },
+        "receive": {
+            "title": "Receive",
+            "quickSave": "Quick Save",
+            "quickSaveHint": "Start tranfer without accept",
+            "saveFolder": "Save Folder",
+            "selectSaveFolder": "Select"
+        },
+        "core": {
+            "title": "core setting",
+            "server": {
+                "title": "server"
+            }
+        }
+    }
+}

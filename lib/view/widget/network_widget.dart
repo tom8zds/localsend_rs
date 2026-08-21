@@ -42,22 +42,20 @@ class _NetworkWidgetState extends State<NetworkWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      child: Column(
-        children: [
-          TextButton.icon(
-            onPressed: getInterface,
-            label: const Text("refresh"),
-            icon: const Icon(Icons.refresh),
-          ),
-          for (final addr in addressList)
-            TextButton(
-                child: Text(addr),
-                onPressed: () {
-                  widget.onPressed(addr);
-                })
-        ],
-      ),
+    return Column(
+      children: [
+        TextButton.icon(
+          onPressed: getInterface,
+          label: const Text("refresh"),
+          icon: const Icon(Icons.refresh),
+        ),
+        for (final addr in addressList)
+          TextButton(
+              child: Text(addr),
+              onPressed: () {
+                widget.onPressed(addr);
+              })
+      ],
     );
   }
 }

@@ -1,4 +1,8 @@
 rust_input: crate::bridge
-rust_root: rust/
+rust_root: rust/ffi/
 dart_output: lib/core/rust
-web: false
+# Web bindings are generated so the conditional import in
+# frb_generated.dart resolves when compiling previews/tests for the
+# web runtime (Flutter widget previewer). The app itself never runs on
+# web and never calls into them.
+web: true

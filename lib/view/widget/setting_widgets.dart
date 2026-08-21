@@ -5,9 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../common/constants.dart';
+import '../../common/spacing.dart';
 import '../../common/utils.dart';
 import '../../core/providers/core_provider.dart';
 import '../../core/providers/locale_provider.dart';
+import '../../core/providers/session_providers.dart';
 import '../../core/providers/theme_provider.dart';
 import '../../core/rust/bridge.dart';
 import '../../core/store/config_store.dart';
@@ -23,18 +25,22 @@ class SettingTileGroup extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.x8),
       child: Container(
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.secondaryContainer,
-          borderRadius: BorderRadius.circular(8),
+          // Neutral filled group: low surface container (not the
+          // secondary/selection container), M3 card corner (12dp).
+          color: Theme.of(context).colorScheme.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(AppSpacing.x12),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.x16,
+                vertical: AppSpacing.x8,
+              ),
               child: Text(
                 title,
                 style: Theme.of(context).textTheme.titleMedium,
@@ -81,12 +87,11 @@ class ThemeTile extends ConsumerWidget {
           context.t.setting.brightness.subTitle(mode: getThemeName(themeMode))),
       trailing: OverflowBar(
         children: [
+          // Selected state is conveyed by IconButton's built-in M3
+          // isSelected treatment (primary), not a hand-picked accent.
           IconButton(
             isSelected: themeMode == ThemeMode.system,
-            selectedIcon: Icon(
-              Icons.brightness_auto,
-              color: Theme.of(context).colorScheme.secondary,
-            ),
+            selectedIcon: const Icon(Icons.brightness_auto),
             onPressed: () {
               setTheme(ref, context, ThemeMode.system);
             },
@@ -94,10 +99,7 @@ class ThemeTile extends ConsumerWidget {
           ),
           IconButton(
             isSelected: themeMode == ThemeMode.light,
-            selectedIcon: Icon(
-              Icons.brightness_5,
-              color: Theme.of(context).colorScheme.secondary,
-            ),
+            selectedIcon: const Icon(Icons.brightness_5),
             onPressed: () {
               setTheme(ref, context, ThemeMode.light);
             },
@@ -105,10 +107,7 @@ class ThemeTile extends ConsumerWidget {
           ),
           IconButton(
             isSelected: themeMode == ThemeMode.dark,
-            selectedIcon: Icon(
-              Icons.brightness_2,
-              color: Theme.of(context).colorScheme.secondary,
-            ),
+            selectedIcon: const Icon(Icons.brightness_2),
             onPressed: () {
               setTheme(ref, context, ThemeMode.dark);
             },
@@ -185,13 +184,13 @@ class ServerTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final core = ref.watch(coreStateProvider);
+    final serverState = ref.watch(serverStateProvider).value ?? false;
     return ListTile(
       title: Text(context.t.setting.core.server.title),
       trailing: OverflowBar(
         children: [
           IconButton(
-            onPressed: core.serverState
+            onPressed: serverState
                 ? null
                 : () async {
                     await startServer();
@@ -199,7 +198,7 @@ class ServerTile extends ConsumerWidget {
             icon: const Icon(Icons.play_arrow),
           ),
           IconButton(
-            onPressed: core.serverState
+            onPressed: serverState
                 ? () async {
                     await shutdownServer();
                   }
@@ -212,27 +211,22 @@ class ServerTile extends ConsumerWidget {
   }
 }
 
-class QuickSaveWidget extends StatefulWidget {
+class QuickSaveWidget extends ConsumerWidget {
   const QuickSaveWidget({
     super.key,
   });
 
   @override
-  State<QuickSaveWidget> createState() => _QuickSaveWidgetState();
-}
-
-class _QuickSaveWidgetState extends State<QuickSaveWidget> {
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final quickSave = ref.watch(quickSaveProvider);
     return ListTile(
       title: Text(context.t.setting.receive.quickSave),
       subtitle: Text(context.t.setting.receive.quickSaveHint),
       trailing: Switch(
         onChanged: (value) {
-          ConfigStore().setQuickSave(value);
-          setState(() {});
+          ref.read(quickSaveProvider.notifier).set(value);
         },
-        value: ConfigStore().quickSave(),
+        value: quickSave,
       ),
     );
   }
@@ -256,7 +250,7 @@ class _StorePathWIdgetState extends State<StorePathWIdget> {
       trailing: FilledButton(
         onPressed: () async {
           String? selectedDirectory =
-              await FilePicker.platform.getDirectoryPath();
+              await FilePicker.getDirectoryPath();
 
           if (selectedDirectory != null) {
             ConfigStore().setStorePath(selectedDirectory);

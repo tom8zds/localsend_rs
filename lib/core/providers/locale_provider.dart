@@ -14,7 +14,7 @@ part 'locale_provider.g.dart';
 part 'locale_provider.freezed.dart';
 
 @freezed
-class LocaleConfig with _$LocaleConfig {
+abstract class LocaleConfig with _$LocaleConfig {
   factory LocaleConfig({
     required LocaleMode mode,
     required Locale customLocale,
