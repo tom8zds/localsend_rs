@@ -80,6 +80,9 @@ pub fn bridged_view(target: &crate::model::NodeDevice, port: u16) -> crate::mode
     let mut view = target.clone();
     view.address = "127.0.0.1".to_string();
     view.port = port;
+    // The bridge is a plaintext loopback entrance; whatever TLS or
+    // relay the real path involves happens inside it.
+    view.protocol = "http".to_string();
     view
 }
 

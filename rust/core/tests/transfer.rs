@@ -558,6 +558,14 @@ async fn info_endpoint_returns_device() {
 // TLS (TOFU) scenarios
 // ---------------------------------------------------------------------------
 
+fn https_target(addr: &str) -> NodeDevice {
+    let mut t = NodeDevice::manual(addr).unwrap();
+    // Pretend the peer was discovered with TLS advertised — manual
+    // targets default to plaintext (official-app interop).
+    t.protocol = "https".to_string();
+    t
+}
+
 async fn make_tls_core(alias: &str, port: u16, store: &Path, identity: &Path) -> CoreHandle {
     let options = CoreOptions {
         enable_discovery: false,
@@ -593,7 +601,7 @@ async fn tls_transfers_end_to_end_and_pins_peer() {
     let file = write_file(&dir_a, "secret.txt", b"tls payload").await;
     let id = a
         .send_files(
-            NodeDevice::manual(&format!("127.0.0.1:{port_b}")).unwrap(),
+            https_target(&format!("127.0.0.1:{port_b}")),
             vec![file],
         )
         .await
@@ -637,7 +645,7 @@ async fn tls_rejects_a_changed_certificate() {
     let file = write_file(&dir_a, "pin.txt", b"x").await;
     let id = a
         .send_files(
-            NodeDevice::manual(&format!("127.0.0.1:{port_b}")).unwrap(),
+            https_target(&format!("127.0.0.1:{port_b}")),
             vec![file],
         )
         .await
@@ -654,7 +662,7 @@ async fn tls_rejects_a_changed_certificate() {
     let file = write_file(&dir_a, "second.txt", b"y").await;
     let id = a
         .send_files(
-            NodeDevice::manual(&format!("127.0.0.1:{port_b}")).unwrap(),
+            https_target(&format!("127.0.0.1:{port_b}")),
             vec![file],
         )
         .await
@@ -694,15 +702,14 @@ async fn tls_handshake_smoke() {
     let port_b = free_port();
     let b = make_tls_core("bob", port_b, &dir_b, &id_b).await;
 
-    // plain HTTP must now be refused
+    // The port is dual-protocol: plaintext (official app) and TLS
+    // (our https peers) are both served.
     let plain = reqwest::Client::new()
         .get(format!("http://127.0.0.1:{port_b}/api/localsend/v2/info"))
         .send()
-        .await;
-    assert!(
-        plain.is_err(),
-        "plain request must not succeed against TLS server"
-    );
+        .await
+        .expect("plain request must succeed on the dual-protocol port");
+    assert!(plain.status().is_success());
 
     // TLS handshake + GET /info
     let tofu = localsend_core::relay::tls::TofuStore::load(id_a.join("pinned-peers.json")).unwrap();

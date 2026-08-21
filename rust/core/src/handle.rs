@@ -108,6 +108,38 @@ impl CoreActor {
                     server.shutdown().await;
                 }
 
+                // Periodic self-announce lives in the core so every
+                // frontend (CLI, FFI, future ones) gets continuous
+                // discovery; a single reactive discovery actor never
+                // breaks the silence between two localsend_rs peers.
+                let ticker_core = core.clone();
+                tokio::spawn(async move {
+                    let mut state = ticker_core.server_state().await;
+                    let mut tick = tokio::time::interval(std::time::Duration::from_secs(5));
+                    loop {
+                        tokio::select! {
+                            _ = tick.tick() => ticker_core.announce().await,
+                            _ = state.changed() => {
+                                if !*state.borrow() {
+                                    // server stopped (shutdown or hot
+                                    // restart) — stop announcing too
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                });
+
+                // Advertise the real scheme: clients (official app
+                // included) pick plaintext vs TLS from this field.
+                {
+                    let mut current = core.device.get_current_device().await;
+                    let https = core.tls().is_some()
+                        && !self.context.config.allow_plain_tls.unwrap_or(false);
+                    current.protocol = if https { "https" } else { "http" }.to_string();
+                    core.device.set_current_device(current).await;
+                }
+
                 let mut handle = HttpServerHandle::new(core.clone(), self.context.config.clone());
                 match handle.wait_bound().await {
                     Ok(port) => {
@@ -515,8 +547,16 @@ async fn route_transport(
         _ => None,
     };
 
+    // Negotiate: peers advertising https (our own with TLS on) get
+    // the TLS bridge; peers advertising http — notably the official
+    // LocalSend app — get plaintext, direct or relayed.
     let tls_disabled = core.get_config().await.allow_plain_tls.unwrap_or(false);
-    let tls = if tls_disabled { None } else { core.tls() };
+    let peer_https = target.protocol.eq_ignore_ascii_case("https");
+    let tls = if tls_disabled || !peer_https {
+        None
+    } else {
+        core.tls()
+    };
 
     let (port, route) = match (&tls, relay_endpoint) {
         (Some(tls), relay) => {
@@ -598,8 +638,9 @@ async fn run_send_driver(
     } else {
         // TLS mode has no plaintext leg: even a direct send rides a
         // TLS bridge (the relay, when used, stacks underneath).
-        let tls_on =
-            core.tls().is_some() && !core.get_config().await.allow_plain_tls.unwrap_or(false);
+        let tls_on = core.tls().is_some()
+            && !core.get_config().await.allow_plain_tls.unwrap_or(false)
+            && target.protocol.eq_ignore_ascii_case("https");
         if tls_on {
             match route_transport(&core, relay_settings.as_ref(), &target, false).await {
                 Ok(bridged) => {

@@ -3,7 +3,9 @@
 
 use std::io;
 use std::net::SocketAddr;
+use std::pin::Pin;
 use std::sync::Arc;
+use std::task::{Context, Poll};
 
 use axum::extract::connect_info::Connected;
 use axum::{
@@ -163,24 +165,16 @@ async fn run_http_actor(
         }
     };
 
-    let serve = if let Some(tls_config) = tls_config {
-        let acceptor = tokio_rustls::TlsAcceptor::from(tls_config);
-        let tls_listener = TlsAcceptListener { listener, acceptor };
-        axum::serve(
-            tls_listener,
-            app.into_make_service_with_connect_info::<ConnAddr>(),
-        )
-        .with_graceful_shutdown(shutdown)
-        .await
-    } else {
-        let plain_listener = PlainAcceptListener { listener };
-        axum::serve(
-            plain_listener,
-            app.into_make_service_with_connect_info::<ConnAddr>(),
-        )
-        .with_graceful_shutdown(shutdown)
-        .await
+    let listener = DualProtocolListener {
+        listener,
+        acceptor: tls_config.map(tokio_rustls::TlsAcceptor::from),
     };
+    let serve = axum::serve(
+        listener,
+        app.into_make_service_with_connect_info::<ConnAddr>(),
+    )
+    .with_graceful_shutdown(shutdown)
+    .await;
 
     if let Err(e) = serve {
         error!("http service {bound_port} failed: {e}");
@@ -209,66 +203,90 @@ struct AppState {
 #[derive(Clone, Copy, Debug)]
 pub struct ConnAddr(pub SocketAddr);
 
-impl<'a> Connected<axum::serve::IncomingStream<'a, TlsAcceptListener>> for ConnAddr {
-    fn connect_info(stream: axum::serve::IncomingStream<'a, TlsAcceptListener>) -> Self {
+impl<'a> Connected<axum::serve::IncomingStream<'a, DualProtocolListener>> for ConnAddr {
+    fn connect_info(stream: axum::serve::IncomingStream<'a, DualProtocolListener>) -> Self {
         *stream.remote_addr()
     }
 }
 
-impl<'a> Connected<axum::serve::IncomingStream<'a, PlainAcceptListener>> for ConnAddr {
-    fn connect_info(stream: axum::serve::IncomingStream<'a, PlainAcceptListener>) -> Self {
-        *stream.remote_addr()
+/// One TCP port serving both plaintext HTTP and TLS: peek the first
+/// byte — 0x16 starts a TLS ClientHello, anything else is HTTP.
+/// The official LocalSend app speaks plaintext; our own peers with
+/// `protocol = "https"` dial TLS. Both coexist on 53317.
+enum Conn {
+    Plain(tokio::net::TcpStream),
+    Tls(tokio_rustls::server::TlsStream<tokio::net::TcpStream>),
+}
+
+impl tokio::io::AsyncRead for Conn {
+    fn poll_read(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        buf: &mut tokio::io::ReadBuf<'_>,
+    ) -> Poll<io::Result<()>> {
+        match &mut *self {
+            Conn::Plain(s) => Pin::new(s).poll_read(cx, buf),
+            Conn::Tls(s) => Pin::new(s).poll_read(cx, buf),
+        }
     }
 }
 
-/// axum Listener over plain TCP with the local `ConnAddr` type.
-struct PlainAcceptListener {
-    listener: tokio::net::TcpListener,
-}
-
-impl axum::serve::Listener for PlainAcceptListener {
-    type Io = tokio::net::TcpStream;
-    type Addr = ConnAddr;
-
-    async fn accept(&mut self) -> (Self::Io, Self::Addr) {
-        loop {
-            match self.listener.accept().await {
-                Ok((stream, addr)) => return (stream, ConnAddr(addr)),
-                Err(e) => {
-                    warn!("tcp accept failed: {e}");
-                    tokio::time::sleep(std::time::Duration::from_millis(100)).await;
-                }
-            }
+impl tokio::io::AsyncWrite for Conn {
+    fn poll_write(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        buf: &[u8],
+    ) -> Poll<io::Result<usize>> {
+        match &mut *self {
+            Conn::Plain(s) => Pin::new(s).poll_write(cx, buf),
+            Conn::Tls(s) => Pin::new(s).poll_write(cx, buf),
         }
     }
 
-    fn local_addr(&self) -> io::Result<ConnAddr> {
-        Ok(ConnAddr(self.listener.local_addr()?))
+    fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+        match &mut *self {
+            Conn::Plain(s) => Pin::new(s).poll_flush(cx),
+            Conn::Tls(s) => Pin::new(s).poll_flush(cx),
+        }
+    }
+
+    fn poll_shutdown(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+        match &mut *self {
+            Conn::Plain(s) => Pin::new(s).poll_shutdown(cx),
+            Conn::Tls(s) => Pin::new(s).poll_shutdown(cx),
+        }
     }
 }
 
-/// Wraps a TCP listener with a TLS acceptor so axum::serve can run
-/// over TLS while keeping ConnectInfo support.
-struct TlsAcceptListener {
+struct DualProtocolListener {
     listener: tokio::net::TcpListener,
-    acceptor: tokio_rustls::TlsAcceptor,
+    acceptor: Option<tokio_rustls::TlsAcceptor>,
 }
 
-impl axum::serve::Listener for TlsAcceptListener {
-    type Io = tokio_rustls::server::TlsStream<tokio::net::TcpStream>;
+impl axum::serve::Listener for DualProtocolListener {
+    type Io = Conn;
     type Addr = ConnAddr;
 
     async fn accept(&mut self) -> (Self::Io, Self::Addr) {
         loop {
             match self.listener.accept().await {
-                Ok((stream, addr)) => match self.acceptor.accept(stream).await {
-                    Ok(tls) => return (tls, ConnAddr(addr)),
-                    Err(e) => {
-                        // Failed handshakes drop the connection and
-                        // keep listening.
-                        warn!("tls handshake with {addr} failed: {e}");
+                Ok((stream, addr)) => {
+                    let mut first = [0u8; 1];
+                    let is_tls = matches!(
+                        stream.peek(&mut first).await,
+                        Ok(1) if first[0] == 0x16
+                    );
+                    if is_tls && self.acceptor.is_some() {
+                        match self.acceptor.as_ref().unwrap().accept(stream).await {
+                            Ok(tls) => return (Conn::Tls(tls), ConnAddr(addr)),
+                            Err(e) => {
+                                warn!("tls handshake with {addr} failed: {e}");
+                            }
+                        }
+                    } else {
+                        return (Conn::Plain(stream), ConnAddr(addr));
                     }
-                },
+                }
                 Err(e) => {
                     warn!("tcp accept failed: {e}");
                     tokio::time::sleep(std::time::Duration::from_millis(100)).await;
