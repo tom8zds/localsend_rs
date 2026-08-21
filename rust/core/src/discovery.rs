@@ -35,41 +35,51 @@ async fn register(client: Client, current: NodeDevice, target: NodeDevice) {
     }
 }
 
-/// Send this device's announcement to the multicast group a few times.
-pub async fn announce(config: &crate::config::CoreConfig, message: &str) {
-    let (interface_addr, multicast_addr) = match (
-        Ipv4Addr::from_str(&config.interface_addr),
-        Ipv4Addr::from_str(&config.multicast_addr),
-    ) {
-        (Ok(i), Ok(m)) => (i, m),
-        _ => {
-            error!("invalid interface/multicast address in config");
-            return;
+/// All IPv4 interface addresses on this host (loopback included) —
+/// machines routinely carry VPNs, docker bridges and WLN adapters
+/// next to the real LAN NIC, and a single membership on the
+/// default-route interface misses the actual network.
+fn all_ipv4_interfaces() -> Vec<Ipv4Addr> {
+    let mut list: Vec<Ipv4Addr> = if_addrs::get_if_addrs()
+        .map(|ifs| {
+            ifs.into_iter()
+                .filter_map(|i| match i.ip() {
+                    std::net::IpAddr::V4(v4) if !i.is_loopback() => Some(v4),
+                    _ => None,
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+    if list.is_empty() {
+        // Fall back to whatever the caller configured (0.0.0.0 lets
+        // the kernel pick the default-route interface).
+        if let Ok(v4) = Ipv4Addr::from_str("0.0.0.0") {
+            list.push(v4);
         }
+    }
+    list
+}
+
+/// Send this device's announcement to the multicast group a few
+/// times, once per interface, so peers on any attached network hear
+/// it regardless of the host's default route.
+pub async fn announce(config: &crate::config::CoreConfig, message: &str) {
+    let Ok(multicast_addr) = Ipv4Addr::from_str(&config.multicast_addr) else {
+        error!("invalid multicast address in config");
+        return;
     };
     let multicast_port = config.multicast_port;
-
-    let send_socket = match UdpSocket::bind((interface_addr, 0)).await {
-        Ok(s) => s,
-        Err(e) => {
-            error!("announce: couldn't bind socket: {e}");
-            return;
-        }
-    };
-
-    if let Err(e) = send_socket.join_multicast_v4(multicast_addr, interface_addr) {
-        error!("announce: failed to join multicast group: {e}");
-        return;
-    }
-
+    let target = SocketAddr::new(IpAddr::from(multicast_addr), multicast_port);
     let buf = message.as_bytes();
-    for _ in 1..3 {
-        let _ = send_socket
-            .send_to(
-                buf,
-                SocketAddr::new(IpAddr::from(multicast_addr), multicast_port),
-            )
-            .await;
+
+    for if_addr in all_ipv4_interfaces() {
+        let Ok(send_socket) = UdpSocket::bind((if_addr, 0)).await else {
+            continue;
+        };
+        let _ = send_socket.join_multicast_v4(multicast_addr, if_addr);
+        for _ in 1..3 {
+            let _ = send_socket.send_to(buf, target).await;
+        }
     }
 }
 
@@ -88,12 +98,38 @@ async fn run_udp_actor(mut actor: DiscoverActor, shutdown_callback: watch::Sende
     };
     let multicast_port = config.multicast_port;
 
-    let rec_socket = match UdpSocket::bind((interface_addr, multicast_port)).await {
-        Ok(s) => s,
-        Err(e) => {
+    // Multiple instances on one host (our own binaries and the
+    // official app) all listen on the multicast port — bind with
+    // SO_REUSEADDR/SO_REUSEPORT or the second instance silently
+    // loses discovery entirely.
+    let rec_socket = {
+        let sockaddr = socket2::SockAddr::from(std::net::SocketAddr::new(
+            std::net::IpAddr::V4(interface_addr),
+            multicast_port,
+        ));
+        let sock = match socket2::Socket::new(socket2::Domain::IPV4, socket2::Type::DGRAM, None) {
+            Ok(s) => s,
+            Err(e) => {
+                error!("udp socket create failed: {e}, discovery disabled");
+                let _ = shutdown_callback.send(true);
+                return;
+            }
+        };
+        let _ = sock.set_reuse_address(true);
+        #[cfg(unix)]
+        let _ = sock.set_reuse_port(true);
+        if let Err(e) = sock.bind(&sockaddr) {
             error!("udp service couldn't bind port {multicast_port}: {e}, discovery disabled");
             let _ = shutdown_callback.send(true);
             return;
+        }
+        match UdpSocket::from_std(sock.into()) {
+            Ok(s) => s,
+            Err(e) => {
+                error!("udp socket register failed: {e}, discovery disabled");
+                let _ = shutdown_callback.send(true);
+                return;
+            }
         }
     };
 
@@ -106,13 +142,33 @@ async fn run_udp_actor(mut actor: DiscoverActor, shutdown_callback: watch::Sende
         }
     };
 
-    if let Err(e) = rec_socket.join_multicast_v4(multicast_addr, interface_addr) {
-        error!("failed to join multicast group: {e}, discovery disabled");
-        let _ = shutdown_callback.send(true);
-        return;
+    // Join the group on every interface — receiving only on the
+    // default-route one misses peers when a VPN/bridge/VM adapter
+    // grabbed that route.
+    let mut joined = 0usize;
+    for if_addr in all_ipv4_interfaces() {
+        match rec_socket.join_multicast_v4(multicast_addr, if_addr) {
+            Ok(()) => {
+                joined += 1;
+                debug!("multicast group joined on {if_addr}");
+            }
+            Err(e) => debug!("join on {if_addr} failed: {e}"),
+        }
+        let _ = send_socket.join_multicast_v4(multicast_addr, if_addr);
     }
-    if let Err(e) = send_socket.join_multicast_v4(multicast_addr, interface_addr) {
-        warn!("send socket failed to join multicast group: {e}");
+    if joined == 0 {
+        // Fall back to the legacy wildcard join (kernel picks the
+        // default route interface).
+        match rec_socket.join_multicast_v4(multicast_addr, interface_addr) {
+            Ok(()) => {}
+            Err(e) => {
+                error!("failed to join multicast group: {e}, discovery disabled");
+                let _ = shutdown_callback.send(true);
+                return;
+            }
+        }
+    } else {
+        debug!("joined multicast group on {joined} interface(s)");
     }
 
     info!("udp service {multicast_port} started");

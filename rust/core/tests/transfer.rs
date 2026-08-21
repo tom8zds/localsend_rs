@@ -600,10 +600,7 @@ async fn tls_transfers_end_to_end_and_pins_peer() {
     // First transfer: TOFU pins b's certificate under b's device id.
     let file = write_file(&dir_a, "secret.txt", b"tls payload").await;
     let id = a
-        .send_files(
-            https_target(&format!("127.0.0.1:{port_b}")),
-            vec![file],
-        )
+        .send_files(https_target(&format!("127.0.0.1:{port_b}")), vec![file])
         .await
         .unwrap();
     wait_session(&a, &id, |s| s.state == MissionState::Finished).await;
@@ -644,10 +641,7 @@ async fn tls_rejects_a_changed_certificate() {
     // Pin b via one transfer.
     let file = write_file(&dir_a, "pin.txt", b"x").await;
     let id = a
-        .send_files(
-            https_target(&format!("127.0.0.1:{port_b}")),
-            vec![file],
-        )
+        .send_files(https_target(&format!("127.0.0.1:{port_b}")), vec![file])
         .await
         .unwrap();
     wait_session(&a, &id, |s| s.state == MissionState::Finished).await;
@@ -661,10 +655,7 @@ async fn tls_rejects_a_changed_certificate() {
 
     let file = write_file(&dir_a, "second.txt", b"y").await;
     let id = a
-        .send_files(
-            https_target(&format!("127.0.0.1:{port_b}")),
-            vec![file],
-        )
+        .send_files(https_target(&format!("127.0.0.1:{port_b}")), vec![file])
         .await
         .unwrap();
     let failed = tokio::time::timeout(TIMEOUT, async {
