@@ -232,7 +232,11 @@ async fn prepare_upload(
     debug!("prepare_upload from {}", addr.ip());
 
     let sender_device = payload.info.to_device(&addr.ip().to_string());
-    state.core.device.add_node_device(sender_device.clone()).await;
+    state
+        .core
+        .device
+        .add_node_device(sender_device.clone())
+        .await;
 
     let pending = state
         .core
@@ -267,10 +271,7 @@ async fn prepare_upload(
     });
 
     let result = match pending.decision.await {
-        Ok(Decision::Accepted { files }) => Ok(Json(FileResponse {
-            session_id,
-            files,
-        })),
+        Ok(Decision::Accepted { files }) => Ok(Json(FileResponse { session_id, files })),
         Ok(Decision::Declined) => {
             debug!("session declined");
             Err((StatusCode::FORBIDDEN, "mission rejected".to_string()))
@@ -295,8 +296,7 @@ where
     E: Into<BoxError>,
 {
     async {
-        let body_with_io_error =
-            stream.map_err(std::io::Error::other);
+        let body_with_io_error = stream.map_err(std::io::Error::other);
         let body_reader = StreamReader::new(body_with_io_error);
         futures::pin_mut!(body_reader);
 

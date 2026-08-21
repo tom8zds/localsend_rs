@@ -784,12 +784,16 @@ impl SseDecode for crate::actor::core::CoreConfig {
         let mut var_multicastAddr = <String>::sse_decode(deserializer);
         let mut var_multicastPort = <u16>::sse_decode(deserializer);
         let mut var_storePath = <String>::sse_decode(deserializer);
+        let mut var_relayAddr = <Option<String>>::sse_decode(deserializer);
+        let mut var_relaySecret = <Option<String>>::sse_decode(deserializer);
         return crate::actor::core::CoreConfig {
             port: var_port,
             interface_addr: var_interfaceAddr,
             multicast_addr: var_multicastAddr,
             multicast_port: var_multicastPort,
             store_path: var_storePath,
+            relay_addr: var_relayAddr,
+            relay_secret: var_relaySecret,
         };
     }
 }
@@ -1187,6 +1191,8 @@ impl flutter_rust_bridge::IntoDart for crate::actor::core::CoreConfig {
             self.multicast_addr.into_into_dart().into_dart(),
             self.multicast_port.into_into_dart().into_dart(),
             self.store_path.into_into_dart().into_dart(),
+            self.relay_addr.into_into_dart().into_dart(),
+            self.relay_secret.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
@@ -1518,6 +1524,8 @@ impl SseEncode for crate::actor::core::CoreConfig {
         <String>::sse_encode(self.multicast_addr, serializer);
         <u16>::sse_encode(self.multicast_port, serializer);
         <String>::sse_encode(self.store_path, serializer);
+        <Option<String>>::sse_encode(self.relay_addr, serializer);
+        <Option<String>>::sse_encode(self.relay_secret, serializer);
     }
 }
 

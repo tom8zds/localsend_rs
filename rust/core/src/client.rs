@@ -90,6 +90,10 @@ impl Default for Client {
 impl Client {
     pub fn new() -> Self {
         let http = reqwest::Client::builder()
+            // Fail unreachable peers fast so the relay fallback (and
+            // the user) don't wait on a black-holed connection. Large
+            // uploads stay unaffected: this bounds dialing only.
+            .connect_timeout(std::time::Duration::from_secs(3))
             .build()
             .expect("failed to build reqwest client");
         Client { http }

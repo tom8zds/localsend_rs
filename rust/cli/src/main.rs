@@ -54,6 +54,11 @@ struct CommonArgs {
     /// immediately, skipping device selection.
     #[arg(long, global = true, value_name = "IP:PORT")]
     to: Option<String>,
+
+    /// Skip the direct attempt and tunnel through the configured
+    /// relay from the start (requires a `[relay]` config section).
+    #[arg(long, global = true)]
+    via_relay: bool,
 }
 
 #[derive(Subcommand)]
@@ -65,6 +70,19 @@ enum Command {
         /// Exit after the first incoming session completes.
         #[arg(long)]
         once: bool,
+    },
+    /// Mint draft-uberti time-limited TURN credentials from the
+    /// shared secret and exit.
+    RelayCredential {
+        /// Shared secret (defaults to the `[relay]` config value).
+        #[arg(long)]
+        secret: Option<String>,
+        /// Credential lifetime in seconds (default 1 hour).
+        #[arg(long, default_value_t = 3600)]
+        ttl: u64,
+        /// Label embedded in the username for log readability.
+        #[arg(long, default_value = "localsend")]
+        suffix: String,
     },
 }
 
@@ -127,6 +145,8 @@ async fn main() -> Result<()> {
     let core_config = CoreConfig {
         port: effective.port,
         store_path: effective.destination.to_string_lossy().to_string(),
+        relay_addr: effective.relay.as_ref().map(|r| r.addr.clone()),
+        relay_secret: effective.relay.as_ref().map(|r| r.secret.clone()),
         ..CoreConfig::default()
     };
     let core = CoreHandle::with_options(
@@ -147,8 +167,7 @@ async fn main() -> Result<()> {
     {
         let core = core.clone();
         tokio::spawn(async move {
-            let mut tick =
-                tokio::time::interval(std::time::Duration::from_secs(5));
+            let mut tick = tokio::time::interval(std::time::Duration::from_secs(5));
             loop {
                 tick.tick().await;
                 core.announce().await;
@@ -157,25 +176,53 @@ async fn main() -> Result<()> {
     }
 
     let result = match (&cli.command, &cli.common.to) {
+        (
+            Some(Command::RelayCredential {
+                secret,
+                ttl,
+                suffix,
+            }),
+            _,
+        ) => {
+            let secret = secret
+                .clone()
+                .or_else(|| effective.relay.as_ref().map(|r| r.secret.clone()))
+                .context("relay-credential needs --secret or a [relay] config section")?;
+            let expiry = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .context("clock before epoch")?
+                .as_secs()
+                + ttl;
+            let (username, password) =
+                localsend_core::relay::generate_credentials(&secret, expiry, suffix);
+            println!("username: {username}");
+            println!("password: {password}");
+            return Ok(());
+        }
         (Some(Command::Send), _) => {
             let to = cli
                 .common
                 .to
                 .as_deref()
                 .context("`send` requires --to <ip:port>")?;
-            let target = NodeDevice::manual(to)
-                .with_context(|| format!("invalid --to target: {to}"))?;
+            let target =
+                NodeDevice::manual(to).with_context(|| format!("invalid --to target: {to}"))?;
             if cli.common.files.is_empty() {
                 anyhow::bail!("`send` requires at least one -f/--file");
             }
-            headless::send(&core, target, cli.common.files.clone()).await
+            headless::send(
+                &core,
+                target,
+                cli.common.files.clone(),
+                cli.common.via_relay,
+            )
+            .await
         }
         (Some(Command::Receive { once }), _) => headless::receive(&core, *once).await,
         (None, to) => {
             let direct_target = match to {
                 Some(t) => Some(
-                    NodeDevice::manual(t)
-                        .with_context(|| format!("invalid --to target: {t}"))?,
+                    NodeDevice::manual(t).with_context(|| format!("invalid --to target: {t}"))?,
                 ),
                 None => None,
             };

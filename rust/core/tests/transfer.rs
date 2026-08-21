@@ -44,6 +44,8 @@ fn test_config(port: u16, store_path: &Path) -> CoreConfig {
         interface_addr: "127.0.0.1".to_string(),
         multicast_addr: "224.0.0.167".to_string(),
         multicast_port: 53317,
+        relay_addr: None,
+        relay_secret: None,
         store_path: store_path.to_string_lossy().to_string(),
     }
 }
@@ -123,10 +125,7 @@ async fn wait_session<F: Fn(&SessionSummary) -> bool>(core: &CoreHandle, id: &st
     })
     .await;
     if result.is_err() {
-        let event = core
-            .session_events(id)
-            .await
-            .map(|rx| rx.borrow().clone());
+        let event = core.session_events(id).await.map(|rx| rx.borrow().clone());
         let index = core.session_index().await.borrow().clone();
         panic!("timed out waiting for session {id}; last event: {event:?}; index: {index:?}");
     }
@@ -157,10 +156,7 @@ async fn send_receive_multi_file() {
     let f1 = write_file(&dir_a, "one.txt", &content1).await;
     let f2 = write_file(&dir_a, "two.bin", &content2).await;
 
-    let session_id = a
-        .send_files(target_of(port_b), vec![f1, f2])
-        .await
-        .unwrap();
+    let session_id = a.send_files(target_of(port_b), vec![f1, f2]).await.unwrap();
 
     // Sender side reaches Finished.
     wait_session(&a, &session_id, |s| s.state == MissionState::Finished).await;
@@ -288,8 +284,7 @@ async fn cancel_during_transfer() {
                 .borrow()
                 .iter()
                 .filter(|s| {
-                    s.direction == SessionDirection::Receive
-                        && s.state == MissionState::Transfering
+                    s.direction == SessionDirection::Receive && s.state == MissionState::Transfering
                 })
                 .map(|s| s.id.clone())
                 .collect();
@@ -540,7 +535,9 @@ async fn info_endpoint_returns_device() {
     let client = reqwest::Client::new();
     for version in ["v1", "v2"] {
         let resp: serde_json::Value = client
-            .get(format!("http://127.0.0.1:{port_a}/api/localsend/{version}/info"))
+            .get(format!(
+                "http://127.0.0.1:{port_a}/api/localsend/{version}/info"
+            ))
             .send()
             .await
             .unwrap()

@@ -112,6 +112,49 @@ note "verify integrity"
 verify rx1 note.txt big.bin small.bin
 verify rx2 small.bin
 
+note "scenario D: cross-network relay fallback"
+# Separate topology (docker/compose.relay.yaml): tx and rx1 sit on
+# mutually-unreachable networks with a coturn relay straddling both.
+# Direct connections cannot route — the sender must fall back.
+docker compose -f compose.relay.yaml down -v >/dev/null 2>&1 || true
+docker compose -f compose.relay.yaml up -d --build rx1 turn
+for i in $(seq 1 60); do
+  if docker compose -f compose.relay.yaml logs rx1 2>/dev/null | grep -q 'Receiving as'; then
+    break
+  fi
+  sleep 1
+  [[ $i -eq 60 ]] && { fail "relay rx1 not ready within 60s"; break; }
+done
+head -c 1048576 /dev/urandom > "$DATA/relay.bin"
+SUM[relay.bin]=$(sha256sum "$DATA/relay.bin" | cut -d' ' -f1)
+if timeout 120 docker compose -f compose.relay.yaml run --rm \
+    -v "$DATA:/data:ro" tx send --to 172.31.201.10:53317 -f /data/relay.bin \
+    >/dev/null 2>&1; then
+  pass "D1 auto-fallback send via relay"
+else
+  fail "D1 auto-fallback send via relay"
+fi
+got=$(docker compose -f compose.relay.yaml exec -T rx1 \
+  sha256sum /inbox/relay.bin 2>/dev/null | cut -d' ' -f1 || true)
+if [[ -n "$got" && "$got" == "${SUM[relay.bin]}" ]]; then
+  pass "D2 rx1/relay.bin sha256 matches"
+else
+  fail "D2 rx1/relay.bin sha256 mismatch"
+fi
+# --via-relay skips the doomed direct attempt entirely.
+head -c 1024 /dev/urandom > "$DATA/forced.bin"
+SUM[forced.bin]=$(sha256sum "$DATA/forced.bin" | cut -d' ' -f1)
+if timeout 120 docker compose -f compose.relay.yaml run --rm \
+    -v "$DATA:/data:ro" tx send --to 172.31.201.10:53317 --via-relay \
+    -f /data/forced.bin >/dev/null 2>&1 \
+  && [[ "$(docker compose -f compose.relay.yaml exec -T rx1 \
+      sha256sum /inbox/forced.bin 2>/dev/null | cut -d' ' -f1)" == "${SUM[forced.bin]}" ]]; then
+  pass "D3 --via-relay forced send + sha256"
+else
+  fail "D3 --via-relay forced send + sha256"
+fi
+docker compose -f compose.relay.yaml down -v >/dev/null 2>&1 || true
+
 note "result"
 if [[ $FAILURES -eq 0 ]]; then
   echo "  ALL SCENARIOS PASSED ✅"

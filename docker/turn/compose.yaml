@@ -1,0 +1,14 @@
+# Local coturn relay used by integration tests and docker/smoke.sh.
+#
+# Production: copy turnserver.conf to a private variant (drop
+# allow-loopback-peers, change the secret, set external-ip to the
+# public address) and deploy from there — see README.md.
+name: localsend-turn
+
+services:
+  turn:
+    image: coturn/coturn:4.17.2
+    restart: unless-stopped
+    network_mode: host # 6062 data connections originate from arbitrary ports
+    volumes:
+      - ./turnserver.conf:/etc/coturn/turnserver.conf:ro

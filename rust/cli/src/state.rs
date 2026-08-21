@@ -236,7 +236,10 @@ impl App {
 
     /// Number of pending receive sessions waiting for a decision.
     pub fn pending_receive_count(&self) -> usize {
-        self.sessions.iter().filter(|s| s.is_pending_receive()).count()
+        self.sessions
+            .iter()
+            .filter(|s| s.is_pending_receive())
+            .count()
     }
 }
 
@@ -371,7 +374,11 @@ mod tests {
         assert_eq!(app.focus, 0);
         // Shrinking the list clamps the focus.
         app.focus = 2;
-        app.apply_index(vec![summary("a", SessionDirection::Send, MissionState::Idle)]);
+        app.apply_index(vec![summary(
+            "a",
+            SessionDirection::Send,
+            MissionState::Idle,
+        )]);
         assert_eq!(app.focus, 0);
     }
 

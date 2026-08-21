@@ -11,6 +11,7 @@ pub mod device;
 pub mod discovery;
 pub mod handle;
 pub mod model;
+pub mod relay;
 pub mod server;
 pub mod session;
 pub mod util;
