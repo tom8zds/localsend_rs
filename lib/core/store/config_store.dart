@@ -99,4 +99,39 @@ class ConfigStore {
   Future<void> setQuickSave(bool value) async {
     await _prefs!.setBool(_quickSaveKey, value);
   }
+
+  static const _relayAddrKey = 'relayAddr';
+
+  /// TURN relay address (`host:port`); empty disables the relay.
+  String relayAddr() {
+    return _prefs!.getString(_relayAddrKey) ?? '';
+  }
+
+  Future<void> setRelayAddr(String value) async {
+    await _prefs!.setString(_relayAddrKey, value);
+  }
+
+  static const _relaySecretKey = 'relaySecret';
+
+  /// Shared secret for the TURN relay credentials; empty disables the
+  /// relay.
+  String relaySecret() {
+    return _prefs!.getString(_relaySecretKey) ?? '';
+  }
+
+  Future<void> setRelaySecret(String value) async {
+    await _prefs!.setString(_relaySecretKey, value);
+  }
+
+  static const _tlsEnabledKey = 'tlsEnabled';
+
+  /// Whether end-to-end TLS is enabled; `false` makes the core run
+  /// plain HTTP (debug only).
+  bool tlsEnabled() {
+    return _prefs!.getBool(_tlsEnabledKey) ?? true;
+  }
+
+  Future<void> setTlsEnabled(bool value) async {
+    await _prefs!.setBool(_tlsEnabledKey, value);
+  }
 }

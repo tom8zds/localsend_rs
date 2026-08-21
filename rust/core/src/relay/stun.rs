@@ -87,6 +87,7 @@ fn decode_type(msg_type: u16) -> Result<(Method, MessageClass), &'static str> {
 pub struct TransactionId(pub [u8; 12]);
 
 impl TransactionId {
+    #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         TransactionId(rand::random::<[u8; 12]>())
     }

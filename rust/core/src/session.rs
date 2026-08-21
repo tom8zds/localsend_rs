@@ -95,6 +95,7 @@ struct Session {
     direction: SessionDirection,
     peer: NodeDevice,
     state: MissionState,
+    via_relay: bool,
     files: HashMap<String, FileEntry>,
     token_index: HashMap<String, String>,
     decision: Option<oneshot::Sender<Decision>>,
@@ -125,6 +126,7 @@ impl Session {
             peer: self.peer.clone(),
             file_count: self.files.len(),
             state: self.state,
+            via_relay: self.via_relay,
             files: self.file_infos(),
         }
     }
@@ -160,6 +162,9 @@ enum Message {
     Cancel {
         id: String,
         respond_to: oneshot::Sender<()>,
+    },
+    MarkViaRelay {
+        id: String,
     },
     StartFile {
         id: String,
@@ -381,6 +386,7 @@ impl Actor {
                     direction: SessionDirection::Receive,
                     peer: sender,
                     state: MissionState::Pending,
+                    via_relay: false,
                     files,
                     token_index,
                     decision: Some(decision_tx),
@@ -422,6 +428,7 @@ impl Actor {
                     direction: SessionDirection::Send,
                     peer: target,
                     state: MissionState::Pending,
+                    via_relay: false,
                     files,
                     token_index: HashMap::new(),
                     decision: None,
@@ -511,6 +518,12 @@ impl Actor {
                 debug!("cancel session {id}");
                 self.cancel_session(&id);
                 let _ = respond_to.send(());
+            }
+            Message::MarkViaRelay { id } => {
+                if let Some(session) = self.sessions.get_mut(&id) {
+                    session.via_relay = true;
+                }
+                self.broadcast_index();
             }
             Message::StartFile {
                 id,
@@ -735,6 +748,15 @@ impl SessionHandle {
             })
             .await;
         recv.await.expect("Actor task has been killed")
+    }
+
+    /// Flag a session as tunneled through the relay (send driver calls
+    /// this after a successful relay fallback).
+    pub async fn mark_via_relay(&self, id: &str) {
+        let _ = self
+            .sender
+            .send(Message::MarkViaRelay { id: id.to_string() })
+            .await;
     }
 
     pub async fn start_file(&self, id: &str, token: &str) -> Result<FileTask, SessionError> {

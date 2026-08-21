@@ -39,6 +39,7 @@
         "peerWantsToSend": "$alias 想要发送给你 $count 个文件",
         "toPeer": "发送到 $alias",
         "failedReason": "失败: $reason",
+        "viaRelay": "经中继",
         "selectAll": "全选",
         "selectNone": "全不选"
     },
@@ -80,6 +81,23 @@
             "quickSaveHint": "不需要等待确认直接接受",
             "saveFolder": "保存目录",
             "selectSaveFolder": "选择"
+        },
+        "relay": {
+            "title": "中继服务器",
+            "address": "服务器地址",
+            "addressHint": "主机:端口",
+            "secret": "共享密钥",
+            "notSet": "未设置",
+            "edit": "编辑",
+            "save": "保存",
+            "cancel": "取消",
+            "restartHint": "修改后重启应用生效"
+        },
+        "security": {
+            "title": "安全",
+            "tls": "端到端加密 (TLS)",
+            "plainWarning": "明文传输，仅建议调试使用",
+            "restartHint": "修改后重启应用生效"
         },
         "core": {
             "title": "核心设置",

@@ -278,6 +278,7 @@ mod tests {
             direction: dir,
             peer: device("peer"),
             file_count: 2,
+            via_relay: false,
             state,
             files: vec![
                 file("f1", "a.txt", 100, FileState::Pending),

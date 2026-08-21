@@ -142,79 +142,54 @@ pub async fn dial_via_relay(
     control.set_nodelay(true).ok();
     debug!("relay control connected to {relay_addr}");
 
-    // --- Allocate: first attempt triggers the 401 challenge ---
+    // --- Authenticate via the 401 challenge, then allocate ---
     let mut cred = CredentialState {
         username: relay.username.clone(),
         password: relay.password.clone(),
         realm: relay.realm.clone(),
         nonce: String::new(),
     };
+    challenge(&mut control, &mut cred, relay.lifetime_seconds).await?;
 
-    let challenge = {
+    let allocated = auth_transact(&mut control, &mut cred, relay.lifetime_seconds, || {
         let mut allocate = Message::new(
             Method::Allocate,
             MessageClass::Request,
             TransactionId::new(),
         );
-        allocate.push_requested_transport(6 /* TCP */);
+        allocate.push_requested_transport(6);
         if relay.lifetime_seconds > 0 {
             allocate.push_lifetime(relay.lifetime_seconds);
         }
-        transact(&mut control, &mut allocate, None).await?
-    };
-
-    match challenge.class {
-        MessageClass::ErrorResponse => {
-            let (class, num, reason) = challenge
-                .error_code()
-                .ok_or(RelayError::Protocol("error response without ERROR-CODE"))?;
-            let code = class as u16 * 100 + num;
-            if code != 401 {
-                return Err(RelayError::Server(code, reason));
-            }
-            cred.realm = challenge
-                .string_attr(Attr::Realm)
-                .ok_or(RelayError::Protocol("401 without REALM"))?;
-            cred.nonce = challenge
-                .string_attr(Attr::Nonce)
-                .ok_or(RelayError::Protocol("401 without NONCE"))?;
-        }
-        _ => {
-            return Err(RelayError::Protocol(
-                "relay accepted allocate without a challenge",
-            ))
-        }
-    }
-
-    let mut allocate = Message::new(
-        Method::Allocate,
-        MessageClass::Request,
-        TransactionId::new(),
-    );
-    allocate.push_requested_transport(6);
-    if relay.lifetime_seconds > 0 {
-        allocate.push_lifetime(relay.lifetime_seconds);
-    }
-    let allocated = authenticated_transact(&mut control, &mut allocate, &cred).await?;
+        allocate
+    })
+    .await?;
     expect_success(&allocated, "allocate")?;
     if let Some(relayed) = xor_address_of(&allocated, Attr::XorRelayedAddress) {
         debug!("relay allocated {relayed}");
     }
 
     // --- CreatePermission for the peer ---
-    let mut permission = Message::new(
-        Method::CreatePermission,
-        MessageClass::Request,
-        TransactionId::new(),
-    );
-    permission.push_xor_address(Attr::XorPeerAddress, target);
-    let permitted = authenticated_transact(&mut control, &mut permission, &cred).await?;
+    let permitted = auth_transact(&mut control, &mut cred, relay.lifetime_seconds, || {
+        let mut permission = Message::new(
+            Method::CreatePermission,
+            MessageClass::Request,
+            TransactionId::new(),
+        );
+        permission.push_xor_address(Attr::XorPeerAddress, target);
+        permission
+    })
+    .await?;
     expect_success(&permitted, "create-permission")?;
 
     // --- Connect to the peer, learn CONNECTION-ID ---
-    let mut connect = Message::new(Method::Connect, MessageClass::Request, TransactionId::new());
-    connect.push_xor_address(Attr::XorPeerAddress, target);
-    let connected = authenticated_transact(&mut control, &mut connect, &cred).await?;
+    let connected = auth_transact(&mut control, &mut cred, relay.lifetime_seconds, || {
+        let mut connect =
+            Message::new(Method::Connect, MessageClass::Request, TransactionId::new());
+        connect.push_xor_address(Attr::XorPeerAddress, target);
+        connect
+    })
+    .await?;
     expect_success(&connected, "connect")?;
     let connection_id = connected.connection_id().ok_or(RelayError::Protocol(
         "connect success without CONNECTION-ID",
@@ -225,13 +200,16 @@ pub async fn dial_via_relay(
         .await
         .map_err(RelayError::Connect)?;
     data.set_nodelay(true).ok();
-    let mut bind = Message::new(
-        Method::ConnectionBind,
-        MessageClass::Request,
-        TransactionId::new(),
-    );
-    bind.push_connection_id(connection_id);
-    let bound = authenticated_transact(&mut data, &mut bind, &cred).await?;
+    let bound = auth_transact(&mut data, &mut cred, relay.lifetime_seconds, || {
+        let mut bind = Message::new(
+            Method::ConnectionBind,
+            MessageClass::Request,
+            TransactionId::new(),
+        );
+        bind.push_connection_id(connection_id);
+        bind
+    })
+    .await?;
     expect_success(&bound, "connection-bind")?;
     debug!("relay tunnel bound (connection {connection_id}) to {target}");
 
@@ -267,13 +245,70 @@ impl CredentialState {
     }
 }
 
-async fn authenticated_transact(
+/// Run one unauthenticated allocate to harvest the server's 401
+/// challenge (realm + nonce) into `cred`.
+async fn challenge(
     conn: &mut TcpStream,
-    msg: &mut Message,
-    cred: &CredentialState,
+    cred: &mut CredentialState,
+    lifetime_seconds: u32,
+) -> Result<(), RelayError> {
+    let mut probe = Message::new(
+        Method::Allocate,
+        MessageClass::Request,
+        TransactionId::new(),
+    );
+    probe.push_requested_transport(6);
+    if lifetime_seconds > 0 {
+        probe.push_lifetime(lifetime_seconds);
+    }
+    let resp = transact(conn, &mut probe, None).await?;
+    match resp.class {
+        MessageClass::ErrorResponse => {
+            let (class, num, reason) = resp
+                .error_code()
+                .ok_or(RelayError::Protocol("error response without ERROR-CODE"))?;
+            let code = class as u16 * 100 + num;
+            if code != 401 {
+                return Err(RelayError::Server(code, reason));
+            }
+            cred.realm = resp
+                .string_attr(Attr::Realm)
+                .ok_or(RelayError::Protocol("401 without REALM"))?;
+            cred.nonce = resp
+                .string_attr(Attr::Nonce)
+                .ok_or(RelayError::Protocol("401 without NONCE"))?;
+            Ok(())
+        }
+        _ => Err(RelayError::Protocol(
+            "relay accepted allocate without a challenge",
+        )),
+    }
+}
+
+/// Sign and send a request; on 438 (stale nonce) re-run the
+/// challenge once with a fresh transaction id and retry.
+async fn auth_transact(
+    conn: &mut TcpStream,
+    cred: &mut CredentialState,
+    lifetime_seconds: u32,
+    build: impl Fn() -> Message,
 ) -> Result<Incoming, RelayError> {
-    let key = cred.sign(msg);
-    transact(conn, msg, Some(&key)).await
+    let mut msg = build();
+    let key = cred.sign(&mut msg);
+    let first = transact(conn, &mut msg, Some(&key)).await?;
+    if let MessageClass::ErrorResponse = first.class {
+        let (class, num, _) = first
+            .error_code()
+            .ok_or(RelayError::Protocol("error response without ERROR-CODE"))?;
+        if class as u16 * 100 + num == 438 {
+            debug!("relay nonce went stale, re-challenging");
+            challenge(conn, cred, lifetime_seconds).await?;
+            let mut msg = build();
+            let key = cred.sign(&mut msg);
+            return transact(conn, &mut msg, Some(&key)).await;
+        }
+    }
+    Ok(first)
 }
 
 /// Send a request and read the matching response (same transaction

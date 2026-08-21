@@ -15,6 +15,14 @@ pub struct CoreConfig {
     pub relay_addr: Option<String>,
     /// Shared secret for draft-uberti time-limited relay credentials.
     pub relay_secret: Option<String>,
+    /// Directory holding the device TLS identity (tls-cert.pem /
+    /// tls-key.pem); when set, the HTTP server speaks TLS and sends
+    /// are wrapped in a TOFU TLS connection. `None` keeps plain HTTP
+    /// (pre-TLS behavior, e.g. for tests and legacy peers).
+    pub identity_dir: Option<String>,
+    /// Permit falling back to plain HTTP when the peer does not
+    /// speak TLS. Defaults to false (TLS-only).
+    pub allow_plain_tls: Option<bool>,
 }
 
 impl Default for CoreConfig {
@@ -27,6 +35,8 @@ impl Default for CoreConfig {
             store_path: "./".to_string(),
             relay_addr: None,
             relay_secret: None,
+            identity_dir: None,
+            allow_plain_tls: None,
         }
     }
 }

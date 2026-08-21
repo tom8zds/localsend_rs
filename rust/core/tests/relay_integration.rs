@@ -86,7 +86,7 @@ async fn two_concurrent_tunnels_are_independent() {
     let echo_addr = spawn_echo().await;
     let relay = endpoint_from_secret("127.0.0.1:3478", SECRET, 600, "it", "");
 
-    let (mut a, mut b) = tokio::join!(
+    let (a, b) = tokio::join!(
         dial_via_relay(&relay, echo_addr),
         dial_via_relay(&relay, echo_addr)
     );

@@ -142,11 +142,28 @@ async fn main() -> Result<()> {
         )
     })?;
 
+    // TLS is on by default: the device identity lives next to the
+    // config file. Delete/rename the dir to run plain HTTP.
+    let identity_dir = std::env::var("LOCALSEND_CLI_NO_TLS")
+        .ok()
+        .filter(|v| v == "1")
+        .map(|_| None)
+        .unwrap_or_else(|| {
+            Some(
+                config::config_path()
+                    .parent()
+                    .unwrap_or_else(|| std::path::Path::new("."))
+                    .join("tls")
+                    .to_string_lossy()
+                    .to_string(),
+            )
+        });
     let core_config = CoreConfig {
         port: effective.port,
         store_path: effective.destination.to_string_lossy().to_string(),
         relay_addr: effective.relay.as_ref().map(|r| r.addr.clone()),
         relay_secret: effective.relay.as_ref().map(|r| r.secret.clone()),
+        identity_dir,
         ..CoreConfig::default()
     };
     let core = CoreHandle::with_options(

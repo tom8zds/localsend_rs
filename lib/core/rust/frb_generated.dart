@@ -640,6 +640,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  bool dco_decode_box_autoadd_bool(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as bool;
+  }
+
+  @protected
   CoreConfig dco_decode_box_autoadd_core_config(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return dco_decode_core_config(raw);
@@ -661,8 +667,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   CoreConfig dco_decode_core_config(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 7)
-      throw Exception('unexpected arr length: expect 7 but see ${arr.length}');
+    if (arr.length != 9)
+      throw Exception('unexpected arr length: expect 9 but see ${arr.length}');
     return CoreConfig(
       port: dco_decode_u_16(arr[0]),
       interfaceAddr: dco_decode_String(arr[1]),
@@ -671,6 +677,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       storePath: dco_decode_String(arr[4]),
       relayAddr: dco_decode_opt_String(arr[5]),
       relaySecret: dco_decode_opt_String(arr[6]),
+      identityDir: dco_decode_opt_String(arr[7]),
+      allowPlainTls: dco_decode_opt_box_autoadd_bool(arr[8]),
     );
   }
 
@@ -813,6 +821,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  bool? dco_decode_opt_box_autoadd_bool(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_bool(raw);
+  }
+
+  @protected
   NodeDevice? dco_decode_opt_box_autoadd_node_device(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw == null ? null : dco_decode_box_autoadd_node_device(raw);
@@ -867,15 +881,16 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   SessionSummary dco_decode_session_summary(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 6)
-      throw Exception('unexpected arr length: expect 6 but see ${arr.length}');
+    if (arr.length != 7)
+      throw Exception('unexpected arr length: expect 7 but see ${arr.length}');
     return SessionSummary(
       id: dco_decode_String(arr[0]),
       direction: dco_decode_session_direction(arr[1]),
       peer: dco_decode_node_device(arr[2]),
       fileCount: dco_decode_u_32(arr[3]),
       state: dco_decode_mission_state(arr[4]),
-      files: dco_decode_list_mission_file_info(arr[5]),
+      viaRelay: dco_decode_bool(arr[5]),
+      files: dco_decode_list_mission_file_info(arr[6]),
     );
   }
 
@@ -967,6 +982,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  bool sse_decode_box_autoadd_bool(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_bool(deserializer));
+  }
+
+  @protected
   CoreConfig sse_decode_box_autoadd_core_config(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return (sse_decode_core_config(deserializer));
@@ -994,6 +1015,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_storePath = sse_decode_String(deserializer);
     var var_relayAddr = sse_decode_opt_String(deserializer);
     var var_relaySecret = sse_decode_opt_String(deserializer);
+    var var_identityDir = sse_decode_opt_String(deserializer);
+    var var_allowPlainTls = sse_decode_opt_box_autoadd_bool(deserializer);
     return CoreConfig(
         port: var_port,
         interfaceAddr: var_interfaceAddr,
@@ -1001,7 +1024,9 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         multicastPort: var_multicastPort,
         storePath: var_storePath,
         relayAddr: var_relayAddr,
-        relaySecret: var_relaySecret);
+        relaySecret: var_relaySecret,
+        identityDir: var_identityDir,
+        allowPlainTls: var_allowPlainTls);
   }
 
   @protected
@@ -1182,6 +1207,17 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  bool? sse_decode_opt_box_autoadd_bool(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_bool(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
   NodeDevice? sse_decode_opt_box_autoadd_node_device(
       SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
@@ -1256,6 +1292,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_peer = sse_decode_node_device(deserializer);
     var var_fileCount = sse_decode_u_32(deserializer);
     var var_state = sse_decode_mission_state(deserializer);
+    var var_viaRelay = sse_decode_bool(deserializer);
     var var_files = sse_decode_list_mission_file_info(deserializer);
     return SessionSummary(
         id: var_id,
@@ -1263,6 +1300,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         peer: var_peer,
         fileCount: var_fileCount,
         state: var_state,
+        viaRelay: var_viaRelay,
         files: var_files);
   }
 
@@ -1387,6 +1425,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_box_autoadd_bool(bool self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_bool(self, serializer);
+  }
+
+  @protected
   void sse_encode_box_autoadd_core_config(
       CoreConfig self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
@@ -1417,6 +1461,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_String(self.storePath, serializer);
     sse_encode_opt_String(self.relayAddr, serializer);
     sse_encode_opt_String(self.relaySecret, serializer);
+    sse_encode_opt_String(self.identityDir, serializer);
+    sse_encode_opt_box_autoadd_bool(self.allowPlainTls, serializer);
   }
 
   @protected
@@ -1557,6 +1603,16 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_opt_box_autoadd_bool(bool? self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_bool(self, serializer);
+    }
+  }
+
+  @protected
   void sse_encode_opt_box_autoadd_node_device(
       NodeDevice? self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
@@ -1629,6 +1685,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_node_device(self.peer, serializer);
     sse_encode_u_32(self.fileCount, serializer);
     sse_encode_mission_state(self.state, serializer);
+    sse_encode_bool(self.viaRelay, serializer);
     sse_encode_list_mission_file_info(self.files, serializer);
   }
 

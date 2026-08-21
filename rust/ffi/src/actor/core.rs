@@ -13,6 +13,8 @@ pub struct CoreConfig {
     pub store_path: String,
     pub relay_addr: Option<String>,
     pub relay_secret: Option<String>,
+    pub identity_dir: Option<String>,
+    pub allow_plain_tls: Option<bool>,
 }
 
 impl CoreConfig {
@@ -25,6 +27,8 @@ impl CoreConfig {
             store_path: self.store_path.clone(),
             relay_addr: self.relay_addr.clone(),
             relay_secret: self.relay_secret.clone(),
+            identity_dir: self.identity_dir.clone(),
+            allow_plain_tls: self.allow_plain_tls,
         }
     }
 }

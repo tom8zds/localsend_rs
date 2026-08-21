@@ -76,7 +76,7 @@ run_tx() {  # run_tx <label> <target> <files...>
   local label=$1 target=$2; shift 2
   local args=(send --to "$target")
   for f in "$@"; do args+=(-f "/data/$f"); done
-  if timeout 120 docker compose run --rm -v "$DATA:/data:ro" tx "${args[@]}" \
+  if timeout 120 docker compose run --rm --build -v "$DATA:/data:ro" tx "${args[@]}" \
       >/dev/null 2>&1; then
     pass "$label -> $target"
   else
@@ -127,7 +127,7 @@ for i in $(seq 1 60); do
 done
 head -c 1048576 /dev/urandom > "$DATA/relay.bin"
 SUM[relay.bin]=$(sha256sum "$DATA/relay.bin" | cut -d' ' -f1)
-if timeout 120 docker compose -f compose.relay.yaml run --rm \
+if timeout 120 docker compose -f compose.relay.yaml run --rm --build \
     -v "$DATA:/data:ro" tx send --to 172.31.201.10:53317 -f /data/relay.bin \
     >/dev/null 2>&1; then
   pass "D1 auto-fallback send via relay"
@@ -144,7 +144,7 @@ fi
 # --via-relay skips the doomed direct attempt entirely.
 head -c 1024 /dev/urandom > "$DATA/forced.bin"
 SUM[forced.bin]=$(sha256sum "$DATA/forced.bin" | cut -d' ' -f1)
-if timeout 120 docker compose -f compose.relay.yaml run --rm \
+if timeout 120 docker compose -f compose.relay.yaml run --rm --build \
     -v "$DATA:/data:ro" tx send --to 172.31.201.10:53317 --via-relay \
     -f /data/forced.bin >/dev/null 2>&1 \
   && [[ "$(docker compose -f compose.relay.yaml exec -T rx1 \

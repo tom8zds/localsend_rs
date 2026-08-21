@@ -1,9 +1,11 @@
 //! HTTP server: axum routes for the v2 (and legacy v1 info) API plus
 //! the server lifecycle actor with port-retry and graceful shutdown.
 
+use std::io;
 use std::net::SocketAddr;
 use std::sync::Arc;
 
+use axum::extract::connect_info::Connected;
 use axum::{
     body::Bytes,
     extract::{ConnectInfo, Query, Request, State},
@@ -126,8 +128,30 @@ async fn run_http_actor(
         }
     };
 
-    info!("http service {bound_port} started");
+    let using_tls = core.tls().is_some();
+    if using_tls {
+        info!("https service {bound_port} started");
+    } else {
+        info!("http service {bound_port} started");
+    }
     let _ = bound.send(Ok(bound_port));
+
+    // Resolve the TLS config before `core` moves into the router.
+    let tls_config = match core
+        .tls()
+        .map(|tls| crate::relay::tls::server_config(&tls.identity))
+        .transpose()
+    {
+        Ok(cfg) => cfg,
+        Err(e) => {
+            error!("tls server config failed: {e}");
+            if let Some(discover) = discover_handle {
+                discover.shutdown().await;
+            }
+            let _ = shutdown_callback.send(true);
+            return;
+        }
+    };
 
     let app = app(core);
 
@@ -139,12 +163,24 @@ async fn run_http_actor(
         }
     };
 
-    let serve = axum::serve(
-        listener,
-        app.into_make_service_with_connect_info::<SocketAddr>(),
-    )
-    .with_graceful_shutdown(shutdown)
-    .await;
+    let serve = if let Some(tls_config) = tls_config {
+        let acceptor = tokio_rustls::TlsAcceptor::from(tls_config);
+        let tls_listener = TlsAcceptListener { listener, acceptor };
+        axum::serve(
+            tls_listener,
+            app.into_make_service_with_connect_info::<ConnAddr>(),
+        )
+        .with_graceful_shutdown(shutdown)
+        .await
+    } else {
+        let plain_listener = PlainAcceptListener { listener };
+        axum::serve(
+            plain_listener,
+            app.into_make_service_with_connect_info::<ConnAddr>(),
+        )
+        .with_graceful_shutdown(shutdown)
+        .await
+    };
 
     if let Err(e) = serve {
         error!("http service {bound_port} failed: {e}");
@@ -165,6 +201,85 @@ async fn run_http_actor(
 
 struct AppState {
     core: CoreHandle,
+}
+
+/// Connection peer address used by both the plain and TLS listener
+/// paths — a local type so we can implement axum's `Connected`
+/// (orphan rules forbid doing that for `SocketAddr` itself).
+#[derive(Clone, Copy, Debug)]
+pub struct ConnAddr(pub SocketAddr);
+
+impl<'a> Connected<axum::serve::IncomingStream<'a, TlsAcceptListener>> for ConnAddr {
+    fn connect_info(stream: axum::serve::IncomingStream<'a, TlsAcceptListener>) -> Self {
+        *stream.remote_addr()
+    }
+}
+
+impl<'a> Connected<axum::serve::IncomingStream<'a, PlainAcceptListener>> for ConnAddr {
+    fn connect_info(stream: axum::serve::IncomingStream<'a, PlainAcceptListener>) -> Self {
+        *stream.remote_addr()
+    }
+}
+
+/// axum Listener over plain TCP with the local `ConnAddr` type.
+struct PlainAcceptListener {
+    listener: tokio::net::TcpListener,
+}
+
+impl axum::serve::Listener for PlainAcceptListener {
+    type Io = tokio::net::TcpStream;
+    type Addr = ConnAddr;
+
+    async fn accept(&mut self) -> (Self::Io, Self::Addr) {
+        loop {
+            match self.listener.accept().await {
+                Ok((stream, addr)) => return (stream, ConnAddr(addr)),
+                Err(e) => {
+                    warn!("tcp accept failed: {e}");
+                    tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+                }
+            }
+        }
+    }
+
+    fn local_addr(&self) -> io::Result<ConnAddr> {
+        Ok(ConnAddr(self.listener.local_addr()?))
+    }
+}
+
+/// Wraps a TCP listener with a TLS acceptor so axum::serve can run
+/// over TLS while keeping ConnectInfo support.
+struct TlsAcceptListener {
+    listener: tokio::net::TcpListener,
+    acceptor: tokio_rustls::TlsAcceptor,
+}
+
+impl axum::serve::Listener for TlsAcceptListener {
+    type Io = tokio_rustls::server::TlsStream<tokio::net::TcpStream>;
+    type Addr = ConnAddr;
+
+    async fn accept(&mut self) -> (Self::Io, Self::Addr) {
+        loop {
+            match self.listener.accept().await {
+                Ok((stream, addr)) => match self.acceptor.accept(stream).await {
+                    Ok(tls) => return (tls, ConnAddr(addr)),
+                    Err(e) => {
+                        // Failed handshakes drop the connection and
+                        // keep listening.
+                        warn!("tls handshake with {addr} failed: {e}");
+                    }
+                },
+                Err(e) => {
+                    warn!("tcp accept failed: {e}");
+                    tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+                }
+            }
+        }
+    }
+
+    fn local_addr(&self) -> io::Result<ConnAddr> {
+        Ok(ConnAddr(self.listener.local_addr()?))
+    }
 }
 
 pub fn app(core: CoreHandle) -> Router {
@@ -194,7 +309,7 @@ async fn handle_info(State(state): State<Arc<AppState>>) -> Json<NodeAnnounce> {
 
 async fn handle_register(
     State(state): State<Arc<AppState>>,
-    ConnectInfo(addr): ConnectInfo<SocketAddr>,
+    ConnectInfo(ConnAddr(addr)): ConnectInfo<ConnAddr>,
     Json(payload): Json<NodeAnnounce>,
 ) -> Json<NodeAnnounce> {
     let device = NodeDevice::from_announce(&payload, &addr.ip().to_string());
@@ -226,7 +341,7 @@ impl Drop for Guard {
 
 async fn prepare_upload(
     State(state): State<Arc<AppState>>,
-    ConnectInfo(addr): ConnectInfo<SocketAddr>,
+    ConnectInfo(ConnAddr(addr)): ConnectInfo<ConnAddr>,
     Json(payload): Json<FileRequest>,
 ) -> Result<Json<FileResponse>, (StatusCode, String)> {
     debug!("prepare_upload from {}", addr.ip());

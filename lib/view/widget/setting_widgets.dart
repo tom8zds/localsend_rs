@@ -9,8 +9,10 @@ import '../../common/spacing.dart';
 import '../../common/utils.dart';
 import '../../core/providers/core_provider.dart';
 import '../../core/providers/locale_provider.dart';
+import '../../core/providers/relay_provider.dart';
 import '../../core/providers/session_providers.dart';
 import '../../core/providers/theme_provider.dart';
+import '../../core/providers/tls_provider.dart';
 import '../../core/rust/bridge.dart';
 import '../../core/store/config_store.dart';
 import '../../i18n/strings.g.dart';
@@ -33,21 +35,29 @@ class SettingTileGroup extends StatelessWidget {
           color: Theme.of(context).colorScheme.surfaceContainerLow,
           borderRadius: BorderRadius.circular(AppSpacing.x12),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.x16,
-                vertical: AppSpacing.x8,
+        child: Material(
+          // Tiles paint their ink (ripples, switch-row taps) on this
+          // Material; without it the DecoratedBox above would hide
+          // them behind the group background.
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(AppSpacing.x12),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.x16,
+                  vertical: AppSpacing.x8,
+                ),
+                child: Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
               ),
-              child: Text(
-                title,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ),
-            ...children,
-          ],
+              ...children,
+            ],
+          ),
         ),
       ),
     );
@@ -259,6 +269,260 @@ class _StorePathWIdgetState extends State<StorePathWIdget> {
         },
         child: Text(context.t.setting.receive.selectSaveFolder),
       ),
+    );
+  }
+}
+
+/// Editing dialog for one relay field. Returns the trimmed value, or
+/// null when cancelled; an empty string clears the field.
+Future<String?> showRelayFieldDialog(
+  BuildContext context, {
+  required String title,
+  String? hint,
+  String initial = '',
+  bool obscureText = false,
+}) {
+  return showDialog<String>(
+    context: context,
+    builder: (context) => _RelayFieldDialog(
+      title: title,
+      hint: hint,
+      initial: initial,
+      obscureText: obscureText,
+    ),
+  );
+}
+
+class _RelayFieldDialog extends StatefulWidget {
+  final String title;
+  final String? hint;
+  final String initial;
+  final bool obscureText;
+
+  const _RelayFieldDialog({
+    required this.title,
+    this.hint,
+    this.initial = '',
+    this.obscureText = false,
+  });
+
+  @override
+  State<_RelayFieldDialog> createState() => _RelayFieldDialogState();
+}
+
+class _RelayFieldDialogState extends State<_RelayFieldDialog> {
+  late final TextEditingController _controller =
+      TextEditingController(text: widget.initial);
+  late bool _obscured = widget.obscureText;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    Navigator.of(context).pop(_controller.text.trim());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    return AlertDialog(
+      title: Text(widget.title),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        obscureText: _obscured,
+        keyboardType: TextInputType.url,
+        decoration: InputDecoration(
+          labelText: widget.title,
+          hintText: widget.hint,
+          border: const OutlineInputBorder(),
+          suffixIcon: widget.obscureText
+              ? IconButton(
+                  // Plain visibility toggle, no semantics beyond the
+                  // icon itself.
+                  onPressed: () {
+                    setState(() {
+                      _obscured = !_obscured;
+                    });
+                  },
+                  icon: Icon(_obscured
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined),
+                )
+              : null,
+        ),
+        onSubmitted: (_) => _submit(),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(t.setting.relay.cancel),
+        ),
+        FilledButton(
+          onPressed: _submit,
+          child: Text(t.setting.relay.save),
+        ),
+      ],
+    );
+  }
+}
+
+/// TURN relay server address (`host:port`). Persisted with the other
+/// app settings and fed into the core config on the next app start,
+/// like the save-folder setting.
+class RelayAddressTile extends ConsumerWidget {
+  const RelayAddressTile({
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final relay = ref.watch(relaySettingsProvider);
+    return ListTile(
+      title: Text(context.t.setting.relay.address),
+      subtitle: Text(
+        relay.addr.isEmpty ? context.t.setting.relay.notSet : relay.addr,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+      trailing: FilledButton(
+        onPressed: () async {
+          final value = await showRelayFieldDialog(
+            context,
+            title: context.t.setting.relay.address,
+            hint: context.t.setting.relay.addressHint,
+            initial: relay.addr,
+          );
+          if (value != null) {
+            await ref.read(relaySettingsProvider.notifier).setAddr(value);
+          }
+        },
+        child: Text(context.t.setting.relay.edit),
+      ),
+    );
+  }
+}
+
+/// Shared secret of the TURN relay. Masked in the subtitle; the edit
+/// dialog starts obscured with a plain-text toggle.
+class RelaySecretTile extends ConsumerWidget {
+  const RelaySecretTile({
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final relay = ref.watch(relaySettingsProvider);
+    return ListTile(
+      title: Text(context.t.setting.relay.secret),
+      subtitle: Text(
+        relay.secret.isEmpty ? context.t.setting.relay.notSet : '••••••',
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+      trailing: FilledButton(
+        onPressed: () async {
+          final value = await showRelayFieldDialog(
+            context,
+            title: context.t.setting.relay.secret,
+            initial: relay.secret,
+            obscureText: true,
+          );
+          if (value != null) {
+            await ref.read(relaySettingsProvider.notifier).setSecret(value);
+          }
+        },
+        child: Text(context.t.setting.relay.edit),
+      ),
+    );
+  }
+}
+
+/// Footer note of a settings group: the group's values join the core
+/// config at startup, so a change needs an app restart.
+class SettingEffectHint extends StatelessWidget {
+  final String text;
+
+  const SettingEffectHint({
+    super.key,
+    required this.text,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(
+        left: AppSpacing.x16,
+        right: AppSpacing.x16,
+        bottom: AppSpacing.x8,
+      ),
+      child: Text(
+        text,
+        // Supporting text: body-small on on-surface-variant.
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+      ),
+    );
+  }
+}
+
+/// Relay group footer: relay settings join the core config at
+/// startup, so a change needs an app restart.
+class RelayEffectHint extends StatelessWidget {
+  const RelayEffectHint({
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SettingEffectHint(text: context.t.setting.relay.restartHint);
+  }
+}
+
+/// Security group footer: the TLS toggle joins the core config at
+/// startup, so a change needs an app restart.
+class TlsEffectHint extends StatelessWidget {
+  const TlsEffectHint({
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SettingEffectHint(text: context.t.setting.security.restartHint);
+  }
+}
+
+/// End-to-end encryption (TLS) toggle. Persisted with the other app
+/// settings and fed into the core config on the next app start; the
+/// core runs plain HTTP while disabled.
+class TlsTile extends ConsumerWidget {
+  const TlsTile({
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tlsEnabled = ref.watch(tlsSettingsProvider);
+    return SwitchListTile(
+      title: Text(context.t.setting.security.tls),
+      subtitle: tlsEnabled
+          ? null
+          : Text(
+              context.t.setting.security.plainWarning,
+              // Warning: error color separates the plain-HTTP state
+              // from ordinary supporting text.
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+            ),
+      value: tlsEnabled,
+      onChanged: (value) {
+        ref.read(tlsSettingsProvider.notifier).setEnabled(value);
+      },
     );
   }
 }
