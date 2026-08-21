@@ -14,6 +14,8 @@ class CoreConfig {
   final String storePath;
   final String? relayAddr;
   final String? relaySecret;
+  final String? identityDir;
+  final bool? allowPlainTls;
 
   const CoreConfig({
     required this.port,
@@ -23,6 +25,8 @@ class CoreConfig {
     required this.storePath,
     this.relayAddr,
     this.relaySecret,
+    this.identityDir,
+    this.allowPlainTls,
   });
 
   @override
@@ -33,7 +37,9 @@ class CoreConfig {
       multicastPort.hashCode ^
       storePath.hashCode ^
       relayAddr.hashCode ^
-      relaySecret.hashCode;
+      relaySecret.hashCode ^
+      identityDir.hashCode ^
+      allowPlainTls.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -46,5 +52,7 @@ class CoreConfig {
           multicastPort == other.multicastPort &&
           storePath == other.storePath &&
           relayAddr == other.relayAddr &&
-          relaySecret == other.relaySecret;
+          relaySecret == other.relaySecret &&
+          identityDir == other.identityDir &&
+          allowPlainTls == other.allowPlainTls;
 }

@@ -786,6 +786,8 @@ impl SseDecode for crate::actor::core::CoreConfig {
         let mut var_storePath = <String>::sse_decode(deserializer);
         let mut var_relayAddr = <Option<String>>::sse_decode(deserializer);
         let mut var_relaySecret = <Option<String>>::sse_decode(deserializer);
+        let mut var_identityDir = <Option<String>>::sse_decode(deserializer);
+        let mut var_allowPlainTls = <Option<bool>>::sse_decode(deserializer);
         return crate::actor::core::CoreConfig {
             port: var_port,
             interface_addr: var_interfaceAddr,
@@ -794,6 +796,8 @@ impl SseDecode for crate::actor::core::CoreConfig {
             store_path: var_storePath,
             relay_addr: var_relayAddr,
             relay_secret: var_relaySecret,
+            identity_dir: var_identityDir,
+            allow_plain_tls: var_allowPlainTls,
         };
     }
 }
@@ -1010,6 +1014,17 @@ impl SseDecode for Option<String> {
     }
 }
 
+impl SseDecode for Option<bool> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        if (<bool>::sse_decode(deserializer)) {
+            return Some(<bool>::sse_decode(deserializer));
+        } else {
+            return None;
+        }
+    }
+}
+
 impl SseDecode for Option<crate::actor::model::NodeDevice> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -1195,6 +1210,8 @@ impl flutter_rust_bridge::IntoDart for crate::actor::core::CoreConfig {
             self.store_path.into_into_dart().into_dart(),
             self.relay_addr.into_into_dart().into_dart(),
             self.relay_secret.into_into_dart().into_dart(),
+            self.identity_dir.into_into_dart().into_dart(),
+            self.allow_plain_tls.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
@@ -1529,6 +1546,8 @@ impl SseEncode for crate::actor::core::CoreConfig {
         <String>::sse_encode(self.store_path, serializer);
         <Option<String>>::sse_encode(self.relay_addr, serializer);
         <Option<String>>::sse_encode(self.relay_secret, serializer);
+        <Option<String>>::sse_encode(self.identity_dir, serializer);
+        <Option<bool>>::sse_encode(self.allow_plain_tls, serializer);
     }
 }
 
@@ -1697,6 +1716,16 @@ impl SseEncode for Option<String> {
         <bool>::sse_encode(self.is_some(), serializer);
         if let Some(value) = self {
             <String>::sse_encode(value, serializer);
+        }
+    }
+}
+
+impl SseEncode for Option<bool> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <bool>::sse_encode(self.is_some(), serializer);
+        if let Some(value) = self {
+            <bool>::sse_encode(value, serializer);
         }
     }
 }

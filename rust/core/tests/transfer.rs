@@ -46,6 +46,8 @@ fn test_config(port: u16, store_path: &Path) -> CoreConfig {
         multicast_port: 53317,
         relay_addr: None,
         relay_secret: None,
+        identity_dir: None,
+        allow_plain_tls: None,
         store_path: store_path.to_string_lossy().to_string(),
     }
 }
@@ -550,4 +552,186 @@ async fn info_endpoint_returns_device() {
     }
 
     a.shutdown().await;
+}
+
+// ---------------------------------------------------------------------------
+// TLS (TOFU) scenarios
+// ---------------------------------------------------------------------------
+
+async fn make_tls_core(alias: &str, port: u16, store: &Path, identity: &Path) -> CoreHandle {
+    let options = CoreOptions {
+        enable_discovery: false,
+        ..CoreOptions::default()
+    };
+    let mut config = test_config(port, store);
+    config.identity_dir = Some(identity.to_string_lossy().to_string());
+    let core = CoreHandle::with_options(test_device(alias, port), config, options);
+    core.start().await;
+    assert!(
+        *core.server_state().await.borrow(),
+        "server of {alias} failed to start"
+    );
+    core
+}
+
+#[tokio::test]
+async fn tls_transfers_end_to_end_and_pins_peer() {
+    let _ = env_logger::builder().is_test(true).try_init();
+    let tmp = tempfile::tempdir().unwrap();
+    let (dir_a, dir_b) = (tmp.path().join("a"), tmp.path().join("b"));
+    let (id_a, id_b) = (tmp.path().join("id-a"), tmp.path().join("id-b"));
+    for d in [&dir_a, &dir_b, &id_a, &id_b] {
+        tokio::fs::create_dir_all(d).await.unwrap();
+    }
+    let (port_a, port_b) = (free_port(), free_port());
+    let a = make_tls_core("alice", port_a, &dir_a, &id_a).await;
+    let b = make_tls_core("bob", port_b, &dir_b, &id_b).await;
+
+    let accept = auto_accept(b.clone());
+
+    // First transfer: TOFU pins b's certificate under b's device id.
+    let file = write_file(&dir_a, "secret.txt", b"tls payload").await;
+    let id = a
+        .send_files(
+            NodeDevice::manual(&format!("127.0.0.1:{port_b}")).unwrap(),
+            vec![file],
+        )
+        .await
+        .unwrap();
+    wait_session(&a, &id, |s| s.state == MissionState::Finished).await;
+    assert!(tokio::fs::read(dir_b.join("secret.txt")).await.is_ok());
+
+    // The pin must exist and match b's actual certificate fingerprint.
+    let identity = localsend_core::relay::identity::DeviceIdentity::load_or_create(&id_b).unwrap();
+    let _store =
+        localsend_core::relay::tls::TofuStore::load(id_a.join("pinned-peers.json")).unwrap();
+    // manual targets pin under `manual-<addr>`; resolve via any pin entry.
+    let any_pin = std::fs::read_to_string(id_a.join("pinned-peers.json"))
+        .unwrap()
+        .contains(&identity.fingerprint);
+    assert!(
+        any_pin,
+        "b's fingerprint must be pinned after first contact"
+    );
+
+    accept.abort();
+    a.shutdown().await;
+    b.shutdown().await;
+}
+
+#[tokio::test]
+async fn tls_rejects_a_changed_certificate() {
+    let tmp = tempfile::tempdir().unwrap();
+    let (dir_a, dir_b) = (tmp.path().join("a"), tmp.path().join("b"));
+    let (id_a, id_b) = (tmp.path().join("id-a"), tmp.path().join("id-b"));
+    for d in [&dir_a, &dir_b, &id_a, &id_b] {
+        tokio::fs::create_dir_all(d).await.unwrap();
+    }
+    let (port_a, port_b) = (free_port(), free_port());
+    let a = make_tls_core("alice", port_a, &dir_a, &id_a).await;
+    let b = make_tls_core("bob", port_b, &dir_b, &id_b).await;
+
+    let accept = auto_accept(b.clone());
+
+    // Pin b via one transfer.
+    let file = write_file(&dir_a, "pin.txt", b"x").await;
+    let id = a
+        .send_files(
+            NodeDevice::manual(&format!("127.0.0.1:{port_b}")).unwrap(),
+            vec![file],
+        )
+        .await
+        .unwrap();
+    wait_session(&a, &id, |s| s.state == MissionState::Finished).await;
+
+    // Swap b's identity (simulates a machine reinstall / MITM cert)
+    // and restart its server.
+    b.shutdown().await;
+    std::fs::remove_file(id_b.join("tls-cert.pem")).unwrap();
+    std::fs::remove_file(id_b.join("tls-key.pem")).unwrap();
+    let b = make_tls_core("bob", port_b, &dir_b, &id_b).await;
+
+    let file = write_file(&dir_a, "second.txt", b"y").await;
+    let id = a
+        .send_files(
+            NodeDevice::manual(&format!("127.0.0.1:{port_b}")).unwrap(),
+            vec![file],
+        )
+        .await
+        .unwrap();
+    let failed = tokio::time::timeout(TIMEOUT, async {
+        let mut rx = a.session_index().await;
+        loop {
+            if let Some(s) = rx.borrow().iter().find(|s| s.id == id) {
+                if matches!(s.state, MissionState::Failed | MissionState::Finished) {
+                    return s.state;
+                }
+            }
+            rx.changed().await.unwrap();
+        }
+    })
+    .await
+    .expect("session must reach a terminal state");
+    assert_ne!(
+        failed,
+        MissionState::Finished,
+        "transfer must fail when the pinned certificate changed"
+    );
+
+    accept.abort();
+    a.shutdown().await;
+    b.shutdown().await;
+}
+
+#[tokio::test]
+async fn tls_handshake_smoke() {
+    let tmp = tempfile::tempdir().unwrap();
+    let (dir_b, id_b) = (tmp.path().join("b"), tmp.path().join("id-b"));
+    let (dir_a, id_a) = (tmp.path().join("a"), tmp.path().join("id-a"));
+    for d in [&dir_a, &dir_b, &id_a, &id_b] {
+        tokio::fs::create_dir_all(d).await.unwrap();
+    }
+    let port_b = free_port();
+    let b = make_tls_core("bob", port_b, &dir_b, &id_b).await;
+
+    // plain HTTP must now be refused
+    let plain = reqwest::Client::new()
+        .get(format!("http://127.0.0.1:{port_b}/api/localsend/v2/info"))
+        .send()
+        .await;
+    assert!(
+        plain.is_err(),
+        "plain request must not succeed against TLS server"
+    );
+
+    // TLS handshake + GET /info
+    let tofu = localsend_core::relay::tls::TofuStore::load(id_a.join("pinned-peers.json")).unwrap();
+    let cfg = localsend_core::relay::tls::tofu_client_config(
+        std::sync::Arc::new(tofu),
+        "manual-127.0.0.1",
+        None,
+    );
+    let tcp = tokio::net::TcpStream::connect(("127.0.0.1", port_b))
+        .await
+        .unwrap();
+    let connector = tokio_rustls::TlsConnector::from(cfg);
+    let name = rustls::pki_types::ServerName::try_from("localsend").unwrap();
+    let mut tls = connector.connect(name, tcp).await.expect("handshake");
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+    tls.write_all(
+        "GET /api/localsend/v2/info HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n".to_string()
+        .as_bytes(),
+    )
+    .await
+    .unwrap();
+    let mut buf = Vec::new();
+    tls.read_to_end(&mut buf).await.unwrap();
+    let text = String::from_utf8_lossy(&buf);
+    assert!(
+        text.starts_with("HTTP/1.1 200"),
+        "got: {}",
+        &text[..text.len().min(200)]
+    );
+
+    b.shutdown().await;
 }

@@ -153,11 +153,19 @@ async fn run_context_actor(mut actor: CoreActor) {
     }
 }
 
+/// Process-wide TLS material (identity + peer pins), initialized
+/// when the config carries an identity dir.
+pub struct TlsContext {
+    pub identity: crate::relay::identity::DeviceIdentity,
+    pub tofu: std::sync::Arc<crate::relay::tls::TofuStore>,
+}
+
 struct CoreInner {
     sender: mpsc::Sender<CoreMessage>,
     sessions: SessionHandle,
     client: Client,
     options: CoreOptions,
+    tls: Option<TlsContext>,
     server_error_rx: watch::Receiver<Option<String>>,
     /// Serializes send sessions per target device (fingerprint or
     /// `address:port` for manual targets). Different targets run
@@ -181,6 +189,26 @@ impl CoreHandle {
     pub fn with_options(device: NodeDevice, config: CoreConfig, options: CoreOptions) -> Self {
         let (server_error_tx, server_error_rx) = watch::channel(None);
 
+        let tls = config.identity_dir.as_deref().and_then(|dir| {
+            match crate::relay::identity::DeviceIdentity::load_or_create(std::path::Path::new(dir))
+            {
+                Ok(identity) => {
+                    let tofu = crate::relay::tls::TofuStore::load(
+                        std::path::Path::new(dir).join("pinned-peers.json"),
+                    )
+                    .ok()?;
+                    Some(TlsContext {
+                        identity,
+                        tofu: std::sync::Arc::new(tofu),
+                    })
+                }
+                Err(e) => {
+                    log::warn!("tls identity unavailable, staying on plain http: {e}");
+                    None
+                }
+            }
+        });
+
         let (sender, receiver) = mpsc::channel(8);
         let actor = CoreActor::new(receiver, device.clone(), config, server_error_tx);
         tokio::spawn(run_context_actor(actor));
@@ -194,6 +222,7 @@ impl CoreHandle {
                 sessions,
                 client: Client::new(),
                 options,
+                tls,
                 server_error_rx,
                 target_locks: Mutex::new(HashMap::new()),
             }),
@@ -203,6 +232,11 @@ impl CoreHandle {
 
     pub(crate) fn options(&self) -> &CoreOptions {
         &self.inner.options
+    }
+
+    /// TLS material when the device identity is configured.
+    pub(crate) fn tls(&self) -> Option<&TlsContext> {
+        self.inner.tls.as_ref()
     }
 
     pub(crate) fn sessions(&self) -> &SessionHandle {
@@ -430,27 +464,67 @@ impl CoreHandle {
     }
 }
 
-/// Resolve a relay route for `target`: dial-bridge the tunnel and
-/// return the loopback view of the target.
-async fn route_via_relay(
-    settings: &crate::relay::RelaySettings,
+/// Resolve the transport route for `target` and return the local
+/// view the HTTP client should dial:
+///
+/// - TLS configured (and not disabled): a TLS bridge, itself riding
+///   the relay when one is given — TLS stays strictly endpoint to
+///   endpoint, the relay is a byte pipe.
+/// - No TLS: plain target, or a relay bridge when a relay is given.
+async fn route_transport(
+    core: &CoreHandle,
+    settings: Option<&crate::relay::RelaySettings>,
     target: &NodeDevice,
+    use_relay: bool,
 ) -> Result<NodeDevice, String> {
     let addr = format!("{}:{}", target.address, target.port);
     // XOR-PEER-ADDRESS carries a literal IP only; resolve hostnames
     // (docker service names, mDNS names) before dialing.
     let sock: std::net::SocketAddr = match addr.parse() {
         Ok(s) => s,
-        Err(_) => tokio::net::lookup_host(&addr)
-            .await
-            .ok()
-            .and_then(|mut it| it.next())
-            .ok_or_else(|| format!("cannot resolve relay target {addr}"))?,
+        Err(_) => match tokio::net::lookup_host(&addr).await {
+            Ok(mut it) => it
+                .next()
+                .ok_or_else(|| format!("cannot resolve target {addr}"))?,
+            Err(e) => return Err(format!("cannot resolve target {addr}: {e}")),
+        },
     };
-    let port = crate::relay::spawn_bridge(settings, sock)
-        .await
-        .map_err(|e| format!("relay bridge failed: {e}"))?;
-    debug!("send routed via relay to {sock} (bridge 127.0.0.1:{port})");
+
+    let relay_endpoint = match (use_relay, settings) {
+        (true, Some(s)) => Some(crate::relay::endpoint_from_secret(
+            &s.addr,
+            &s.secret,
+            600,
+            "localsend",
+            &s.realm,
+        )),
+        _ => None,
+    };
+
+    let tls_disabled = core.get_config().await.allow_plain_tls.unwrap_or(false);
+    let tls = if tls_disabled { None } else { core.tls() };
+
+    let (port, route) = match (&tls, relay_endpoint) {
+        (Some(tls), relay) => {
+            let client =
+                crate::relay::tls::tofu_client_config(tls.tofu.clone(), &target.fingerprint, None);
+            let via_relay = relay.is_some();
+            let port = crate::relay::spawn_tls_bridge(client, sock, relay)
+                .await
+                .map_err(|e| format!("tls bridge failed: {e}"))?;
+            (port, if via_relay { "tls+relay" } else { "tls" })
+        }
+        (None, Some(_)) => {
+            // relay_endpoint only exists when settings are present
+            let settings = settings.expect("relay settings");
+            let port = crate::relay::spawn_bridge(settings, sock)
+                .await
+                .map_err(|e| format!("relay bridge failed: {e}"))?;
+            (port, "relay")
+        }
+        (None, None) => return Ok(target.clone()),
+    };
+    debug!("send routed via {route} to {sock} (bridge 127.0.0.1:{port})");
     Ok(crate::relay::bridged_view(target, port))
 }
 
@@ -496,15 +570,26 @@ async fn run_send_driver(
     let relay_settings = core.get_config().await.relay_settings();
 
     if force_relay {
-        match &relay_settings {
-            Some(settings) => match route_via_relay(settings, &target).await {
-                Ok(bridged) => {
-                    sessions.mark_via_relay(&session_id).await;
-                    target = bridged;
-                }
+        if relay_settings.is_none() {
+            bail!("via-relay requested but no relay is configured".to_string());
+        }
+        match route_transport(&core, relay_settings.as_ref(), &target, true).await {
+            Ok(bridged) => {
+                sessions.mark_via_relay(&session_id).await;
+                target = bridged;
+            }
+            Err(reason) => bail!(reason),
+        }
+    } else {
+        // TLS mode has no plaintext leg: even a direct send rides a
+        // TLS bridge (the relay, when used, stacks underneath).
+        let tls_on =
+            core.tls().is_some() && !core.get_config().await.allow_plain_tls.unwrap_or(false);
+        if tls_on {
+            match route_transport(&core, relay_settings.as_ref(), &target, false).await {
+                Ok(bridged) => target = bridged,
                 Err(reason) => bail!(reason),
-            },
-            None => bail!("via-relay requested but no relay is configured".to_string()),
+            }
         }
     }
 
@@ -537,7 +622,7 @@ async fn run_send_driver(
                     .map(|e| e.to_string())
                     .unwrap_or_default()
             );
-            match route_via_relay(settings, &target).await {
+            match route_transport(&core, Some(settings), &target, true).await {
                 Ok(bridged) => {
                     sessions.mark_via_relay(&session_id).await;
                     target = bridged;
