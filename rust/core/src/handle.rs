@@ -321,10 +321,7 @@ impl CoreHandle {
     }
 
     /// Per-session event stream. `None` if the session is unknown.
-    pub async fn session_events(
-        &self,
-        session_id: &str,
-    ) -> Option<watch::Receiver<SessionEvent>> {
+    pub async fn session_events(&self, session_id: &str) -> Option<watch::Receiver<SessionEvent>> {
         self.inner.sessions.session_events(session_id).await
     }
 
@@ -356,6 +353,27 @@ impl CoreHandle {
         &self,
         target: NodeDevice,
         files: Vec<PathBuf>,
+    ) -> Result<String, SendError> {
+        self.send_files_internal(target, files, false).await
+    }
+
+    /// [`CoreHandle::send_files`] with an explicit route: `true`
+    /// skips the direct attempt and tunnels through the configured
+    /// relay from the start.
+    pub async fn send_files_via(
+        &self,
+        target: NodeDevice,
+        files: Vec<PathBuf>,
+        via_relay: bool,
+    ) -> Result<String, SendError> {
+        self.send_files_internal(target, files, via_relay).await
+    }
+
+    async fn send_files_internal(
+        &self,
+        target: NodeDevice,
+        files: Vec<PathBuf>,
+        force_relay: bool,
     ) -> Result<String, SendError> {
         if files.is_empty() {
             return Err(SendError::EmptySelection);
@@ -396,22 +414,62 @@ impl CoreHandle {
         let lock = self.target_lock(&target);
         let driver_session = session_id.clone();
         tokio::spawn(async move {
-            run_send_driver(core, driver_session, target, files, entries, lock).await;
+            run_send_driver(
+                core,
+                driver_session,
+                target,
+                files,
+                entries,
+                lock,
+                force_relay,
+            )
+            .await;
         });
 
         Ok(session_id)
     }
 }
 
+/// Resolve a relay route for `target`: dial-bridge the tunnel and
+/// return the loopback view of the target.
+async fn route_via_relay(
+    settings: &crate::relay::RelaySettings,
+    target: &NodeDevice,
+) -> Result<NodeDevice, String> {
+    let addr = format!("{}:{}", target.address, target.port);
+    // XOR-PEER-ADDRESS carries a literal IP only; resolve hostnames
+    // (docker service names, mDNS names) before dialing.
+    let sock: std::net::SocketAddr = match addr.parse() {
+        Ok(s) => s,
+        Err(_) => tokio::net::lookup_host(&addr)
+            .await
+            .ok()
+            .and_then(|mut it| it.next())
+            .ok_or_else(|| format!("cannot resolve relay target {addr}"))?,
+    };
+    let port = crate::relay::spawn_bridge(settings, sock)
+        .await
+        .map_err(|e| format!("relay bridge failed: {e}"))?;
+    debug!("send routed via relay to {sock} (bridge 127.0.0.1:{port})");
+    Ok(crate::relay::bridged_view(target, port))
+}
+
 /// Drives one send session: register -> prepare -> upload each file ->
 /// finish/fail. All state changes go through the session manager.
+///
+/// Routing: with `force_relay` the session tunnels through the
+/// configured relay from the start; otherwise a direct connection is
+/// attempted first and a transport-level failure falls back to the
+/// relay (when one is configured). Peer refusals (403/409) are
+/// answers, not outages — they never trigger the fallback.
 async fn run_send_driver(
     core: CoreHandle,
     session_id: String,
-    target: NodeDevice,
+    mut target: NodeDevice,
     files: Vec<PathBuf>,
     entries: Vec<(String, FileInfo)>,
     lock: Arc<Semaphore>,
+    force_relay: bool,
 ) {
     let sessions = core.sessions().clone();
     let client = core.inner.client.clone();
@@ -435,6 +493,18 @@ async fn run_send_driver(
 
     // Best-effort register so the peer knows us; failure is not fatal.
     let current = core.device.get_current_device().await;
+    let relay_settings = core.get_config().await.relay_settings();
+
+    if force_relay {
+        match &relay_settings {
+            Some(settings) => match route_via_relay(settings, &target).await {
+                Ok(bridged) => target = bridged,
+                Err(reason) => bail!(reason),
+            },
+            None => bail!("via-relay requested but no relay is configured".to_string()),
+        }
+    }
+
     if let Err(e) = client.register(&target, &current).await {
         warn!("register before send failed: {e}");
     }
@@ -444,10 +514,39 @@ async fn run_send_driver(
         files: entries.iter().cloned().collect(),
     };
 
-    let prepared = tokio::select! {
+    let mut prepared = tokio::select! {
         res = client.prepare_upload(&target, &request) => res,
         _ = cancel.cancelled() => return,
     };
+
+    // Transport-level failure on the direct route: try the relay
+    // once before declaring the session dead.
+    if !force_relay
+        && prepared.is_err()
+        && !matches!(prepared, Err(crate::client::ClientError::Status(..)))
+    {
+        if let Some(settings) = &relay_settings {
+            warn!(
+                "direct prepare failed ({}), falling back to relay",
+                prepared
+                    .as_ref()
+                    .err()
+                    .map(|e| e.to_string())
+                    .unwrap_or_default()
+            );
+            match route_via_relay(settings, &target).await {
+                Ok(bridged) => {
+                    target = bridged;
+                    let _ = client.register(&target, &current).await;
+                    prepared = tokio::select! {
+                        res = client.prepare_upload(&target, &request) => res,
+                        _ = cancel.cancelled() => return,
+                    };
+                }
+                Err(reason) => bail!(reason),
+            }
+        }
+    }
 
     let response = match prepared {
         Ok(r) => r,
@@ -533,13 +632,7 @@ async fn run_send_driver(
             }
             Err(e) => {
                 sessions
-                    .report_file_state(
-                        &session_id,
-                        file_id,
-                        FileState::Fail {
-                            msg: e.to_string(),
-                        },
-                    )
+                    .report_file_state(&session_id, file_id, FileState::Fail { msg: e.to_string() })
                     .await;
                 // Failing one file fails the session (report_file_state
                 // with Fail already failed the session); also tell the

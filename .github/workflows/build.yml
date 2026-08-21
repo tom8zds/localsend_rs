@@ -6,6 +6,7 @@ on:
         branches:
             - main
             - 'refactor/**'
+            - 'feat/**'
 
 jobs:
     build-apk:

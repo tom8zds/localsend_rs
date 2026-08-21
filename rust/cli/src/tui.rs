@@ -11,9 +11,7 @@ use std::path::PathBuf;
 use std::time::Duration;
 
 use anyhow::Result;
-use crossterm::event::{
-    DisableMouseCapture, Event, EventStream, KeyCode, KeyEvent, KeyModifiers,
-};
+use crossterm::event::{DisableMouseCapture, Event, EventStream, KeyCode, KeyEvent, KeyModifiers};
 use crossterm::terminal::{
     disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
 };
@@ -113,7 +111,9 @@ pub async fn run(core: CoreHandle, config: EffectiveConfig, startup: StartupActi
     let mut quit = false;
 
     while !quit {
-        guard.terminal.draw(|f| draw(f, &app, &config, &server_rx, &server_err_rx))?;
+        guard
+            .terminal
+            .draw(|f| draw(f, &app, &config, &server_rx, &server_err_rx))?;
 
         tokio::select! {
             maybe_key = keys.next() => {
@@ -189,8 +189,7 @@ async fn handle_key(core: &CoreHandle, app: &mut App, key: KeyEvent) -> Result<b
                 let input = buffer.trim().to_string();
                 app.input = InputMode::Normal;
                 if !input.is_empty() {
-                    let paths: Vec<PathBuf> =
-                        input.split_whitespace().map(PathBuf::from).collect();
+                    let paths: Vec<PathBuf> = input.split_whitespace().map(PathBuf::from).collect();
                     let missing = app.stage_files(paths);
                     app.notice = Some(if missing.is_empty() {
                         format!("{} file(s) staged", app.pending_files.len())
@@ -335,7 +334,10 @@ fn draw_devices(frame: &mut ratatui::Frame, app: &App, area: ratatui::layout::Re
     let title = if app.pending_files.is_empty() {
         "Devices".to_string()
     } else {
-        format!("Devices — {} file(s) staged, press 1-9 to send", app.pending_files.len())
+        format!(
+            "Devices — {} file(s) staged, press 1-9 to send",
+            app.pending_files.len()
+        )
     };
     let block = Block::default().borders(Borders::ALL).title(title);
     frame.render_widget(List::new(items).block(block), area);
@@ -419,7 +421,10 @@ fn session_lines(s: &SessionView, focused: bool, width: usize) -> Vec<Line<'stat
                 .add_modifier(Modifier::BOLD),
         ),
         Span::raw(format!(" {} ({}) ", s.peer_alias, s.peer_addr)),
-        Span::styled(label, Style::default().fg(color).add_modifier(Modifier::BOLD)),
+        Span::styled(
+            label,
+            Style::default().fg(color).add_modifier(Modifier::BOLD),
+        ),
     ];
     if s.is_pending_receive() {
         head.push(Span::styled(
@@ -489,7 +494,9 @@ fn draw_sessions(frame: &mut ratatui::Frame, app: &App, area: ratatui::layout::R
     };
     let block = Block::default().borders(Borders::ALL).title(title);
     frame.render_widget(
-        Paragraph::new(lines).block(block).wrap(Wrap { trim: false }),
+        Paragraph::new(lines)
+            .block(block)
+            .wrap(Wrap { trim: false }),
         area,
     );
 }
@@ -518,14 +525,20 @@ fn draw_status(
         ),
         Span::raw("| "),
         Span::styled(server_label, Style::default().fg(server_color)),
-        Span::raw(format!(" | save to {} | {notice}", config.destination.display())),
+        Span::raw(format!(
+            " | save to {} | {notice}",
+            config.destination.display()
+        )),
     ]);
 
     let line2 = if let InputMode::AddingFile { buffer } = &app.input {
         Line::from(vec![
             Span::styled(" add file path(s): ", Style::default().fg(Color::Yellow)),
             Span::raw(buffer.clone()),
-            Span::styled("▌ (Enter=stage, Esc=cancel)", Style::default().fg(Color::DarkGray)),
+            Span::styled(
+                "▌ (Enter=stage, Esc=cancel)",
+                Style::default().fg(Color::DarkGray),
+            ),
         ])
     } else {
         Line::from(Span::styled(

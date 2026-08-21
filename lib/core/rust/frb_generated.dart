@@ -661,14 +661,16 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   CoreConfig dco_decode_core_config(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 5)
-      throw Exception('unexpected arr length: expect 5 but see ${arr.length}');
+    if (arr.length != 7)
+      throw Exception('unexpected arr length: expect 7 but see ${arr.length}');
     return CoreConfig(
       port: dco_decode_u_16(arr[0]),
       interfaceAddr: dco_decode_String(arr[1]),
       multicastAddr: dco_decode_String(arr[2]),
       multicastPort: dco_decode_u_16(arr[3]),
       storePath: dco_decode_String(arr[4]),
+      relayAddr: dco_decode_opt_String(arr[5]),
+      relaySecret: dco_decode_opt_String(arr[6]),
     );
   }
 
@@ -990,12 +992,16 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_multicastAddr = sse_decode_String(deserializer);
     var var_multicastPort = sse_decode_u_16(deserializer);
     var var_storePath = sse_decode_String(deserializer);
+    var var_relayAddr = sse_decode_opt_String(deserializer);
+    var var_relaySecret = sse_decode_opt_String(deserializer);
     return CoreConfig(
         port: var_port,
         interfaceAddr: var_interfaceAddr,
         multicastAddr: var_multicastAddr,
         multicastPort: var_multicastPort,
-        storePath: var_storePath);
+        storePath: var_storePath,
+        relayAddr: var_relayAddr,
+        relaySecret: var_relaySecret);
   }
 
   @protected
@@ -1409,6 +1415,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_String(self.multicastAddr, serializer);
     sse_encode_u_16(self.multicastPort, serializer);
     sse_encode_String(self.storePath, serializer);
+    sse_encode_opt_String(self.relayAddr, serializer);
+    sse_encode_opt_String(self.relaySecret, serializer);
   }
 
   @protected

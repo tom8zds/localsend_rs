@@ -1,0 +1,6 @@
+# Pre-provisioned CLI config for the relay smoke test: tells the
+# sender-side CLI how to reach the coturn container and with which
+# shared secret (mirrors turn/turnserver.conf).
+[relay]
+addr = "turn:3478"
+secret = "localsend-relay-test-secret"

@@ -13,6 +13,15 @@ use serde::{Deserialize, Serialize};
 
 pub const DEFAULT_PORT: u16 = 53317;
 
+/// `[relay]` section: TURN server for the cross-network fallback.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct RelayFileConfig {
+    /// TURN server `host:port` (TCP, usually 3478).
+    pub addr: String,
+    /// Shared secret for draft-uberti time-limited credentials.
+    pub secret: String,
+}
+
 /// Raw settings as stored on disk. Every field is optional so a
 /// partially-written or hand-edited file still loads.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
@@ -22,6 +31,7 @@ pub struct FileConfig {
     pub destination: Option<PathBuf>,
     /// Stable device identity, generated once on first run.
     pub fingerprint: Option<String>,
+    pub relay: Option<RelayFileConfig>,
 }
 
 /// Fully-resolved runtime settings (CLI args merged over the file).
@@ -31,6 +41,7 @@ pub struct EffectiveConfig {
     pub port: u16,
     pub destination: PathBuf,
     pub fingerprint: String,
+    pub relay: Option<RelayFileConfig>,
 }
 
 /// Overrides coming from the command line. `None` means "fall back to
@@ -51,8 +62,9 @@ pub fn config_path() -> PathBuf {
 
 pub fn load(path: &Path) -> Result<FileConfig> {
     match std::fs::read_to_string(path) {
-        Ok(text) => toml::from_str(&text)
-            .with_context(|| format!("failed to parse {}", path.display())),
+        Ok(text) => {
+            toml::from_str(&text).with_context(|| format!("failed to parse {}", path.display()))
+        }
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(FileConfig::default()),
         Err(e) => Err(e).with_context(|| format!("failed to read {}", path.display())),
     }
@@ -91,10 +103,7 @@ pub fn resolve(overrides: &CliOverrides, file: &FileConfig) -> EffectiveConfig {
         .clone()
         .or_else(|| file.alias.clone())
         .unwrap_or_else(|| default_alias(&fingerprint));
-    let port = overrides
-        .port
-        .or(file.port)
-        .unwrap_or(DEFAULT_PORT);
+    let port = overrides.port.or(file.port).unwrap_or(DEFAULT_PORT);
     let destination = overrides
         .destination
         .clone()
@@ -105,6 +114,7 @@ pub fn resolve(overrides: &CliOverrides, file: &FileConfig) -> EffectiveConfig {
         port,
         destination,
         fingerprint,
+        relay: file.relay.clone(),
     }
 }
 
@@ -169,6 +179,7 @@ mod tests {
             port: Some(1111),
             destination: Some(PathBuf::from("/from-file")),
             fingerprint: Some("fp".into()),
+            relay: None,
         };
         let overrides = CliOverrides {
             alias: Some("cli-alias".into()),
@@ -189,6 +200,7 @@ mod tests {
             port: Some(1111),
             destination: None,
             fingerprint: Some("abcdef".into()),
+            relay: None,
         };
         let eff = resolve(&CliOverrides::default(), &file);
         assert_eq!(eff.alias, "file-alias");

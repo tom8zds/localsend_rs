@@ -1,0 +1,54 @@
+# Relay smoke topology: tx and rx1 live on mutually-unreachable
+# networks; only the coturn relay straddles both. Direct connections
+# from tx to rx1 cannot route — every transfer must fall back to the
+# relay.
+#
+# docker/smoke.sh drives scenario D against this file.
+name: localsend-relay-test
+
+networks:
+  neta:
+    driver: bridge
+    ipam:
+      config:
+        # Fixed subnet so senders can address rx1 by literal IP —
+        # docker DNS does not resolve across isolated networks.
+        - subnet: 172.31.201.0/24
+  netb:
+    driver: bridge
+
+services:
+  turn:
+    image: coturn/coturn:4.17.2
+    volumes:
+      - ./turn/turnserver.conf:/etc/coturn/turnserver.conf:ro
+    networks: [neta, netb]
+
+  rx1:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.cli
+    command: ["receive", "--alias", "rx1", "--destination", "/inbox"]
+    networks:
+      neta:
+        ipv4_address: 172.31.201.10
+
+  tx:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.cli
+    profiles: ["sender"]
+    environment:
+      # The source config below is mounted read-only; copy it to a
+      # writable dir first — the CLI persists its fingerprint there.
+      XDG_CONFIG_HOME: /relayconf
+    entrypoint:
+      [
+        "/bin/sh",
+        "-c",
+        "cp -r /relayconf.ro /relayconf && exec localsend-cli \"$@\"",
+        "--",
+      ]
+    volumes:
+      - ./relay-test-config:/relayconf.ro:ro
+    networks: [netb]

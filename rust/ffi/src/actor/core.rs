@@ -11,6 +11,8 @@ pub struct CoreConfig {
     pub multicast_addr: String,
     pub multicast_port: u16,
     pub store_path: String,
+    pub relay_addr: Option<String>,
+    pub relay_secret: Option<String>,
 }
 
 impl CoreConfig {
@@ -21,6 +23,8 @@ impl CoreConfig {
             multicast_addr: self.multicast_addr.clone(),
             multicast_port: self.multicast_port,
             store_path: self.store_path.clone(),
+            relay_addr: self.relay_addr.clone(),
+            relay_secret: self.relay_secret.clone(),
         }
     }
 }

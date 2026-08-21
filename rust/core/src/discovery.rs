@@ -37,15 +37,16 @@ async fn register(client: Client, current: NodeDevice, target: NodeDevice) {
 
 /// Send this device's announcement to the multicast group a few times.
 pub async fn announce(config: &crate::config::CoreConfig, message: &str) {
-    let (interface_addr, multicast_addr) =
-        match (Ipv4Addr::from_str(&config.interface_addr), Ipv4Addr::from_str(&config.multicast_addr))
-        {
-            (Ok(i), Ok(m)) => (i, m),
-            _ => {
-                error!("invalid interface/multicast address in config");
-                return;
-            }
-        };
+    let (interface_addr, multicast_addr) = match (
+        Ipv4Addr::from_str(&config.interface_addr),
+        Ipv4Addr::from_str(&config.multicast_addr),
+    ) {
+        (Ok(i), Ok(m)) => (i, m),
+        _ => {
+            error!("invalid interface/multicast address in config");
+            return;
+        }
+    };
     let multicast_port = config.multicast_port;
 
     let send_socket = match UdpSocket::bind((interface_addr, 0)).await {
@@ -201,7 +202,11 @@ impl DiscoverHandle {
         let (sender, receiver) = mpsc::channel(8);
         let (s_sender, s_receiver) = watch::channel(true);
 
-        let actor = DiscoverActor { receiver, core, config };
+        let actor = DiscoverActor {
+            receiver,
+            core,
+            config,
+        };
 
         tokio::spawn(run_udp_actor(actor, s_sender));
         Self {

@@ -22,8 +22,8 @@ use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
 
 use crate::model::{
-    FileInfo, FileState, MissionFileInfo, MissionState, NodeDevice, SessionDirection,
-    SessionEvent, SessionSummary,
+    FileInfo, FileState, MissionFileInfo, MissionState, NodeDevice, SessionDirection, SessionEvent,
+    SessionSummary,
 };
 
 /// Maximum number of concurrent receive sessions (pending + active).
@@ -130,7 +130,10 @@ impl Session {
     }
 
     fn is_active(&self) -> bool {
-        matches!(self.state, MissionState::Pending | MissionState::Transfering)
+        matches!(
+            self.state,
+            MissionState::Pending | MissionState::Transfering
+        )
     }
 }
 
@@ -234,8 +237,7 @@ impl Actor {
     }
 
     fn broadcast_index(&self) {
-        let mut list: Vec<SessionSummary> =
-            self.sessions.values().map(Session::summary).collect();
+        let mut list: Vec<SessionSummary> = self.sessions.values().map(Session::summary).collect();
         list.sort_by(|a, b| a.id.cmp(&b.id));
         let _ = self.index_tx.send(list);
     }
@@ -283,9 +285,10 @@ impl Actor {
             Some(session) => {
                 session.is_active()
                     && !session.files.is_empty()
-                    && session.files.values().all(|f| {
-                        matches!(f.state, FileState::Finish | FileState::Skip)
-                    })
+                    && session
+                        .files
+                        .values()
+                        .all(|f| matches!(f.state, FileState::Finish | FileState::Skip))
             }
             None => false,
         };
@@ -306,9 +309,9 @@ impl Actor {
                 .send(SessionEvent::StateChanged(MissionState::Failed));
             // Sent last: watch receivers keep the latest value, and the
             // failure reason is the most useful terminal event.
-            let _ = session
-                .events_tx
-                .send(SessionEvent::Failed { reason: reason.clone() });
+            let _ = session.events_tx.send(SessionEvent::Failed {
+                reason: reason.clone(),
+            });
             // Unblock a still-waiting prepare-upload handler.
             if let Some(decision) = session.decision.take() {
                 let _ = decision.send(Decision::Canceled);
@@ -587,11 +590,7 @@ impl Actor {
                 }
                 let _ = respond_to.send(());
             }
-            Message::ReportProgress {
-                id,
-                file_id,
-                bytes,
-            } => {
+            Message::ReportProgress { id, file_id, bytes } => {
                 if let Some(session) = self.sessions.get(&id) {
                     let _ = session
                         .events_tx
@@ -859,7 +858,10 @@ impl SessionHandle {
 
     pub async fn session_index(&self) -> watch::Receiver<Vec<SessionSummary>> {
         let (send, recv) = oneshot::channel();
-        let _ = self.sender.send(Message::ListenIndex { respond_to: send }).await;
+        let _ = self
+            .sender
+            .send(Message::ListenIndex { respond_to: send })
+            .await;
         recv.await.expect("Actor task has been killed")
     }
 }

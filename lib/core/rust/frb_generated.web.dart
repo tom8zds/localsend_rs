@@ -3,7 +3,6 @@
 
 // ignore_for_file: unused_import, unused_element, unnecessary_import, duplicate_ignore, invalid_use_of_internal_member, annotate_overrides, non_constant_identifier_names, curly_braces_in_flow_control_structures, prefer_const_literals_to_create_immutables, unused_field
 
-
 // Static analysis wrongly picks the IO variant, thus ignore this
 // ignore_for_file: argument_type_not_assignable
 
@@ -17,254 +16,389 @@ import 'frb_generated.dart';
 import 'logger.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated_web.dart';
 
+abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
+  RustLibApiImplPlatform({
+    required super.handler,
+    required super.wire,
+    required super.generalizedFrbRustBinding,
+    required super.portManager,
+  });
 
+  @protected
+  AnyhowException dco_decode_AnyhowException(dynamic raw);
 
+  @protected
+  RustStreamSink<bool> dco_decode_StreamSink_bool_Sse(dynamic raw);
 
-                abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
-                  RustLibApiImplPlatform({
-                    required super.handler,
-                    required super.wire,
-                    required super.generalizedFrbRustBinding,
-                    required super.portManager,
-                  });
+  @protected
+  RustStreamSink<List<NodeDevice>> dco_decode_StreamSink_list_node_device_Sse(
+      dynamic raw);
 
-                  
+  @protected
+  RustStreamSink<List<SessionSummary>>
+      dco_decode_StreamSink_list_session_summary_Sse(dynamic raw);
 
-                  @protected AnyhowException dco_decode_AnyhowException(dynamic raw);
+  @protected
+  RustStreamSink<LogEntry> dco_decode_StreamSink_log_entry_Sse(dynamic raw);
 
-@protected RustStreamSink<bool> dco_decode_StreamSink_bool_Sse(dynamic raw);
+  @protected
+  RustStreamSink<String?> dco_decode_StreamSink_opt_String_Sse(dynamic raw);
 
-@protected RustStreamSink<List<NodeDevice>> dco_decode_StreamSink_list_node_device_Sse(dynamic raw);
+  @protected
+  RustStreamSink<SessionEvent> dco_decode_StreamSink_session_event_Sse(
+      dynamic raw);
 
-@protected RustStreamSink<List<SessionSummary>> dco_decode_StreamSink_list_session_summary_Sse(dynamic raw);
+  @protected
+  String dco_decode_String(dynamic raw);
 
-@protected RustStreamSink<LogEntry> dco_decode_StreamSink_log_entry_Sse(dynamic raw);
+  @protected
+  bool dco_decode_bool(dynamic raw);
 
-@protected RustStreamSink<String?> dco_decode_StreamSink_opt_String_Sse(dynamic raw);
+  @protected
+  CoreConfig dco_decode_box_autoadd_core_config(dynamic raw);
 
-@protected RustStreamSink<SessionEvent> dco_decode_StreamSink_session_event_Sse(dynamic raw);
+  @protected
+  FileState dco_decode_box_autoadd_file_state(dynamic raw);
 
-@protected String dco_decode_String(dynamic raw);
+  @protected
+  NodeDevice dco_decode_box_autoadd_node_device(dynamic raw);
 
-@protected bool dco_decode_bool(dynamic raw);
+  @protected
+  CoreConfig dco_decode_core_config(dynamic raw);
 
-@protected CoreConfig dco_decode_box_autoadd_core_config(dynamic raw);
+  @protected
+  FileInfo dco_decode_file_info(dynamic raw);
 
-@protected FileState dco_decode_box_autoadd_file_state(dynamic raw);
+  @protected
+  FileState dco_decode_file_state(dynamic raw);
 
-@protected NodeDevice dco_decode_box_autoadd_node_device(dynamic raw);
+  @protected
+  int dco_decode_i_32(dynamic raw);
 
-@protected CoreConfig dco_decode_core_config(dynamic raw);
+  @protected
+  PlatformInt64 dco_decode_i_64(dynamic raw);
 
-@protected FileInfo dco_decode_file_info(dynamic raw);
+  @protected
+  List<String> dco_decode_list_String(dynamic raw);
 
-@protected FileState dco_decode_file_state(dynamic raw);
+  @protected
+  List<MissionFileInfo> dco_decode_list_mission_file_info(dynamic raw);
 
-@protected int dco_decode_i_32(dynamic raw);
+  @protected
+  List<NodeDevice> dco_decode_list_node_device(dynamic raw);
 
-@protected PlatformInt64 dco_decode_i_64(dynamic raw);
+  @protected
+  Uint8List dco_decode_list_prim_u_8_strict(dynamic raw);
 
-@protected List<String> dco_decode_list_String(dynamic raw);
+  @protected
+  List<SessionSummary> dco_decode_list_session_summary(dynamic raw);
 
-@protected List<MissionFileInfo> dco_decode_list_mission_file_info(dynamic raw);
+  @protected
+  LogEntry dco_decode_log_entry(dynamic raw);
 
-@protected List<NodeDevice> dco_decode_list_node_device(dynamic raw);
+  @protected
+  MissionFileInfo dco_decode_mission_file_info(dynamic raw);
 
-@protected Uint8List dco_decode_list_prim_u_8_strict(dynamic raw);
+  @protected
+  MissionState dco_decode_mission_state(dynamic raw);
 
-@protected List<SessionSummary> dco_decode_list_session_summary(dynamic raw);
+  @protected
+  NodeDevice dco_decode_node_device(dynamic raw);
 
-@protected LogEntry dco_decode_log_entry(dynamic raw);
+  @protected
+  String? dco_decode_opt_String(dynamic raw);
 
-@protected MissionFileInfo dco_decode_mission_file_info(dynamic raw);
+  @protected
+  NodeDevice? dco_decode_opt_box_autoadd_node_device(dynamic raw);
 
-@protected MissionState dco_decode_mission_state(dynamic raw);
+  @protected
+  List<String>? dco_decode_opt_list_String(dynamic raw);
 
-@protected NodeDevice dco_decode_node_device(dynamic raw);
+  @protected
+  Uint8List? dco_decode_opt_list_prim_u_8_strict(dynamic raw);
 
-@protected String? dco_decode_opt_String(dynamic raw);
+  @protected
+  SessionDirection dco_decode_session_direction(dynamic raw);
 
-@protected NodeDevice? dco_decode_opt_box_autoadd_node_device(dynamic raw);
+  @protected
+  SessionEvent dco_decode_session_event(dynamic raw);
 
-@protected List<String>? dco_decode_opt_list_String(dynamic raw);
+  @protected
+  SessionSummary dco_decode_session_summary(dynamic raw);
 
-@protected Uint8List? dco_decode_opt_list_prim_u_8_strict(dynamic raw);
+  @protected
+  int dco_decode_u_16(dynamic raw);
 
-@protected SessionDirection dco_decode_session_direction(dynamic raw);
+  @protected
+  int dco_decode_u_32(dynamic raw);
 
-@protected SessionEvent dco_decode_session_event(dynamic raw);
+  @protected
+  int dco_decode_u_8(dynamic raw);
 
-@protected SessionSummary dco_decode_session_summary(dynamic raw);
+  @protected
+  void dco_decode_unit(dynamic raw);
 
-@protected int dco_decode_u_16(dynamic raw);
+  @protected
+  AnyhowException sse_decode_AnyhowException(SseDeserializer deserializer);
 
-@protected int dco_decode_u_32(dynamic raw);
+  @protected
+  RustStreamSink<bool> sse_decode_StreamSink_bool_Sse(
+      SseDeserializer deserializer);
 
-@protected int dco_decode_u_8(dynamic raw);
+  @protected
+  RustStreamSink<List<NodeDevice>> sse_decode_StreamSink_list_node_device_Sse(
+      SseDeserializer deserializer);
 
-@protected void dco_decode_unit(dynamic raw);
+  @protected
+  RustStreamSink<List<SessionSummary>>
+      sse_decode_StreamSink_list_session_summary_Sse(
+          SseDeserializer deserializer);
 
-@protected AnyhowException sse_decode_AnyhowException(SseDeserializer deserializer);
+  @protected
+  RustStreamSink<LogEntry> sse_decode_StreamSink_log_entry_Sse(
+      SseDeserializer deserializer);
 
-@protected RustStreamSink<bool> sse_decode_StreamSink_bool_Sse(SseDeserializer deserializer);
+  @protected
+  RustStreamSink<String?> sse_decode_StreamSink_opt_String_Sse(
+      SseDeserializer deserializer);
 
-@protected RustStreamSink<List<NodeDevice>> sse_decode_StreamSink_list_node_device_Sse(SseDeserializer deserializer);
+  @protected
+  RustStreamSink<SessionEvent> sse_decode_StreamSink_session_event_Sse(
+      SseDeserializer deserializer);
 
-@protected RustStreamSink<List<SessionSummary>> sse_decode_StreamSink_list_session_summary_Sse(SseDeserializer deserializer);
+  @protected
+  String sse_decode_String(SseDeserializer deserializer);
 
-@protected RustStreamSink<LogEntry> sse_decode_StreamSink_log_entry_Sse(SseDeserializer deserializer);
+  @protected
+  bool sse_decode_bool(SseDeserializer deserializer);
 
-@protected RustStreamSink<String?> sse_decode_StreamSink_opt_String_Sse(SseDeserializer deserializer);
+  @protected
+  CoreConfig sse_decode_box_autoadd_core_config(SseDeserializer deserializer);
 
-@protected RustStreamSink<SessionEvent> sse_decode_StreamSink_session_event_Sse(SseDeserializer deserializer);
+  @protected
+  FileState sse_decode_box_autoadd_file_state(SseDeserializer deserializer);
 
-@protected String sse_decode_String(SseDeserializer deserializer);
+  @protected
+  NodeDevice sse_decode_box_autoadd_node_device(SseDeserializer deserializer);
 
-@protected bool sse_decode_bool(SseDeserializer deserializer);
+  @protected
+  CoreConfig sse_decode_core_config(SseDeserializer deserializer);
 
-@protected CoreConfig sse_decode_box_autoadd_core_config(SseDeserializer deserializer);
+  @protected
+  FileInfo sse_decode_file_info(SseDeserializer deserializer);
 
-@protected FileState sse_decode_box_autoadd_file_state(SseDeserializer deserializer);
+  @protected
+  FileState sse_decode_file_state(SseDeserializer deserializer);
 
-@protected NodeDevice sse_decode_box_autoadd_node_device(SseDeserializer deserializer);
+  @protected
+  int sse_decode_i_32(SseDeserializer deserializer);
 
-@protected CoreConfig sse_decode_core_config(SseDeserializer deserializer);
+  @protected
+  PlatformInt64 sse_decode_i_64(SseDeserializer deserializer);
 
-@protected FileInfo sse_decode_file_info(SseDeserializer deserializer);
+  @protected
+  List<String> sse_decode_list_String(SseDeserializer deserializer);
 
-@protected FileState sse_decode_file_state(SseDeserializer deserializer);
+  @protected
+  List<MissionFileInfo> sse_decode_list_mission_file_info(
+      SseDeserializer deserializer);
 
-@protected int sse_decode_i_32(SseDeserializer deserializer);
+  @protected
+  List<NodeDevice> sse_decode_list_node_device(SseDeserializer deserializer);
 
-@protected PlatformInt64 sse_decode_i_64(SseDeserializer deserializer);
+  @protected
+  Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer);
 
-@protected List<String> sse_decode_list_String(SseDeserializer deserializer);
+  @protected
+  List<SessionSummary> sse_decode_list_session_summary(
+      SseDeserializer deserializer);
 
-@protected List<MissionFileInfo> sse_decode_list_mission_file_info(SseDeserializer deserializer);
+  @protected
+  LogEntry sse_decode_log_entry(SseDeserializer deserializer);
 
-@protected List<NodeDevice> sse_decode_list_node_device(SseDeserializer deserializer);
+  @protected
+  MissionFileInfo sse_decode_mission_file_info(SseDeserializer deserializer);
 
-@protected Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer);
+  @protected
+  MissionState sse_decode_mission_state(SseDeserializer deserializer);
 
-@protected List<SessionSummary> sse_decode_list_session_summary(SseDeserializer deserializer);
+  @protected
+  NodeDevice sse_decode_node_device(SseDeserializer deserializer);
 
-@protected LogEntry sse_decode_log_entry(SseDeserializer deserializer);
+  @protected
+  String? sse_decode_opt_String(SseDeserializer deserializer);
 
-@protected MissionFileInfo sse_decode_mission_file_info(SseDeserializer deserializer);
+  @protected
+  NodeDevice? sse_decode_opt_box_autoadd_node_device(
+      SseDeserializer deserializer);
 
-@protected MissionState sse_decode_mission_state(SseDeserializer deserializer);
+  @protected
+  List<String>? sse_decode_opt_list_String(SseDeserializer deserializer);
 
-@protected NodeDevice sse_decode_node_device(SseDeserializer deserializer);
+  @protected
+  Uint8List? sse_decode_opt_list_prim_u_8_strict(SseDeserializer deserializer);
 
-@protected String? sse_decode_opt_String(SseDeserializer deserializer);
+  @protected
+  SessionDirection sse_decode_session_direction(SseDeserializer deserializer);
 
-@protected NodeDevice? sse_decode_opt_box_autoadd_node_device(SseDeserializer deserializer);
+  @protected
+  SessionEvent sse_decode_session_event(SseDeserializer deserializer);
 
-@protected List<String>? sse_decode_opt_list_String(SseDeserializer deserializer);
+  @protected
+  SessionSummary sse_decode_session_summary(SseDeserializer deserializer);
 
-@protected Uint8List? sse_decode_opt_list_prim_u_8_strict(SseDeserializer deserializer);
+  @protected
+  int sse_decode_u_16(SseDeserializer deserializer);
 
-@protected SessionDirection sse_decode_session_direction(SseDeserializer deserializer);
+  @protected
+  int sse_decode_u_32(SseDeserializer deserializer);
 
-@protected SessionEvent sse_decode_session_event(SseDeserializer deserializer);
+  @protected
+  int sse_decode_u_8(SseDeserializer deserializer);
 
-@protected SessionSummary sse_decode_session_summary(SseDeserializer deserializer);
+  @protected
+  void sse_decode_unit(SseDeserializer deserializer);
 
-@protected int sse_decode_u_16(SseDeserializer deserializer);
+  @protected
+  void sse_encode_AnyhowException(
+      AnyhowException self, SseSerializer serializer);
 
-@protected int sse_decode_u_32(SseDeserializer deserializer);
+  @protected
+  void sse_encode_StreamSink_bool_Sse(
+      RustStreamSink<bool> self, SseSerializer serializer);
 
-@protected int sse_decode_u_8(SseDeserializer deserializer);
+  @protected
+  void sse_encode_StreamSink_list_node_device_Sse(
+      RustStreamSink<List<NodeDevice>> self, SseSerializer serializer);
 
-@protected void sse_decode_unit(SseDeserializer deserializer);
+  @protected
+  void sse_encode_StreamSink_list_session_summary_Sse(
+      RustStreamSink<List<SessionSummary>> self, SseSerializer serializer);
 
-@protected void sse_encode_AnyhowException(AnyhowException self, SseSerializer serializer);
+  @protected
+  void sse_encode_StreamSink_log_entry_Sse(
+      RustStreamSink<LogEntry> self, SseSerializer serializer);
 
-@protected void sse_encode_StreamSink_bool_Sse(RustStreamSink<bool> self, SseSerializer serializer);
+  @protected
+  void sse_encode_StreamSink_opt_String_Sse(
+      RustStreamSink<String?> self, SseSerializer serializer);
 
-@protected void sse_encode_StreamSink_list_node_device_Sse(RustStreamSink<List<NodeDevice>> self, SseSerializer serializer);
+  @protected
+  void sse_encode_StreamSink_session_event_Sse(
+      RustStreamSink<SessionEvent> self, SseSerializer serializer);
 
-@protected void sse_encode_StreamSink_list_session_summary_Sse(RustStreamSink<List<SessionSummary>> self, SseSerializer serializer);
+  @protected
+  void sse_encode_String(String self, SseSerializer serializer);
 
-@protected void sse_encode_StreamSink_log_entry_Sse(RustStreamSink<LogEntry> self, SseSerializer serializer);
+  @protected
+  void sse_encode_bool(bool self, SseSerializer serializer);
 
-@protected void sse_encode_StreamSink_opt_String_Sse(RustStreamSink<String?> self, SseSerializer serializer);
+  @protected
+  void sse_encode_box_autoadd_core_config(
+      CoreConfig self, SseSerializer serializer);
 
-@protected void sse_encode_StreamSink_session_event_Sse(RustStreamSink<SessionEvent> self, SseSerializer serializer);
+  @protected
+  void sse_encode_box_autoadd_file_state(
+      FileState self, SseSerializer serializer);
 
-@protected void sse_encode_String(String self, SseSerializer serializer);
+  @protected
+  void sse_encode_box_autoadd_node_device(
+      NodeDevice self, SseSerializer serializer);
 
-@protected void sse_encode_bool(bool self, SseSerializer serializer);
+  @protected
+  void sse_encode_core_config(CoreConfig self, SseSerializer serializer);
 
-@protected void sse_encode_box_autoadd_core_config(CoreConfig self, SseSerializer serializer);
+  @protected
+  void sse_encode_file_info(FileInfo self, SseSerializer serializer);
 
-@protected void sse_encode_box_autoadd_file_state(FileState self, SseSerializer serializer);
+  @protected
+  void sse_encode_file_state(FileState self, SseSerializer serializer);
 
-@protected void sse_encode_box_autoadd_node_device(NodeDevice self, SseSerializer serializer);
+  @protected
+  void sse_encode_i_32(int self, SseSerializer serializer);
 
-@protected void sse_encode_core_config(CoreConfig self, SseSerializer serializer);
+  @protected
+  void sse_encode_i_64(PlatformInt64 self, SseSerializer serializer);
 
-@protected void sse_encode_file_info(FileInfo self, SseSerializer serializer);
+  @protected
+  void sse_encode_list_String(List<String> self, SseSerializer serializer);
 
-@protected void sse_encode_file_state(FileState self, SseSerializer serializer);
+  @protected
+  void sse_encode_list_mission_file_info(
+      List<MissionFileInfo> self, SseSerializer serializer);
 
-@protected void sse_encode_i_32(int self, SseSerializer serializer);
+  @protected
+  void sse_encode_list_node_device(
+      List<NodeDevice> self, SseSerializer serializer);
 
-@protected void sse_encode_i_64(PlatformInt64 self, SseSerializer serializer);
+  @protected
+  void sse_encode_list_prim_u_8_strict(
+      Uint8List self, SseSerializer serializer);
 
-@protected void sse_encode_list_String(List<String> self, SseSerializer serializer);
+  @protected
+  void sse_encode_list_session_summary(
+      List<SessionSummary> self, SseSerializer serializer);
 
-@protected void sse_encode_list_mission_file_info(List<MissionFileInfo> self, SseSerializer serializer);
+  @protected
+  void sse_encode_log_entry(LogEntry self, SseSerializer serializer);
 
-@protected void sse_encode_list_node_device(List<NodeDevice> self, SseSerializer serializer);
+  @protected
+  void sse_encode_mission_file_info(
+      MissionFileInfo self, SseSerializer serializer);
 
-@protected void sse_encode_list_prim_u_8_strict(Uint8List self, SseSerializer serializer);
+  @protected
+  void sse_encode_mission_state(MissionState self, SseSerializer serializer);
 
-@protected void sse_encode_list_session_summary(List<SessionSummary> self, SseSerializer serializer);
+  @protected
+  void sse_encode_node_device(NodeDevice self, SseSerializer serializer);
 
-@protected void sse_encode_log_entry(LogEntry self, SseSerializer serializer);
+  @protected
+  void sse_encode_opt_String(String? self, SseSerializer serializer);
 
-@protected void sse_encode_mission_file_info(MissionFileInfo self, SseSerializer serializer);
+  @protected
+  void sse_encode_opt_box_autoadd_node_device(
+      NodeDevice? self, SseSerializer serializer);
 
-@protected void sse_encode_mission_state(MissionState self, SseSerializer serializer);
+  @protected
+  void sse_encode_opt_list_String(List<String>? self, SseSerializer serializer);
 
-@protected void sse_encode_node_device(NodeDevice self, SseSerializer serializer);
+  @protected
+  void sse_encode_opt_list_prim_u_8_strict(
+      Uint8List? self, SseSerializer serializer);
 
-@protected void sse_encode_opt_String(String? self, SseSerializer serializer);
+  @protected
+  void sse_encode_session_direction(
+      SessionDirection self, SseSerializer serializer);
 
-@protected void sse_encode_opt_box_autoadd_node_device(NodeDevice? self, SseSerializer serializer);
+  @protected
+  void sse_encode_session_event(SessionEvent self, SseSerializer serializer);
 
-@protected void sse_encode_opt_list_String(List<String>? self, SseSerializer serializer);
+  @protected
+  void sse_encode_session_summary(
+      SessionSummary self, SseSerializer serializer);
 
-@protected void sse_encode_opt_list_prim_u_8_strict(Uint8List? self, SseSerializer serializer);
+  @protected
+  void sse_encode_u_16(int self, SseSerializer serializer);
 
-@protected void sse_encode_session_direction(SessionDirection self, SseSerializer serializer);
+  @protected
+  void sse_encode_u_32(int self, SseSerializer serializer);
 
-@protected void sse_encode_session_event(SessionEvent self, SseSerializer serializer);
+  @protected
+  void sse_encode_u_8(int self, SseSerializer serializer);
 
-@protected void sse_encode_session_summary(SessionSummary self, SseSerializer serializer);
-
-@protected void sse_encode_u_16(int self, SseSerializer serializer);
-
-@protected void sse_encode_u_32(int self, SseSerializer serializer);
-
-@protected void sse_encode_u_8(int self, SseSerializer serializer);
-
-@protected void sse_encode_unit(void self, SseSerializer serializer);
-                }
-                
-
+  @protected
+  void sse_encode_unit(void self, SseSerializer serializer);
+}
 
 // Section: wire_class
 
 class RustLibWire implements BaseWire {
-            RustLibWire.fromExternalLibrary(ExternalLibrary lib);
+  RustLibWire.fromExternalLibrary(ExternalLibrary lib);
+}
 
-            
-        }
-        @JS('wasm_bindgen') external RustLibWasmModule get wasmModule;
+@JS('wasm_bindgen')
+external RustLibWasmModule get wasmModule;
 
-        @JS() @anonymous extension type RustLibWasmModule._(JSObject _) implements JSObject {
-            
-        }
-        
+@JS()
+@anonymous
+extension type RustLibWasmModule._(JSObject _) implements JSObject {}

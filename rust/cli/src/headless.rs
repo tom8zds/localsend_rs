@@ -13,7 +13,12 @@ use localsend_core::{CoreHandle, MissionState, NodeDevice, SessionDirection, Ses
 
 /// Send `files` to `target`, printing progress lines to stdout.
 /// Returns `Ok(())` only when the session finishes cleanly.
-pub async fn send(core: &CoreHandle, target: NodeDevice, files: Vec<PathBuf>) -> Result<()> {
+pub async fn send(
+    core: &CoreHandle,
+    target: NodeDevice,
+    files: Vec<PathBuf>,
+    via_relay: bool,
+) -> Result<()> {
     for f in &files {
         if !f.exists() {
             anyhow::bail!("file not found: {}", f.display());
@@ -21,7 +26,7 @@ pub async fn send(core: &CoreHandle, target: NodeDevice, files: Vec<PathBuf>) ->
     }
     println!("Sending {} file(s) to {}", files.len(), target.alias);
     let session_id = core
-        .send_files(target, files)
+        .send_files_via(target, files, via_relay)
         .await
         .context("failed to start send session")?;
     println!("session {session_id}");
@@ -55,10 +60,7 @@ pub async fn send(core: &CoreHandle, target: NodeDevice, files: Vec<PathBuf>) ->
                         .files
                         .iter()
                         .map(|f| {
-                            let live = progress
-                                .get(&f.info.id)
-                                .copied()
-                                .unwrap_or(0) as u64;
+                            let live = progress.get(&f.info.id).copied().unwrap_or(0) as u64;
                             let size = f.info.size.max(0) as u64;
                             match f.state {
                                 localsend_core::FileState::Finish => size,
@@ -103,7 +105,10 @@ pub async fn receive(core: &CoreHandle, once: bool) -> Result<()> {
         "Receiving as \"{}\" on {}:{}, saving to {}",
         device.alias, config.interface_addr, device.port, config.store_path
     );
-    println!("auto-accepting all incoming sessions{}", if once { " (exits after the first)" } else { "" });
+    println!(
+        "auto-accepting all incoming sessions{}",
+        if once { " (exits after the first)" } else { "" }
+    );
 
     let mut index = core.session_index().await;
     loop {
@@ -112,17 +117,20 @@ pub async fn receive(core: &CoreHandle, once: bool) -> Result<()> {
             (
                 list.iter()
                     .filter(|s| {
-                        s.direction == SessionDirection::Receive
-                            && s.state == MissionState::Pending
+                        s.direction == SessionDirection::Receive && s.state == MissionState::Pending
                     })
                     .map(|s| s.id.clone())
                     .collect(),
                 list.iter()
-                    .filter(|s| s.direction == SessionDirection::Receive && {
-                        matches!(
-                            s.state,
-                            MissionState::Finished | MissionState::Failed | MissionState::Canceled
-                        )
+                    .filter(|s| {
+                        s.direction == SessionDirection::Receive && {
+                            matches!(
+                                s.state,
+                                MissionState::Finished
+                                    | MissionState::Failed
+                                    | MissionState::Canceled
+                            )
+                        }
                     })
                     .map(|s| (s.id.clone(), s.state))
                     .collect(),
