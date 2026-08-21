@@ -8,7 +8,9 @@
 
 pub mod bridge;
 pub mod credentials;
+pub mod identity;
 pub mod stun;
+pub mod tls;
 pub mod turn;
 
 pub use bridge::{bridged_view, spawn_bridge, RelaySettings};
