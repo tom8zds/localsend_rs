@@ -49,6 +49,62 @@ jobs:
                   name: android-release
                   path: /tmp/flutter-apk/*.apk
 
+    build-linux:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Set up Flutter SDK
+              uses: subosito/flutter-action@v2.16.0
+              with:
+                  channel: stable
+                  cache: false
+
+            - name: Set up rust
+              uses: dtolnay/rust-toolchain@stable
+
+            - name: Build Prepare
+              run: flutter pub get
+
+            - name: Build Linux
+              run: flutter build linux --release
+
+            - name: Bundle
+              run: |
+                  cd build/linux/x64/release/bundle
+                  tar czf ../../../localsend_rs-linux-x64.tar.gz .
+
+            - name: Upload Linux
+              uses: actions/upload-artifact@v4.3.3
+              with:
+                  name: linux-release
+                  path: build/linux/x64/localsend_rs-linux-x64.tar.gz
+
+    build-cli:
+        runs-on: ubuntu-latest
+
+        defaults:
+            run:
+                working-directory: ./rust
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Set up rust
+              uses: dtolnay/rust-toolchain@stable
+
+            - name: Build CLI
+              run: cargo build --release -p localsend-cli
+
+            - name: Upload CLI
+              uses: actions/upload-artifact@v4.3.3
+              with:
+                  name: localsend-cli-linux-x64
+                  path: rust/target/release/localsend-cli
+
     build-windows:
         runs-on: windows-latest
 
