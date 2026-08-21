@@ -93,6 +93,12 @@
             "cancel": "Cancel",
             "restartHint": "Changes take effect after restarting the app"
         },
+        "security": {
+            "title": "Security",
+            "tls": "End-to-end Encryption (TLS)",
+            "plainWarning": "Unencrypted transfer; recommended for debugging only",
+            "restartHint": "Changes take effect after restarting the app"
+        },
         "core": {
             "title": "core setting",
             "server": {

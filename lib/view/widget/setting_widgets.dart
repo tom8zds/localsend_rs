@@ -12,6 +12,7 @@ import '../../core/providers/locale_provider.dart';
 import '../../core/providers/relay_provider.dart';
 import '../../core/providers/session_providers.dart';
 import '../../core/providers/theme_provider.dart';
+import '../../core/providers/tls_provider.dart';
 import '../../core/rust/bridge.dart';
 import '../../core/store/config_store.dart';
 import '../../i18n/strings.g.dart';
@@ -34,21 +35,29 @@ class SettingTileGroup extends StatelessWidget {
           color: Theme.of(context).colorScheme.surfaceContainerLow,
           borderRadius: BorderRadius.circular(AppSpacing.x12),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.x16,
-                vertical: AppSpacing.x8,
+        child: Material(
+          // Tiles paint their ink (ripples, switch-row taps) on this
+          // Material; without it the DecoratedBox above would hide
+          // them behind the group background.
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(AppSpacing.x12),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.x16,
+                  vertical: AppSpacing.x8,
+                ),
+                child: Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
               ),
-              child: Text(
-                title,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ),
-            ...children,
-          ],
+              ...children,
+            ],
+          ),
         ),
       ),
     );
@@ -432,11 +441,14 @@ class RelaySecretTile extends ConsumerWidget {
   }
 }
 
-/// Footer note of the relay group: relay settings join the core
+/// Footer note of a settings group: the group's values join the core
 /// config at startup, so a change needs an app restart.
-class RelayEffectHint extends StatelessWidget {
-  const RelayEffectHint({
+class SettingEffectHint extends StatelessWidget {
+  final String text;
+
+  const SettingEffectHint({
     super.key,
+    required this.text,
   });
 
   @override
@@ -448,12 +460,69 @@ class RelayEffectHint extends StatelessWidget {
         bottom: AppSpacing.x8,
       ),
       child: Text(
-        context.t.setting.relay.restartHint,
+        text,
         // Supporting text: body-small on on-surface-variant.
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
       ),
+    );
+  }
+}
+
+/// Relay group footer: relay settings join the core config at
+/// startup, so a change needs an app restart.
+class RelayEffectHint extends StatelessWidget {
+  const RelayEffectHint({
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SettingEffectHint(text: context.t.setting.relay.restartHint);
+  }
+}
+
+/// Security group footer: the TLS toggle joins the core config at
+/// startup, so a change needs an app restart.
+class TlsEffectHint extends StatelessWidget {
+  const TlsEffectHint({
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SettingEffectHint(text: context.t.setting.security.restartHint);
+  }
+}
+
+/// End-to-end encryption (TLS) toggle. Persisted with the other app
+/// settings and fed into the core config on the next app start; the
+/// core runs plain HTTP while disabled.
+class TlsTile extends ConsumerWidget {
+  const TlsTile({
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tlsEnabled = ref.watch(tlsSettingsProvider);
+    return SwitchListTile(
+      title: Text(context.t.setting.security.tls),
+      subtitle: tlsEnabled
+          ? null
+          : Text(
+              context.t.setting.security.plainWarning,
+              // Warning: error color separates the plain-HTTP state
+              // from ordinary supporting text.
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+            ),
+      value: tlsEnabled,
+      onChanged: (value) {
+        ref.read(tlsSettingsProvider.notifier).setEnabled(value);
+      },
     );
   }
 }

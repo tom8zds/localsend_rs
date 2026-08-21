@@ -51,3 +51,38 @@ Widget relaySettingsConfiguredPreview() => previewShell(
       ),
       child: const _RelayGroup(),
     );
+
+/// Security group as mounted on the settings page. Resolves the
+/// group title at build time so it follows the preview locale.
+class _SecurityGroup extends StatelessWidget {
+  const _SecurityGroup();
+
+  @override
+  Widget build(BuildContext context) {
+    return SettingTileGroup(
+      title: context.t.setting.security.title,
+      children: const [
+        TlsTile(),
+        TlsEffectHint(),
+      ],
+    );
+  }
+}
+
+/// End-to-end TLS, on (default): switch on, no warning.
+@Preview(name: 'TLS enabled')
+Widget tlsEnabledPreview() => previewShell(
+      name: 'tlsEnabled',
+      height: 220,
+      overrides: previewOverrides(tlsEnabled: true),
+      child: const _SecurityGroup(),
+    );
+
+/// End-to-end TLS, off: switch off plus the plain-transport warning.
+@Preview(name: 'TLS disabled')
+Widget tlsDisabledPreview() => previewShell(
+      name: 'tlsDisabled',
+      height: 220,
+      overrides: previewOverrides(tlsEnabled: false),
+      child: const _SecurityGroup(),
+    );

@@ -265,6 +265,7 @@ class Translations$setting$en {
 	late final Translations$setting$language$en language = Translations$setting$language$en._(_root);
 	late final Translations$setting$receive$en receive = Translations$setting$receive$en._(_root);
 	late final Translations$setting$relay$en relay = Translations$setting$relay$en._(_root);
+	late final Translations$setting$security$en security = Translations$setting$security$en._(_root);
 	late final Translations$setting$core$en core = Translations$setting$core$en._(_root);
 }
 
@@ -355,6 +356,27 @@ class Translations$setting$relay$en {
 
 	/// en: 'Cancel'
 	String get cancel => 'Cancel';
+
+	/// en: 'Changes take effect after restarting the app'
+	String get restartHint => 'Changes take effect after restarting the app';
+}
+
+// Path: setting.security
+class Translations$setting$security$en {
+	Translations$setting$security$en._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Security'
+	String get title => 'Security';
+
+	/// en: 'End-to-end Encryption (TLS)'
+	String get tls => 'End-to-end Encryption (TLS)';
+
+	/// en: 'Unencrypted transfer; recommended for debugging only'
+	String get plainWarning => 'Unencrypted transfer; recommended for debugging only';
 
 	/// en: 'Changes take effect after restarting the app'
 	String get restartHint => 'Changes take effect after restarting the app';
@@ -483,6 +505,10 @@ extension on Translations {
 			'setting.relay.save' => 'Save',
 			'setting.relay.cancel' => 'Cancel',
 			'setting.relay.restartHint' => 'Changes take effect after restarting the app',
+			'setting.security.title' => 'Security',
+			'setting.security.tls' => 'End-to-end Encryption (TLS)',
+			'setting.security.plainWarning' => 'Unencrypted transfer; recommended for debugging only',
+			'setting.security.restartHint' => 'Changes take effect after restarting the app',
 			'setting.core.title' => 'core setting',
 			'setting.core.server.title' => 'server',
 			_ => null,

@@ -161,14 +161,27 @@ pub async fn spawn_tls_bridge(
                     return;
                 }
             },
-            None => match TcpStream::connect(target).await {
-                Ok(s) => RemoteStream::Tcp(s),
-                Err(e) => {
-                    warn!("tls bridge connect failed: {e}");
-                    let _ = incoming.shutdown().await;
-                    return;
+            None => {
+                // Black-holed addresses drop SYN silently; bound the
+                // dial so the relay fallback isn't left waiting on
+                // the kernel's ~2min timeout.
+                let dialed =
+                    tokio::time::timeout(std::time::Duration::from_secs(3), TcpStream::connect(target))
+                        .await;
+                match dialed {
+                    Ok(Ok(s)) => RemoteStream::Tcp(s),
+                    Ok(Err(e)) => {
+                        warn!("tls bridge connect failed: {e}");
+                        let _ = incoming.shutdown().await;
+                        return;
+                    }
+                    Err(_) => {
+                        warn!("tls bridge connect to {target} timed out");
+                        let _ = incoming.shutdown().await;
+                        return;
+                    }
                 }
-            },
+            }
         };
         // The verifier ignores the name; "localsend" is a placeholder.
         let name = rustls::pki_types::ServerName::try_from("localsend").expect("valid server name");

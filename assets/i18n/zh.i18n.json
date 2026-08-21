@@ -93,6 +93,12 @@
             "cancel": "取消",
             "restartHint": "修改后重启应用生效"
         },
+        "security": {
+            "title": "安全",
+            "tls": "端到端加密 (TLS)",
+            "plainWarning": "明文传输，仅建议调试使用",
+            "restartHint": "修改后重启应用生效"
+        },
         "core": {
             "title": "核心设置",
             "server": {

@@ -568,6 +568,7 @@ async fn run_send_driver(
     // Best-effort register so the peer knows us; failure is not fatal.
     let current = core.device.get_current_device().await;
     let relay_settings = core.get_config().await.relay_settings();
+    let mut direct_bridge_target: Option<NodeDevice> = None;
 
     if force_relay {
         if relay_settings.is_none() {
@@ -587,7 +588,13 @@ async fn run_send_driver(
             core.tls().is_some() && !core.get_config().await.allow_plain_tls.unwrap_or(false);
         if tls_on {
             match route_transport(&core, relay_settings.as_ref(), &target, false).await {
-                Ok(bridged) => target = bridged,
+                Ok(bridged) => {
+                    // Keep the pristine target: if this bridge fails we
+                    // must fall back against the real peer, not the
+                    // bridge address.
+                    direct_bridge_target = Some(target);
+                    target = bridged;
+                }
                 Err(reason) => bail!(reason),
             }
         }
@@ -622,7 +629,10 @@ async fn run_send_driver(
                     .map(|e| e.to_string())
                     .unwrap_or_default()
             );
-            match route_transport(&core, Some(settings), &target, true).await {
+            let pristine = direct_bridge_target
+                .clone()
+                .unwrap_or_else(|| target.clone());
+            match route_transport(&core, Some(settings), &pristine, true).await {
                 Ok(bridged) => {
                     sessions.mark_via_relay(&session_id).await;
                     target = bridged;

@@ -122,4 +122,16 @@ class ConfigStore {
   Future<void> setRelaySecret(String value) async {
     await _prefs!.setString(_relaySecretKey, value);
   }
+
+  static const _tlsEnabledKey = 'tlsEnabled';
+
+  /// Whether end-to-end TLS is enabled; `false` makes the core run
+  /// plain HTTP (debug only).
+  bool tlsEnabled() {
+    return _prefs!.getBool(_tlsEnabledKey) ?? true;
+  }
+
+  Future<void> setTlsEnabled(bool value) async {
+    await _prefs!.setBool(_tlsEnabledKey, value);
+  }
 }

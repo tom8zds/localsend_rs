@@ -72,6 +72,18 @@ Locale stringToLocale(String value) {
   return const Locale("en");
 }
 
+/// Maps the persisted TLS toggle onto the core's `identityDir`:
+/// enabled hands the core a device identity (which lives in the
+/// `tls` subdirectory of [baseDir], the app documents directory),
+/// disabled runs plain HTTP. The core creates the directory on
+/// demand; `allowPlainTls` stays unset (its `false` default).
+String? identityDirFor({required bool tlsEnabled, required String baseDir}) {
+  if (!tlsEnabled) {
+    return null;
+  }
+  return '$baseDir${Platform.pathSeparator}tls';
+}
+
 Future<CoreConfig> getConfig(int port) async {
   if (!ConfigStore().storePathSet()) {
     final path = await getDownloadPath();
@@ -91,6 +103,12 @@ Future<CoreConfig> getConfig(int port) async {
     // values mean "no relay" and are passed as null.
     relayAddr: relayAddr.isEmpty ? null : relayAddr,
     relaySecret: relaySecret.isEmpty ? null : relaySecret,
+    // End-to-end TLS: Some(identityDir) enables it, null runs plain
+    // HTTP.
+    identityDir: identityDirFor(
+      tlsEnabled: ConfigStore().tlsEnabled(),
+      baseDir: (await getApplicationDocumentsDirectory()).path,
+    ),
   );
 }
 

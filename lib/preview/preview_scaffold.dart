@@ -8,6 +8,7 @@ import '../core/providers/core_provider.dart';
 import '../core/providers/relay_provider.dart';
 import '../core/providers/selection_providers.dart';
 import '../core/providers/session_providers.dart';
+import '../core/providers/tls_provider.dart';
 import '../core/rust/actor/model.dart';
 import '../core/rust/api/model.dart';
 import '../i18n/strings.g.dart';
@@ -98,6 +99,22 @@ class PreviewRelaySettings extends RelaySettings {
   RelayConfig build() => config;
 }
 
+class PreviewTlsSettings extends TlsSettings {
+  PreviewTlsSettings(this.enabled);
+
+  final bool enabled;
+
+  @override
+  bool build() => enabled;
+
+  // The previewer has no initialized ConfigStore; keep toggle taps
+  // local instead of persisting.
+  @override
+  Future<void> setEnabled(bool value) async {
+    state = value;
+  }
+}
+
 class PreviewAutoAccept extends AutoAccept {
   @override
   Set<String> build() => {};
@@ -109,6 +126,7 @@ List<Override> previewOverrides({
   Map<String, SessionExtras> extras = const {},
   List<String> selectedFiles = const [],
   RelayConfig relay = const RelayConfig(),
+  bool tlsEnabled = true,
 }) {
   return [
     sessionIndexProvider.overrideWith((ref) => Stream.value(sessions)),
@@ -127,6 +145,7 @@ List<Override> previewOverrides({
         .overrideWith(() => PreviewSelectedFiles(selectedFiles)),
     quickSaveProvider.overrideWith(PreviewQuickSave.new),
     relaySettingsProvider.overrideWith(() => PreviewRelaySettings(relay)),
+    tlsSettingsProvider.overrideWith(() => PreviewTlsSettings(tlsEnabled)),
     autoAcceptProvider.overrideWith(PreviewAutoAccept.new),
     for (final entry in extras.entries)
       sessionExtrasProvider(entry.key).overrideWith(

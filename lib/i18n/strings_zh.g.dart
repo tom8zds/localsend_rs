@@ -161,6 +161,7 @@ class _Translations$setting$zh implements Translations$setting$en {
 	@override late final _Translations$setting$language$zh language = _Translations$setting$language$zh._(_root);
 	@override late final _Translations$setting$receive$zh receive = _Translations$setting$receive$zh._(_root);
 	@override late final _Translations$setting$relay$zh relay = _Translations$setting$relay$zh._(_root);
+	@override late final _Translations$setting$security$zh security = _Translations$setting$security$zh._(_root);
 	@override late final _Translations$setting$core$zh core = _Translations$setting$core$zh._(_root);
 }
 
@@ -216,6 +217,19 @@ class _Translations$setting$relay$zh implements Translations$setting$relay$en {
 	@override String get edit => '编辑';
 	@override String get save => '保存';
 	@override String get cancel => '取消';
+	@override String get restartHint => '修改后重启应用生效';
+}
+
+// Path: setting.security
+class _Translations$setting$security$zh implements Translations$setting$security$en {
+	_Translations$setting$security$zh._(this._root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '安全';
+	@override String get tls => '端到端加密 (TLS)';
+	@override String get plainWarning => '明文传输，仅建议调试使用';
 	@override String get restartHint => '修改后重启应用生效';
 }
 
@@ -331,6 +345,10 @@ extension on TranslationsZh {
 			'setting.relay.save' => '保存',
 			'setting.relay.cancel' => '取消',
 			'setting.relay.restartHint' => '修改后重启应用生效',
+			'setting.security.title' => '安全',
+			'setting.security.tls' => '端到端加密 (TLS)',
+			'setting.security.plainWarning' => '明文传输，仅建议调试使用',
+			'setting.security.restartHint' => '修改后重启应用生效',
 			'setting.core.title' => '核心设置',
 			'setting.core.server.title' => '服务器',
 			_ => null,
