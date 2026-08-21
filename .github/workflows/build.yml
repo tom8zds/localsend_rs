@@ -81,14 +81,13 @@ jobs:
 
             - name: Bundle
               run: |
-                  cd build/linux/x64/release/bundle
-                  tar czf ../../../localsend_rs-linux-x64.tar.gz .
+                  tar czf build/linux/localsend_rs-linux-x64.tar.gz -C build/linux/x64/release/bundle .
 
             - name: Upload Linux
               uses: actions/upload-artifact@v4.3.3
               with:
                   name: linux-release
-                  path: build/linux/x64/localsend_rs-linux-x64.tar.gz
+                  path: build/linux/localsend_rs-linux-x64.tar.gz
 
     build-cli:
         runs-on: ubuntu-latest
