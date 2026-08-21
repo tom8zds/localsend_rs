@@ -24,6 +24,8 @@ rustls = { version = "0.23.43", default-features = false, features = ["ring", "s
 rcgen = "0.14.9"
 pem = "4.0.0"
 sha2 = "0.11.0"
+if-addrs = "0.15.0"
+socket2 = "0.6.5"
 
 [dev-dependencies]
 env_logger = "0.11.11"

@@ -215,7 +215,7 @@ impl<'a> Connected<axum::serve::IncomingStream<'a, DualProtocolListener>> for Co
 /// `protocol = "https"` dial TLS. Both coexist on 53317.
 enum Conn {
     Plain(tokio::net::TcpStream),
-    Tls(tokio_rustls::server::TlsStream<tokio::net::TcpStream>),
+    Tls(Box<tokio_rustls::server::TlsStream<tokio::net::TcpStream>>),
 }
 
 impl tokio::io::AsyncRead for Conn {
@@ -276,15 +276,14 @@ impl axum::serve::Listener for DualProtocolListener {
                         stream.peek(&mut first).await,
                         Ok(1) if first[0] == 0x16
                     );
-                    if is_tls && self.acceptor.is_some() {
-                        match self.acceptor.as_ref().unwrap().accept(stream).await {
-                            Ok(tls) => return (Conn::Tls(tls), ConnAddr(addr)),
+                    match (is_tls, &self.acceptor) {
+                        (true, Some(acceptor)) => match acceptor.accept(stream).await {
+                            Ok(tls) => return (Conn::Tls(Box::new(tls)), ConnAddr(addr)),
                             Err(e) => {
                                 warn!("tls handshake with {addr} failed: {e}");
                             }
-                        }
-                    } else {
-                        return (Conn::Plain(stream), ConnAddr(addr));
+                        },
+                        _ => return (Conn::Plain(stream), ConnAddr(addr)),
                     }
                 }
                 Err(e) => {
