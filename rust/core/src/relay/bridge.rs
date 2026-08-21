@@ -165,9 +165,11 @@ pub async fn spawn_tls_bridge(
                 // Black-holed addresses drop SYN silently; bound the
                 // dial so the relay fallback isn't left waiting on
                 // the kernel's ~2min timeout.
-                let dialed =
-                    tokio::time::timeout(std::time::Duration::from_secs(3), TcpStream::connect(target))
-                        .await;
+                let dialed = tokio::time::timeout(
+                    std::time::Duration::from_secs(3),
+                    TcpStream::connect(target),
+                )
+                .await;
                 match dialed {
                     Ok(Ok(s)) => RemoteStream::Tcp(s),
                     Ok(Err(e)) => {

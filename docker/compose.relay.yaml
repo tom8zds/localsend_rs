@@ -18,12 +18,6 @@ networks:
     driver: bridge
 
 services:
-  turn:
-    image: coturn/coturn:4.17.2
-    volumes:
-      - ./turn/turnserver.conf:/etc/coturn/turnserver.conf:ro
-    networks: [neta, netb]
-
   rx1:
     build:
       context: ..
@@ -38,6 +32,9 @@ services:
       context: ..
       dockerfile: docker/Dockerfile.cli
     profiles: ["sender"]
+    extra_hosts:
+      # reach the host-network coturn/panel from the isolated netb
+      - "host.docker.internal:host-gateway"
     environment:
       # The source config below is mounted read-only; copy it to a
       # writable dir first — the CLI persists its fingerprint there.

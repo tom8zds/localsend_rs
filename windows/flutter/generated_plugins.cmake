@@ -3,6 +3,7 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+  app_links
   desktop_drop
   screen_retriever_windows
   window_manager

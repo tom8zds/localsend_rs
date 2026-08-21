@@ -113,6 +113,29 @@ jobs:
                   name: localsend-cli-linux-x64
                   path: rust/target/release/localsend-cli
 
+    build-panel:
+        runs-on: ubuntu-latest
+
+        defaults:
+            run:
+                working-directory: ./rust
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Set up rust
+              uses: dtolnay/rust-toolchain@stable
+
+            - name: Build Panel
+              run: cargo build --release -p relay-panel
+
+            - name: Upload Panel
+              uses: actions/upload-artifact@v4.3.3
+              with:
+                  name: relay-panel-linux-x64
+                  path: rust/target/release/relay-panel
+
     build-windows:
         runs-on: windows-latest
 

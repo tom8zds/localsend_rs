@@ -1,8 +1,10 @@
 [workspace]
 resolver = "2"
-members = ["core", "ffi", "cli"]
+members = ["core", "ffi", "cli", "relay-panel"]
 
 [workspace.dependencies]
+rusqlite = { version = "0.37", features = ["bundled"] }
+qrcode = "0.14"
 localsend_core = { path = "core" }
 
 flutter_rust_bridge = "=2.12.0"

@@ -119,6 +119,47 @@ impl From<std::io::Error> for RelayError {
 
 const IO_TIMEOUT: Duration = Duration::from_secs(10);
 
+/// Round-trip probe of a TURN server: an unauthenticated STUN
+/// Binding request over TCP. Returns the round-trip time. This
+/// exercises the listener (not authentication) — enough for a
+/// "server reachable" indicator.
+pub async fn ping(addr: &str) -> Result<std::time::Duration, RelayError> {
+    let sock: SocketAddr = match addr.parse() {
+        Ok(s) => s,
+        Err(_) => tokio::net::lookup_host(addr)
+            .await
+            .ok()
+            .and_then(|mut it| it.next())
+            .ok_or(RelayError::Protocol("relay address is not host:port"))?,
+    };
+    let started = std::time::Instant::now();
+    let mut conn = TcpStream::connect(sock)
+        .await
+        .map_err(RelayError::Connect)?;
+    conn.set_nodelay(true).ok();
+    let mut probe = Message::new(Method::Binding, MessageClass::Request, TransactionId::new());
+    let wire = probe.encode(None);
+    let write = conn.write_all(&wire);
+    tokio::time::timeout(IO_TIMEOUT, write)
+        .await
+        .map_err(|_| RelayError::Protocol("probe write timeout"))??;
+    let mut buf = vec![0u8; 1024];
+    let read = conn.read(&mut buf);
+    let n = tokio::time::timeout(IO_TIMEOUT, read)
+        .await
+        .map_err(|_| RelayError::Protocol("probe response timeout"))??;
+    let resp = Incoming::decode(&buf[..n])
+        .map_err(|_| RelayError::Protocol("undecodable probe response"))?;
+    if resp.tid != probe.tid || resp.method != Method::Binding {
+        return Err(RelayError::Protocol("unexpected probe response"));
+    }
+    if resp.class != MessageClass::SuccessResponse {
+        let (class, num, reason) = resp.error_code().unwrap_or((4, 0, String::new()));
+        return Err(RelayError::Server(class as u16 * 100 + num, reason));
+    }
+    Ok(started.elapsed())
+}
+
 /// Dial `target` through the TURN relay and return a transparent
 /// TCP pipe to it.
 pub async fn dial_via_relay(

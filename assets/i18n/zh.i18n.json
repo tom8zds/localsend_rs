@@ -91,7 +91,22 @@
             "edit": "编辑",
             "save": "保存",
             "cancel": "取消",
-            "restartHint": "修改后重启应用生效"
+            "restartHint": "修改后重启应用生效",
+            "importTitle": "导入配置",
+            "importHint": "邀请链接或 主机:端口|密钥",
+            "import": "导入",
+            "importInvalid": "无法识别的中继配置",
+            "scanQr": "扫描二维码",
+            "scanTitle": "扫描二维码",
+            "scanError": "相机不可用",
+            "confirmTitle": "应用中继配置？",
+            "apply": "应用",
+            "savedRestart": "中继已保存，重启应用后生效",
+            "test": "连接测试",
+            "testHint": "向中继发送 STUN 探测",
+            "testAction": "测试",
+            "testResult": "$ms ms",
+            "testFailed": "失败: $reason"
         },
         "security": {
             "title": "安全",

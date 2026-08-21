@@ -719,8 +719,9 @@ async fn tls_handshake_smoke() {
     let mut tls = connector.connect(name, tcp).await.expect("handshake");
     use tokio::io::{AsyncReadExt, AsyncWriteExt};
     tls.write_all(
-        "GET /api/localsend/v2/info HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n".to_string()
-        .as_bytes(),
+        "GET /api/localsend/v2/info HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n"
+            .to_string()
+            .as_bytes(),
     )
     .await
     .unwrap();

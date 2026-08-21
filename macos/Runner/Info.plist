@@ -8,6 +8,18 @@
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIconFile</key>
 	<string></string>
+	<!-- Relay invite deep links: localsend-relay://configure?addr=host:port&secret=xxx -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>github.tom8zds.localsendRs</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>localsend-relay</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleIdentifier</key>
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleInfoDictionaryVersion</key>

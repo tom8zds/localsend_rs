@@ -67,3 +67,66 @@ abstract class _$RelaySettings extends $Notifier<RelayConfig> {
     element.handleCreate(ref, build);
   }
 }
+
+/// One-shot STUN probe of the relay. The core probes the relay it was
+/// *started* with (the config `getConfig` assembled at startup), so
+/// the result reflects the persisted settings only after a restart.
+
+@ProviderFor(RelayPing)
+final relayPingProvider = RelayPingProvider._();
+
+/// One-shot STUN probe of the relay. The core probes the relay it was
+/// *started* with (the config `getConfig` assembled at startup), so
+/// the result reflects the persisted settings only after a restart.
+final class RelayPingProvider
+    extends $NotifierProvider<RelayPing, RelayPingState> {
+  /// One-shot STUN probe of the relay. The core probes the relay it was
+  /// *started* with (the config `getConfig` assembled at startup), so
+  /// the result reflects the persisted settings only after a restart.
+  RelayPingProvider._()
+      : super(
+          from: null,
+          argument: null,
+          retry: null,
+          name: r'relayPingProvider',
+          isAutoDispose: true,
+          dependencies: null,
+          $allTransitiveDependencies: null,
+        );
+
+  @override
+  String debugGetCreateSourceHash() => _$relayPingHash();
+
+  @$internal
+  @override
+  RelayPing create() => RelayPing();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(RelayPingState value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<RelayPingState>(value),
+    );
+  }
+}
+
+String _$relayPingHash() => r'572f479084560a7b41b3fc4fde5a63d3ca81c4fe';
+
+/// One-shot STUN probe of the relay. The core probes the relay it was
+/// *started* with (the config `getConfig` assembled at startup), so
+/// the result reflects the persisted settings only after a restart.
+
+abstract class _$RelayPing extends $Notifier<RelayPingState> {
+  RelayPingState build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final ref = this.ref as $Ref<RelayPingState, RelayPingState>;
+    final element = ref.element as $ClassProviderElement<
+        AnyNotifier<RelayPingState, RelayPingState>,
+        RelayPingState,
+        Object?,
+        Object?>;
+    element.handleCreate(ref, build);
+  }
+}

@@ -359,6 +359,51 @@ class Translations$setting$relay$en {
 
 	/// en: 'Changes take effect after restarting the app'
 	String get restartHint => 'Changes take effect after restarting the app';
+
+	/// en: 'Import Configuration'
+	String get importTitle => 'Import Configuration';
+
+	/// en: 'Invite link or host:port|secret'
+	String get importHint => 'Invite link or host:port|secret';
+
+	/// en: 'Import'
+	String get import => 'Import';
+
+	/// en: 'Unrecognized relay configuration'
+	String get importInvalid => 'Unrecognized relay configuration';
+
+	/// en: 'Scan QR Code'
+	String get scanQr => 'Scan QR Code';
+
+	/// en: 'Scan QR Code'
+	String get scanTitle => 'Scan QR Code';
+
+	/// en: 'Camera unavailable'
+	String get scanError => 'Camera unavailable';
+
+	/// en: 'Apply Relay Configuration?'
+	String get confirmTitle => 'Apply Relay Configuration?';
+
+	/// en: 'Apply'
+	String get apply => 'Apply';
+
+	/// en: 'Relay saved; restart the app to apply'
+	String get savedRestart => 'Relay saved; restart the app to apply';
+
+	/// en: 'Connection Test'
+	String get test => 'Connection Test';
+
+	/// en: 'Probe the relay with a STUN request'
+	String get testHint => 'Probe the relay with a STUN request';
+
+	/// en: 'Test'
+	String get testAction => 'Test';
+
+	/// en: '$ms ms'
+	String testResult({required Object ms}) => '${ms} ms';
+
+	/// en: 'Failed: $reason'
+	String testFailed({required Object reason}) => 'Failed: ${reason}';
 }
 
 // Path: setting.security
@@ -505,6 +550,21 @@ extension on Translations {
 			'setting.relay.save' => 'Save',
 			'setting.relay.cancel' => 'Cancel',
 			'setting.relay.restartHint' => 'Changes take effect after restarting the app',
+			'setting.relay.importTitle' => 'Import Configuration',
+			'setting.relay.importHint' => 'Invite link or host:port|secret',
+			'setting.relay.import' => 'Import',
+			'setting.relay.importInvalid' => 'Unrecognized relay configuration',
+			'setting.relay.scanQr' => 'Scan QR Code',
+			'setting.relay.scanTitle' => 'Scan QR Code',
+			'setting.relay.scanError' => 'Camera unavailable',
+			'setting.relay.confirmTitle' => 'Apply Relay Configuration?',
+			'setting.relay.apply' => 'Apply',
+			'setting.relay.savedRestart' => 'Relay saved; restart the app to apply',
+			'setting.relay.test' => 'Connection Test',
+			'setting.relay.testHint' => 'Probe the relay with a STUN request',
+			'setting.relay.testAction' => 'Test',
+			'setting.relay.testResult' => ({required Object ms}) => '${ms} ms',
+			'setting.relay.testFailed' => ({required Object reason}) => 'Failed: ${reason}',
 			'setting.security.title' => 'Security',
 			'setting.security.tls' => 'End-to-end Encryption (TLS)',
 			'setting.security.plainWarning' => 'Unencrypted transfer; recommended for debugging only',
