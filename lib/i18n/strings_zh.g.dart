@@ -113,6 +113,7 @@ class _Translations$transfers$zh implements Translations$transfers$en {
 	@override String peerWantsToSend({required Object alias, required Object count}) => '${alias} 想要发送给你 ${count} 个文件';
 	@override String toPeer({required Object alias}) => '发送到 ${alias}';
 	@override String failedReason({required Object reason}) => '失败: ${reason}';
+	@override String get viaRelay => '经中继';
 	@override String get selectAll => '全选';
 	@override String get selectNone => '全不选';
 }
@@ -159,6 +160,7 @@ class _Translations$setting$zh implements Translations$setting$en {
 	@override late final _Translations$setting$brightness$zh brightness = _Translations$setting$brightness$zh._(_root);
 	@override late final _Translations$setting$language$zh language = _Translations$setting$language$zh._(_root);
 	@override late final _Translations$setting$receive$zh receive = _Translations$setting$receive$zh._(_root);
+	@override late final _Translations$setting$relay$zh relay = _Translations$setting$relay$zh._(_root);
 	@override late final _Translations$setting$core$zh core = _Translations$setting$core$zh._(_root);
 }
 
@@ -197,6 +199,24 @@ class _Translations$setting$receive$zh implements Translations$setting$receive$e
 	@override String get quickSaveHint => '不需要等待确认直接接受';
 	@override String get saveFolder => '保存目录';
 	@override String get selectSaveFolder => '选择';
+}
+
+// Path: setting.relay
+class _Translations$setting$relay$zh implements Translations$setting$relay$en {
+	_Translations$setting$relay$zh._(this._root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '中继服务器';
+	@override String get address => '服务器地址';
+	@override String get addressHint => '主机:端口';
+	@override String get secret => '共享密钥';
+	@override String get notSet => '未设置';
+	@override String get edit => '编辑';
+	@override String get save => '保存';
+	@override String get cancel => '取消';
+	@override String get restartHint => '修改后重启应用生效';
 }
 
 // Path: setting.core
@@ -273,6 +293,7 @@ extension on TranslationsZh {
 			'transfers.peerWantsToSend' => ({required Object alias, required Object count}) => '${alias} 想要发送给你 ${count} 个文件',
 			'transfers.toPeer' => ({required Object alias}) => '发送到 ${alias}',
 			'transfers.failedReason' => ({required Object reason}) => '失败: ${reason}',
+			'transfers.viaRelay' => '经中继',
 			'transfers.selectAll' => '全选',
 			'transfers.selectNone' => '全不选',
 			'mission.accept' => '接收',
@@ -301,6 +322,15 @@ extension on TranslationsZh {
 			'setting.receive.quickSaveHint' => '不需要等待确认直接接受',
 			'setting.receive.saveFolder' => '保存目录',
 			'setting.receive.selectSaveFolder' => '选择',
+			'setting.relay.title' => '中继服务器',
+			'setting.relay.address' => '服务器地址',
+			'setting.relay.addressHint' => '主机:端口',
+			'setting.relay.secret' => '共享密钥',
+			'setting.relay.notSet' => '未设置',
+			'setting.relay.edit' => '编辑',
+			'setting.relay.save' => '保存',
+			'setting.relay.cancel' => '取消',
+			'setting.relay.restartHint' => '修改后重启应用生效',
 			'setting.core.title' => '核心设置',
 			'setting.core.server.title' => '服务器',
 			_ => null,

@@ -157,6 +157,10 @@ class SessionSummary {
   final int fileCount;
   final MissionState state;
 
+  /// True when this session's traffic is tunneled through the
+  /// configured TURN relay.
+  final bool viaRelay;
+
   /// Per-file metadata and state, sorted by file name. Live byte
   /// counters are not included; subscribe to the per-session event
   /// stream for those.
@@ -168,6 +172,7 @@ class SessionSummary {
     required this.peer,
     required this.fileCount,
     required this.state,
+    required this.viaRelay,
     required this.files,
   });
 
@@ -178,6 +183,7 @@ class SessionSummary {
       peer.hashCode ^
       fileCount.hashCode ^
       state.hashCode ^
+      viaRelay.hashCode ^
       files.hashCode;
 
   @override
@@ -190,5 +196,6 @@ class SessionSummary {
           peer == other.peer &&
           fileCount == other.fileCount &&
           state == other.state &&
+          viaRelay == other.viaRelay &&
           files == other.files;
 }

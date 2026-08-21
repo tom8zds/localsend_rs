@@ -498,7 +498,10 @@ async fn run_send_driver(
     if force_relay {
         match &relay_settings {
             Some(settings) => match route_via_relay(settings, &target).await {
-                Ok(bridged) => target = bridged,
+                Ok(bridged) => {
+                    sessions.mark_via_relay(&session_id).await;
+                    target = bridged;
+                }
                 Err(reason) => bail!(reason),
             },
             None => bail!("via-relay requested but no relay is configured".to_string()),
@@ -536,6 +539,7 @@ async fn run_send_driver(
             );
             match route_via_relay(settings, &target).await {
                 Ok(bridged) => {
+                    sessions.mark_via_relay(&session_id).await;
                     target = bridged;
                     let _ = client.register(&target, &current).await;
                     prepared = tokio::select! {

@@ -43,6 +43,17 @@ class SettingPage extends StatelessWidget {
                     height: AppSpacing.x16,
                   ),
                   SettingTileGroup(
+                    title: t.setting.relay.title,
+                    children: const [
+                      RelayAddressTile(),
+                      RelaySecretTile(),
+                      RelayEffectHint(),
+                    ],
+                  ),
+                  const SizedBox(
+                    height: AppSpacing.x16,
+                  ),
+                  SettingTileGroup(
                     title: t.setting.core.title,
                     children: const [
                       // core status

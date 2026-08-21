@@ -39,6 +39,7 @@
         "peerWantsToSend": "$alias wants to send you $count file(s)",
         "toPeer": "To $alias",
         "failedReason": "Failed: $reason",
+        "viaRelay": "Via relay",
         "selectAll": "All",
         "selectNone": "None"
     },
@@ -80,6 +81,17 @@
             "quickSaveHint": "Start tranfer without accept",
             "saveFolder": "Save Folder",
             "selectSaveFolder": "Select"
+        },
+        "relay": {
+            "title": "Relay Server",
+            "address": "Server Address",
+            "addressHint": "host:port",
+            "secret": "Shared Secret",
+            "notSet": "Not set",
+            "edit": "Edit",
+            "save": "Save",
+            "cancel": "Cancel",
+            "restartHint": "Changes take effect after restarting the app"
         },
         "core": {
             "title": "core setting",

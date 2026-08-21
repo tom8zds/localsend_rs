@@ -5,6 +5,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart' show Override;
 import '../common/platform_int64.dart';
 
 import '../core/providers/core_provider.dart';
+import '../core/providers/relay_provider.dart';
 import '../core/providers/selection_providers.dart';
 import '../core/providers/session_providers.dart';
 import '../core/rust/actor/model.dart';
@@ -55,6 +56,7 @@ SessionSummary mockSession({
   required SessionDirection direction,
   required MissionState state,
   NodeDevice? peer,
+  bool viaRelay = false,
   List<MissionFileInfo>? files,
 }) {
   final fileList = files ??
@@ -68,6 +70,7 @@ SessionSummary mockSession({
     peer: peer ?? mockDevice(),
     fileCount: fileList.length,
     state: state,
+    viaRelay: viaRelay,
     files: fileList,
   );
 }
@@ -86,6 +89,15 @@ class PreviewQuickSave extends QuickSave {
   bool build() => false;
 }
 
+class PreviewRelaySettings extends RelaySettings {
+  PreviewRelaySettings(this.config);
+
+  final RelayConfig config;
+
+  @override
+  RelayConfig build() => config;
+}
+
 class PreviewAutoAccept extends AutoAccept {
   @override
   Set<String> build() => {};
@@ -96,6 +108,7 @@ List<Override> previewOverrides({
   List<SessionSummary> sessions = const [],
   Map<String, SessionExtras> extras = const {},
   List<String> selectedFiles = const [],
+  RelayConfig relay = const RelayConfig(),
 }) {
   return [
     sessionIndexProvider.overrideWith((ref) => Stream.value(sessions)),
@@ -113,6 +126,7 @@ List<Override> previewOverrides({
     selectedFilesProvider
         .overrideWith(() => PreviewSelectedFiles(selectedFiles)),
     quickSaveProvider.overrideWith(PreviewQuickSave.new),
+    relaySettingsProvider.overrideWith(() => PreviewRelaySettings(relay)),
     autoAcceptProvider.overrideWith(PreviewAutoAccept.new),
     for (final entry in extras.entries)
       sessionExtrasProvider(entry.key).overrideWith(

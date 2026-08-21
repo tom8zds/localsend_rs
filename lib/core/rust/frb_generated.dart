@@ -867,15 +867,16 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   SessionSummary dco_decode_session_summary(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 6)
-      throw Exception('unexpected arr length: expect 6 but see ${arr.length}');
+    if (arr.length != 7)
+      throw Exception('unexpected arr length: expect 7 but see ${arr.length}');
     return SessionSummary(
       id: dco_decode_String(arr[0]),
       direction: dco_decode_session_direction(arr[1]),
       peer: dco_decode_node_device(arr[2]),
       fileCount: dco_decode_u_32(arr[3]),
       state: dco_decode_mission_state(arr[4]),
-      files: dco_decode_list_mission_file_info(arr[5]),
+      viaRelay: dco_decode_bool(arr[5]),
+      files: dco_decode_list_mission_file_info(arr[6]),
     );
   }
 
@@ -1256,6 +1257,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_peer = sse_decode_node_device(deserializer);
     var var_fileCount = sse_decode_u_32(deserializer);
     var var_state = sse_decode_mission_state(deserializer);
+    var var_viaRelay = sse_decode_bool(deserializer);
     var var_files = sse_decode_list_mission_file_info(deserializer);
     return SessionSummary(
         id: var_id,
@@ -1263,6 +1265,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         peer: var_peer,
         fileCount: var_fileCount,
         state: var_state,
+        viaRelay: var_viaRelay,
         files: var_files);
   }
 
@@ -1629,6 +1632,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_node_device(self.peer, serializer);
     sse_encode_u_32(self.fileCount, serializer);
     sse_encode_mission_state(self.state, serializer);
+    sse_encode_bool(self.viaRelay, serializer);
     sse_encode_list_mission_file_info(self.files, serializer);
   }
 

@@ -1099,6 +1099,7 @@ impl SseDecode for crate::actor::model::SessionSummary {
         let mut var_peer = <crate::actor::model::NodeDevice>::sse_decode(deserializer);
         let mut var_fileCount = <u32>::sse_decode(deserializer);
         let mut var_state = <crate::actor::model::MissionState>::sse_decode(deserializer);
+        let mut var_viaRelay = <bool>::sse_decode(deserializer);
         let mut var_files = <Vec<crate::actor::model::MissionFileInfo>>::sse_decode(deserializer);
         return crate::actor::model::SessionSummary {
             id: var_id,
@@ -1106,6 +1107,7 @@ impl SseDecode for crate::actor::model::SessionSummary {
             peer: var_peer,
             file_count: var_fileCount,
             state: var_state,
+            via_relay: var_viaRelay,
             files: var_files,
         };
     }
@@ -1422,6 +1424,7 @@ impl flutter_rust_bridge::IntoDart for crate::actor::model::SessionSummary {
             self.peer.into_into_dart().into_dart(),
             self.file_count.into_into_dart().into_dart(),
             self.state.into_into_dart().into_dart(),
+            self.via_relay.into_into_dart().into_dart(),
             self.files.into_into_dart().into_dart(),
         ]
         .into_dart()
@@ -1781,6 +1784,7 @@ impl SseEncode for crate::actor::model::SessionSummary {
         <crate::actor::model::NodeDevice>::sse_encode(self.peer, serializer);
         <u32>::sse_encode(self.file_count, serializer);
         <crate::actor::model::MissionState>::sse_encode(self.state, serializer);
+        <bool>::sse_encode(self.via_relay, serializer);
         <Vec<crate::actor::model::MissionFileInfo>>::sse_encode(self.files, serializer);
     }
 }

@@ -183,6 +183,9 @@ class Translations$transfers$en {
 	/// en: 'Failed: $reason'
 	String failedReason({required Object reason}) => 'Failed: ${reason}';
 
+	/// en: 'Via relay'
+	String get viaRelay => 'Via relay';
+
 	/// en: 'All'
 	String get selectAll => 'All';
 
@@ -261,6 +264,7 @@ class Translations$setting$en {
 	late final Translations$setting$brightness$en brightness = Translations$setting$brightness$en._(_root);
 	late final Translations$setting$language$en language = Translations$setting$language$en._(_root);
 	late final Translations$setting$receive$en receive = Translations$setting$receive$en._(_root);
+	late final Translations$setting$relay$en relay = Translations$setting$relay$en._(_root);
 	late final Translations$setting$core$en core = Translations$setting$core$en._(_root);
 }
 
@@ -318,6 +322,42 @@ class Translations$setting$receive$en {
 
 	/// en: 'Select'
 	String get selectSaveFolder => 'Select';
+}
+
+// Path: setting.relay
+class Translations$setting$relay$en {
+	Translations$setting$relay$en._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Relay Server'
+	String get title => 'Relay Server';
+
+	/// en: 'Server Address'
+	String get address => 'Server Address';
+
+	/// en: 'host:port'
+	String get addressHint => 'host:port';
+
+	/// en: 'Shared Secret'
+	String get secret => 'Shared Secret';
+
+	/// en: 'Not set'
+	String get notSet => 'Not set';
+
+	/// en: 'Edit'
+	String get edit => 'Edit';
+
+	/// en: 'Save'
+	String get save => 'Save';
+
+	/// en: 'Cancel'
+	String get cancel => 'Cancel';
+
+	/// en: 'Changes take effect after restarting the app'
+	String get restartHint => 'Changes take effect after restarting the app';
 }
 
 // Path: setting.core
@@ -405,6 +445,7 @@ extension on Translations {
 			'transfers.peerWantsToSend' => ({required Object alias, required Object count}) => '${alias} wants to send you ${count} file(s)',
 			'transfers.toPeer' => ({required Object alias}) => 'To ${alias}',
 			'transfers.failedReason' => ({required Object reason}) => 'Failed: ${reason}',
+			'transfers.viaRelay' => 'Via relay',
 			'transfers.selectAll' => 'All',
 			'transfers.selectNone' => 'None',
 			'mission.accept' => 'Accept',
@@ -433,6 +474,15 @@ extension on Translations {
 			'setting.receive.quickSaveHint' => 'Start tranfer without accept',
 			'setting.receive.saveFolder' => 'Save Folder',
 			'setting.receive.selectSaveFolder' => 'Select',
+			'setting.relay.title' => 'Relay Server',
+			'setting.relay.address' => 'Server Address',
+			'setting.relay.addressHint' => 'host:port',
+			'setting.relay.secret' => 'Shared Secret',
+			'setting.relay.notSet' => 'Not set',
+			'setting.relay.edit' => 'Edit',
+			'setting.relay.save' => 'Save',
+			'setting.relay.cancel' => 'Cancel',
+			'setting.relay.restartHint' => 'Changes take effect after restarting the app',
 			'setting.core.title' => 'core setting',
 			'setting.core.server.title' => 'server',
 			_ => null,

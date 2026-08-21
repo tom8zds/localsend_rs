@@ -8,7 +8,7 @@
 
 use std::net::SocketAddr;
 
-use log::{debug, warn};
+use log::{debug, info, warn};
 use tokio::io::AsyncWriteExt as _;
 use tokio::net::TcpListener;
 
@@ -51,10 +51,14 @@ pub async fn spawn_bridge(settings: &RelaySettings, target: SocketAddr) -> std::
         debug!("relay bridge accepted local connection for {target}");
         match dial_via_relay(&relay, target).await {
             Ok(mut tunnel) => {
-                if let Err(e) = tokio::io::copy_bidirectional(&mut incoming, &mut tunnel).await {
-                    debug!("relay bridge closed: {e}");
-                } else {
-                    let _ = tunnel.shutdown().await;
+                match tokio::io::copy_bidirectional(&mut incoming, &mut tunnel).await {
+                    Ok((sent, received)) => {
+                        // Traffic accounting hook (Q8): one line per
+                        // tunnel, greppable when reporting is needed.
+                        info!("relay tunnel {target} closed: sent={sent}B received={received}B");
+                        let _ = tunnel.shutdown().await;
+                    }
+                    Err(e) => debug!("relay bridge closed: {e}"),
                 }
             }
             Err(e) => {

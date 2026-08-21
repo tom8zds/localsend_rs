@@ -78,6 +78,8 @@ Future<CoreConfig> getConfig(int port) async {
     ConfigStore().setStorePath(path);
   }
   final storePath = ConfigStore().storePath();
+  final relayAddr = ConfigStore().relayAddr();
+  final relaySecret = ConfigStore().relaySecret();
 
   return CoreConfig(
     port: port,
@@ -85,6 +87,10 @@ Future<CoreConfig> getConfig(int port) async {
     multicastAddr: "224.0.0.167",
     multicastPort: 53317,
     storePath: storePath,
+    // Relay routing is enabled only when both fields are set; empty
+    // values mean "no relay" and are passed as null.
+    relayAddr: relayAddr.isEmpty ? null : relayAddr,
+    relaySecret: relaySecret.isEmpty ? null : relaySecret,
   );
 }
 

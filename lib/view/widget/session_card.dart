@@ -89,6 +89,47 @@ class SessionFileTile extends StatelessWidget {
   }
 }
 
+/// Small "via relay" marker for sessions tunneled through the TURN
+/// relay. Same tonal-container treatment as [Tag], on the secondary
+/// container so it stays distinct from the primary tags.
+class RelayBadge extends StatelessWidget {
+  const RelayBadge({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.x8,
+        vertical: AppSpacing.x4,
+      ),
+      decoration: BoxDecoration(
+        // M3 chip corner: small (8dp).
+        borderRadius: BorderRadius.circular(AppSpacing.x8),
+        color: Theme.of(context).colorScheme.secondaryContainer,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.alt_route,
+            size: 16,
+            color: Theme.of(context).colorScheme.onSecondaryContainer,
+          ),
+          const SizedBox(width: AppSpacing.x4),
+          Text(
+            context.t.transfers.viaRelay,
+            // Tonal pairing: on-secondary-container on
+            // secondary-container.
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: Theme.of(context).colorScheme.onSecondaryContainer,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// Aggregate card for one transfer session: direction, peer, per-file
 /// progress/state, failure reason and the actions valid for the current
 /// state (accept/decline while pending, cancel while active).
@@ -167,11 +208,22 @@ class _SessionCardState extends ConsumerState<SessionCard> {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                Text(
-                  summary.state.getName(),
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
+                if (summary.viaRelay) ...[
+                  const RelayBadge(),
+                  const SizedBox(width: AppSpacing.x8),
+                ],
+                // Flexible so the ellipsizing title and the relay badge
+                // can never push the state label into overflow.
+                Flexible(
+                  child: Text(
+                    summary.state.getName(),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color:
+                              Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ],
             ),

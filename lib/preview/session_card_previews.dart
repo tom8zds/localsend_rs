@@ -82,3 +82,29 @@ Widget sessionCardFailedPreview() {
     child: SingleChildScrollView(child: SessionCard(summary: summary)),
   );
 }
+
+/// Relayed transfer: the header carries the "Via relay" marker
+/// between the peer name and the state.
+@Preview(name: 'Session card (via relay)')
+Widget sessionCardViaRelayPreview() {
+  final summary = mockSession(
+    id: 'preview-relay',
+    direction: SessionDirection.send,
+    state: MissionState.transfering,
+    viaRelay: true,
+    files: [
+      mockFile('photo.jpg', 1024 * 1024, state: const FileState.transfer()),
+    ],
+  );
+  return previewShell(
+    name: 'sessionCardViaRelay',
+    overrides: previewOverrides(
+      extras: {
+        'preview-relay': const SessionExtras(
+          progress: {'id-photo.jpg': 256 * 1024},
+        ),
+      },
+    ),
+    child: SingleChildScrollView(child: SessionCard(summary: summary)),
+  );
+}

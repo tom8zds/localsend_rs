@@ -246,6 +246,9 @@ pub struct SessionSummary {
     pub peer: NodeDevice,
     pub file_count: usize,
     pub state: MissionState,
+    /// True when this session's traffic is being tunneled through the
+    /// configured TURN relay.
+    pub via_relay: bool,
     /// Per-file metadata and state, sorted by file name. Live byte
     /// counters are not included; subscribe to
     /// [`crate::CoreHandle::session_events`] for those.
