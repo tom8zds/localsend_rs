@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../common/spacing.dart';
 import '../../i18n/strings.g.dart';
 import '../widget/common_widget.dart';
+import '../widget/relay_widgets.dart';
 import '../widget/setting_widgets.dart';
 
 class SettingPage extends StatelessWidget {
@@ -47,6 +48,8 @@ class SettingPage extends StatelessWidget {
                     children: const [
                       RelayAddressTile(),
                       RelaySecretTile(),
+                      RelayImportTile(),
+                      RelayTestTile(),
                       RelayEffectHint(),
                     ],
                   ),

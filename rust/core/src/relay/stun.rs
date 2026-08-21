@@ -17,6 +17,7 @@ pub const FINGERPRINT_XOR: u32 = 0x5354_554E;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u16)]
 pub enum Method {
+    Binding = 0x001,
     Allocate = 0x003,
     Refresh = 0x004,
     CreatePermission = 0x008,
@@ -71,6 +72,7 @@ fn decode_type(msg_type: u16) -> Result<(Method, MessageClass), &'static str> {
         _ => MessageClass::ErrorResponse,
     };
     let method = match method {
+        0x001 => Method::Binding,
         0x003 => Method::Allocate,
         0x004 => Method::Refresh,
         0x008 => Method::CreatePermission,

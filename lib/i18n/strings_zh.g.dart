@@ -218,6 +218,21 @@ class _Translations$setting$relay$zh implements Translations$setting$relay$en {
 	@override String get save => '保存';
 	@override String get cancel => '取消';
 	@override String get restartHint => '修改后重启应用生效';
+	@override String get importTitle => '导入配置';
+	@override String get importHint => '邀请链接或 主机:端口|密钥';
+	@override String get import => '导入';
+	@override String get importInvalid => '无法识别的中继配置';
+	@override String get scanQr => '扫描二维码';
+	@override String get scanTitle => '扫描二维码';
+	@override String get scanError => '相机不可用';
+	@override String get confirmTitle => '应用中继配置？';
+	@override String get apply => '应用';
+	@override String get savedRestart => '中继已保存，重启应用后生效';
+	@override String get test => '连接测试';
+	@override String get testHint => '向中继发送 STUN 探测';
+	@override String get testAction => '测试';
+	@override String testResult({required Object ms}) => '${ms} ms';
+	@override String testFailed({required Object reason}) => '失败: ${reason}';
 }
 
 // Path: setting.security
@@ -345,6 +360,21 @@ extension on TranslationsZh {
 			'setting.relay.save' => '保存',
 			'setting.relay.cancel' => '取消',
 			'setting.relay.restartHint' => '修改后重启应用生效',
+			'setting.relay.importTitle' => '导入配置',
+			'setting.relay.importHint' => '邀请链接或 主机:端口|密钥',
+			'setting.relay.import' => '导入',
+			'setting.relay.importInvalid' => '无法识别的中继配置',
+			'setting.relay.scanQr' => '扫描二维码',
+			'setting.relay.scanTitle' => '扫描二维码',
+			'setting.relay.scanError' => '相机不可用',
+			'setting.relay.confirmTitle' => '应用中继配置？',
+			'setting.relay.apply' => '应用',
+			'setting.relay.savedRestart' => '中继已保存，重启应用后生效',
+			'setting.relay.test' => '连接测试',
+			'setting.relay.testHint' => '向中继发送 STUN 探测',
+			'setting.relay.testAction' => '测试',
+			'setting.relay.testResult' => ({required Object ms}) => '${ms} ms',
+			'setting.relay.testFailed' => ({required Object reason}) => '失败: ${reason}',
 			'setting.security.title' => '安全',
 			'setting.security.tls' => '端到端加密 (TLS)',
 			'setting.security.plainWarning' => '明文传输，仅建议调试使用',

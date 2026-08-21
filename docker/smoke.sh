@@ -114,10 +114,19 @@ verify rx2 small.bin
 
 note "scenario D: cross-network relay fallback"
 # Separate topology (docker/compose.relay.yaml): tx and rx1 sit on
-# mutually-unreachable networks with a coturn relay straddling both.
+# mutually-unreachable networks; the coturn relay runs on the host
+# network (docker/turn) and is reached via host.docker.internal.
 # Direct connections cannot route — the sender must fall back.
 docker compose -f compose.relay.yaml down -v >/dev/null 2>&1 || true
-docker compose -f compose.relay.yaml up -d --build rx1 turn
+( cd turn && docker compose up -d --build ) >/dev/null 2>&1
+for i in $(seq 1 60); do
+  if ss -tln 2>/dev/null | grep -q ':3478 ' \
+     || docker logs localsend-turn-turn-1 2>&1 | tail -50 | grep -q 'Total auth threads'; then
+    break
+  fi
+  sleep 1
+done
+docker compose -f compose.relay.yaml up -d --build rx1
 for i in $(seq 1 60); do
   if docker compose -f compose.relay.yaml logs rx1 2>/dev/null | grep -q 'Receiving as'; then
     break
@@ -155,7 +164,22 @@ else
 fi
 docker compose -f compose.relay.yaml down -v >/dev/null 2>&1 || true
 
-note "result"
+note "scenario E: panel-issued config (standalone script)"
+# Runs in its own stack: inside the long-lived smoke process, coturn
+# intermittently stops answering dials after scenario D (see the
+# header of smoke-panel.sh). The panel flow is verified end-to-end by
+# docker/smoke-panel.sh.
+if [[ "${SMOKE_SKIP_PANEL:-0}" != "1" ]]; then
+  if ./smoke-panel.sh > /tmp/smoke-panel.log 2>&1; then
+    pass "E panel flow (details: docker/smoke-panel.sh)"
+  else
+    fail "E panel flow (rerun docker/smoke-panel.sh for details)"
+    tail -20 /tmp/smoke-panel.log || true
+  fi
+else
+  echo "  SKIP E (SMOKE_SKIP_PANEL=1)"
+fi
+
 if [[ $FAILURES -eq 0 ]]; then
   echo "  ALL SCENARIOS PASSED ✅"
 else

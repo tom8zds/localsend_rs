@@ -38,7 +38,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.12.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 391133850;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -1455318415;
 
 // Section: executor
 
@@ -503,6 +503,41 @@ fn wire__crate__bridge__manual_device_impl(
                     let output_ok = Result::<_, ()>::Ok(crate::bridge::manual_device(api_addr))?;
                     Ok(output_ok)
                 })())
+            }
+        },
+    )
+}
+fn wire__crate__bridge__relay_ping_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_async::<flutter_rust_bridge::for_generated::SseCodec, _, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "relay_ping",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            deserializer.end();
+            move |context| async move {
+                transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
+                    (move || async move {
+                        let output_ok = crate::bridge::relay_ping().await?;
+                        Ok(output_ok)
+                    })()
+                    .await,
+                )
             }
         },
     )
@@ -1142,6 +1177,13 @@ impl SseDecode for u32 {
     }
 }
 
+impl SseDecode for u64 {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        deserializer.cursor.read_u64::<NativeEndian>().unwrap()
+    }
+}
+
 impl SseDecode for u8 {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -1176,11 +1218,12 @@ fn pde_ffi_dispatcher_primary_impl(
         11 => wire__crate__bridge__listen_session_impl(port, ptr, rust_vec_len, data_len),
         12 => wire__crate__bridge__listen_session_index_impl(port, ptr, rust_vec_len, data_len),
         13 => wire__crate__bridge__manual_device_impl(port, ptr, rust_vec_len, data_len),
-        14 => wire__crate__bridge__restart_server_impl(port, ptr, rust_vec_len, data_len),
-        15 => wire__crate__bridge__send_files_impl(port, ptr, rust_vec_len, data_len),
-        16 => wire__crate__bridge__setup_impl(port, ptr, rust_vec_len, data_len),
-        17 => wire__crate__bridge__shutdown_server_impl(port, ptr, rust_vec_len, data_len),
-        18 => wire__crate__bridge__start_server_impl(port, ptr, rust_vec_len, data_len),
+        14 => wire__crate__bridge__relay_ping_impl(port, ptr, rust_vec_len, data_len),
+        15 => wire__crate__bridge__restart_server_impl(port, ptr, rust_vec_len, data_len),
+        16 => wire__crate__bridge__send_files_impl(port, ptr, rust_vec_len, data_len),
+        17 => wire__crate__bridge__setup_impl(port, ptr, rust_vec_len, data_len),
+        18 => wire__crate__bridge__shutdown_server_impl(port, ptr, rust_vec_len, data_len),
+        19 => wire__crate__bridge__start_server_impl(port, ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -1829,6 +1872,13 @@ impl SseEncode for u32 {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         serializer.cursor.write_u32::<NativeEndian>(self).unwrap();
+    }
+}
+
+impl SseEncode for u64 {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        serializer.cursor.write_u64::<NativeEndian>(self).unwrap();
     }
 }
 

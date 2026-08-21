@@ -1,0 +1,15 @@
+[package]
+name = "relay-panel"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+localsend_core = { workspace = true }
+axum = { workspace = true }
+tokio = { workspace = true }
+reqwest = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+uuid = { workspace = true }
+qrcode = { workspace = true }
+rusqlite = { workspace = true }

@@ -6,6 +6,21 @@
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
 	<string>Localsend Rs</string>
+	<!-- Relay invite deep links: localsend-relay://configure?addr=host:port&secret=xxx -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>github.tom8zds.localsendRs</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>localsend-relay</string>
+			</array>
+		</dict>
+	</array>
+	<!-- Camera access is only used to scan relay configuration QR codes. -->
+	<key>NSCameraUsageDescription</key>
+	<string>Scan relay configuration QR codes</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>

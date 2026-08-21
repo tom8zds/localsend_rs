@@ -58,6 +58,15 @@ where
     }
 }
 
+/// STUN-probe the configured relay; returns RTT in milliseconds.
+pub async fn relay_ping() -> Result<u64> {
+    get_core()
+        .await?
+        .relay_ping()
+        .await
+        .map_err(anyhow::Error::msg)
+}
+
 // --- lifecycle ---------------------------------------------------------------
 
 pub async fn setup(device: NodeDevice, config: CoreConfig) {

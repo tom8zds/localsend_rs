@@ -91,7 +91,22 @@
             "edit": "Edit",
             "save": "Save",
             "cancel": "Cancel",
-            "restartHint": "Changes take effect after restarting the app"
+            "restartHint": "Changes take effect after restarting the app",
+            "importTitle": "Import Configuration",
+            "importHint": "Invite link or host:port|secret",
+            "import": "Import",
+            "importInvalid": "Unrecognized relay configuration",
+            "scanQr": "Scan QR Code",
+            "scanTitle": "Scan QR Code",
+            "scanError": "Camera unavailable",
+            "confirmTitle": "Apply Relay Configuration?",
+            "apply": "Apply",
+            "savedRestart": "Relay saved; restart the app to apply",
+            "test": "Connection Test",
+            "testHint": "Probe the relay with a STUN request",
+            "testAction": "Test",
+            "testResult": "$ms ms",
+            "testFailed": "Failed: $reason"
         },
         "security": {
             "title": "Security",

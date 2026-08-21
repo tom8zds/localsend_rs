@@ -16,6 +16,7 @@ import 'core/rust/frb_generated.dart';
 import 'core/store/config_store.dart';
 import 'i18n/strings.g.dart';
 import 'view/pages/frame_page.dart';
+import 'view/widget/relay_widgets.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -82,7 +83,9 @@ class MyApp extends ConsumerWidget {
         locale,
       ),
       themeMode: themeMode,
-      home: const FramePage(),
+      // RelayInviteHost routes localsend-relay:// deep links (cold
+      // start and running) into the relay import confirm dialog.
+      home: RelayInviteHost(child: const FramePage()),
     );
   }
 }

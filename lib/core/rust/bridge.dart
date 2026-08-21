@@ -12,6 +12,9 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 // These functions are ignored because they are not marked as `pub`: `forward_watch`, `get_core`
 
+/// STUN-probe the configured relay; returns RTT in milliseconds.
+Future<BigInt> relayPing() => RustLib.instance.api.crateBridgeRelayPing();
+
 Future<void> setup({required NodeDevice device, required CoreConfig config}) =>
     RustLib.instance.api.crateBridgeSetup(device: device, config: config);
 

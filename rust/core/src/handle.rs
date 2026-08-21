@@ -234,6 +234,20 @@ impl CoreHandle {
         &self.inner.options
     }
 
+    /// Probe the configured relay with a STUN binding request.
+    /// Returns the round-trip time in milliseconds.
+    pub async fn relay_ping(&self) -> Result<u64, String> {
+        let settings = self
+            .get_config()
+            .await
+            .relay_settings()
+            .ok_or_else(|| "no relay configured".to_string())?;
+        let rt = crate::relay::ping(&settings.addr)
+            .await
+            .map_err(|e| e.to_string())?;
+        Ok(rt.as_millis() as u64)
+    }
+
     /// TLS material when the device identity is configured.
     pub(crate) fn tls(&self) -> Option<&TlsContext> {
         self.inner.tls.as_ref()

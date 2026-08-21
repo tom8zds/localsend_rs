@@ -59,6 +59,50 @@ Test condition :
   - [x] Android
   - [ ] linux
 
+## Relay invite deep links
+
+Relay configuration can be shared as a deep link:
+
+```
+localsend-relay://configure?addr=host:port&secret=xxx
+```
+
+Opening such a link (or scanning its QR code) shows a confirmation
+dialog; confirming writes the address and secret into the relay
+settings. The scheme is registered automatically on Android
+(`AndroidManifest.xml`), iOS/macOS (`CFBundleURLTypes`) and by the
+Windows installer (`[Registry]` section in `setup.dart`).
+
+### Linux (manual registration)
+
+The Flutter Linux build has no `.desktop` template in this repository
+(the Flutter tool generates the launcher entry at build time), so the
+`x-scheme-handler/localsend-relay` association must be registered by
+hand — once per user:
+
+1. Create `~/.local/share/applications/localsend-relay.desktop` next
+   to the app's own launcher entry (adjust `Exec` to where the app is
+   installed):
+
+   ```ini
+   [Desktop Entry]
+   Type=Application
+   Name=localsend_rs
+   Exec=/path/to/localsend_rs %u
+   NoDisplay=true
+   MimeType=x-scheme-handler/localsend-relay;
+   ```
+
+2. Refresh the handler cache:
+
+   ```sh
+   update-desktop-database ~/.local/share/applications
+   ```
+
+Afterwards, opening a `localsend-relay://` link (e.g. `xdg-open
+'localsend-relay://configure?addr=example.com:3478&secret=s'`) starts
+the app or hands the link to the already-running instance.
+
 ## Getting Started
 
 This project is a starting point for a Flutter application.

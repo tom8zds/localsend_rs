@@ -3,6 +3,7 @@ import 'package:flutter/widget_previews.dart';
 
 import '../core/providers/relay_provider.dart';
 import '../i18n/strings.g.dart';
+import '../view/widget/relay_widgets.dart';
 import '../view/widget/setting_widgets.dart';
 import 'preview_scaffold.dart';
 
@@ -18,6 +19,8 @@ class _RelayGroup extends StatelessWidget {
       children: const [
         RelayAddressTile(),
         RelaySecretTile(),
+        RelayImportTile(),
+        RelayTestTile(),
         RelayEffectHint(),
       ],
     );
@@ -29,7 +32,7 @@ class _RelayGroup extends StatelessWidget {
 @Preview(name: 'Relay settings (unset)')
 Widget relaySettingsUnsetPreview() => previewShell(
       name: 'relaySettingsUnset',
-      height: 300,
+      height: 420,
       // Plain previewOverrides() still routes the relay provider to
       // the empty mock — the real one would hit ConfigStore, which is
       // not initialized in the previewer.
@@ -38,11 +41,11 @@ Widget relaySettingsUnsetPreview() => previewShell(
     );
 
 /// Relay settings, configured: address shown as entered, secret
-/// masked.
+/// masked; the import entry and test button are enabled.
 @Preview(name: 'Relay settings (configured)')
 Widget relaySettingsConfiguredPreview() => previewShell(
       name: 'relaySettingsConfigured',
-      height: 300,
+      height: 420,
       overrides: previewOverrides(
         relay: const RelayConfig(
           addr: 'turn.example.com:3478',
@@ -50,6 +53,82 @@ Widget relaySettingsConfiguredPreview() => previewShell(
         ),
       ),
       child: const _RelayGroup(),
+    );
+
+/// Relay test tile, unset relay: the test button is disabled.
+@Preview(name: 'Relay test (disabled)')
+Widget relayTestDisabledPreview() => previewShell(
+      name: 'relayTestDisabled',
+      height: 180,
+      overrides: previewOverrides(),
+      child: const SettingTileGroup(
+        title: 'Relay Server',
+        children: [RelayTestTile()],
+      ),
+    );
+
+/// Relay test tile, probe answered: the RTT shows under the button.
+@Preview(name: 'Relay test (result)')
+Widget relayTestResultPreview() => previewShell(
+      name: 'relayTestResult',
+      height: 180,
+      overrides: previewOverrides(
+        relay: const RelayConfig(
+          addr: 'turn.example.com:3478',
+          secret: 'topsecret',
+        ),
+        ping: const RelayPingOk(12),
+      ),
+      child: const SettingTileGroup(
+        title: 'Relay Server',
+        children: [RelayTestTile()],
+      ),
+    );
+
+/// Relay test tile, probe failed: the failure shows in error color.
+@Preview(name: 'Relay test (error)')
+Widget relayTestErrorPreview() => previewShell(
+      name: 'relayTestError',
+      height: 180,
+      overrides: previewOverrides(
+        relay: const RelayConfig(
+          addr: 'turn.example.com:3478',
+          secret: 'topsecret',
+        ),
+        ping: const RelayPingError('no relay configured'),
+      ),
+      child: const SettingTileGroup(
+        title: 'Relay Server',
+        children: [RelayTestTile()],
+      ),
+    );
+
+/// Relay import dialog. Mounted directly (not as a route) so the
+/// paste field and actions stay previewable; the QR entry is
+/// mobile-only and stays hidden under the desktop previewer.
+@Preview(name: 'Relay import dialog')
+Widget relayImportDialogPreview() => previewShell(
+      name: 'relayImportDialog',
+      height: 460,
+      overrides: previewOverrides(),
+      child: const Center(child: RelayImportDialog()),
+    );
+
+/// Confirm dialog for a scanned/pasted invite: address in the clear,
+/// secret masked.
+@Preview(name: 'Relay invite confirm dialog')
+Widget relayInviteConfirmPreview() => previewShell(
+      name: 'relayInviteConfirm',
+      height: 460,
+      overrides: previewOverrides(),
+      child: const Center(
+        child: RelayInviteConfirmDialog(
+          invite: RelayInvite(
+            addr: 'turn.example.com:3478',
+            secret: 'topsecret',
+          ),
+        ),
+      ),
     );
 
 /// Security group as mounted on the settings page. Resolves the

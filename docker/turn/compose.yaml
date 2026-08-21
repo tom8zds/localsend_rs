@@ -3,6 +3,10 @@
 # Production: copy turnserver.conf to a private variant (drop
 # allow-loopback-peers, change the secret, set external-ip to the
 # public address) and deploy from there — see README.md.
+#
+# `panel` runs relay-panel (repo root Dockerfile.panel) next to
+# coturn on the host network: coturn's Prometheus (9641) and admin
+# CLI (5766) on loopback, panel UI on 127.0.0.1:8787.
 name: localsend-turn
 
 services:
@@ -10,5 +14,32 @@ services:
     image: coturn/coturn:4.17.2
     restart: unless-stopped
     network_mode: host # 6062 data connections originate from arbitrary ports
+    # Override the image default cmd: it passes
+    # `--external-ip=$(detect-external-ip)` (which the entrypoint
+    # expands to a broken value) and would override the mounted
+    # turnserver.conf. The image's WORKDIR (/etc/coturn) makes
+    # coturn read the mounted conf by default.
+    command: ["--log-file=stdout"]
     volumes:
       - ./turnserver.conf:/etc/coturn/turnserver.conf:ro
+
+  panel:
+    build:
+      context: ../..
+      dockerfile: docker/Dockerfile.panel
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      PANEL_ADMIN_PASSWORD: ${PANEL_ADMIN_PASSWORD:-localtest-admin}
+      RELAY_SECRET: ${RELAY_SECRET:-localsend-relay-test-secret}
+      RELAY_PUBLIC_ADDR: ${RELAY_PUBLIC_ADDR:-127.0.0.1:3478}
+      COTURN_PROM_URL: http://127.0.0.1:9641/metrics
+      COTURN_CLI_ADDR: 127.0.0.1:5766
+      COTURN_CLI_PASSWORD_PLAIN: ${COTURN_CLI_PASSWORD_PLAIN:-localtest-cli}
+      PANEL_DB: /data/panel.db
+      PANEL_BIND: 127.0.0.1:8787
+    volumes:
+      - panel-data:/data
+
+volumes:
+  panel-data:

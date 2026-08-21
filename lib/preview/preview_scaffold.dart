@@ -99,6 +99,20 @@ class PreviewRelaySettings extends RelaySettings {
   RelayConfig build() => config;
 }
 
+class PreviewRelayPing extends RelayPing {
+  PreviewRelayPing(this.initial);
+
+  final RelayPingState initial;
+
+  @override
+  RelayPingState build() => initial;
+
+  // The previewer has no Rust bridge; tapping the test button in a
+  // preview stays on the mocked state instead of probing.
+  @override
+  Future<void> run() async {}
+}
+
 class PreviewTlsSettings extends TlsSettings {
   PreviewTlsSettings(this.enabled);
 
@@ -121,12 +135,17 @@ class PreviewAutoAccept extends AutoAccept {
 }
 
 /// Overrides routing every Rust-backed provider to mock data.
+///
+/// [pingImpl] swaps in a behavior-mocking ping notifier (used by the
+/// widget tests) instead of the stateless [PreviewRelayPing].
 List<Override> previewOverrides({
   List<SessionSummary> sessions = const [],
   Map<String, SessionExtras> extras = const {},
   List<String> selectedFiles = const [],
   RelayConfig relay = const RelayConfig(),
   bool tlsEnabled = true,
+  RelayPingState ping = const RelayPingIdle(),
+  RelayPing Function()? pingImpl,
 }) {
   return [
     sessionIndexProvider.overrideWith((ref) => Stream.value(sessions)),
@@ -145,6 +164,7 @@ List<Override> previewOverrides({
         .overrideWith(() => PreviewSelectedFiles(selectedFiles)),
     quickSaveProvider.overrideWith(PreviewQuickSave.new),
     relaySettingsProvider.overrideWith(() => PreviewRelaySettings(relay)),
+    relayPingProvider.overrideWith(pingImpl ?? () => PreviewRelayPing(ping)),
     tlsSettingsProvider.overrideWith(() => PreviewTlsSettings(tlsEnabled)),
     autoAcceptProvider.overrideWith(PreviewAutoAccept.new),
     for (final entry in extras.entries)
