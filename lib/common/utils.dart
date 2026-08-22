@@ -116,19 +116,25 @@ Future<String> getDownloadPath() async {
   String storePath;
   if (Platform.isAndroid) {
     storePath = "/storage/emulated/0/Download";
-    if (kDebugMode) {
-      createLogStream().listen((event) {
-        debugPrint(
-            '${event.level} ${event.tag} ${event.msg} ${event.timeMillis}');
-      });
-    }
   } else {
     storePath = (await getDownloadsDirectory())!.absolute.path;
   }
   return storePath;
 }
 
-const levelList = [
+/// Shared app logger (package:logger). Pretty-printed, colored by
+/// level; Rust-core records arrive through [routeRustLogs].
+final appLogger = Logger(
+  printer: PrettyPrinter(
+    methodCount: 0,
+    errorMethodCount: 8,
+    lineLength: 100,
+    colors: true,
+    printEmojis: false,
+  ),
+);
+
+const _levelList = [
   Level.off,
   Level.error,
   Level.warning,
@@ -137,20 +143,18 @@ const levelList = [
   Level.trace
 ];
 
-void initLogger() {
-  var logger = Logger();
-
-  if (Platform.isAndroid) {
-    if (kDebugMode) {
-      createLogStream().listen((event) {
-        logger.log(
-          levelList[event.level],
-          event.msg,
-          time: DateTime.fromMillisecondsSinceEpoch(event.timeMillis.toInt()),
-        );
-      });
-    }
-  }
+/// Bridge the Rust core's log stream into [appLogger] — the core's
+/// own logging (file-side) already filters third-party chatter, so
+/// everything arriving here is worth showing in debug builds.
+void routeRustLogs() {
+  if (!kDebugMode) return;
+  createLogStream().listen((event) {
+    appLogger.log(
+      _levelList[event.level],
+      '[${event.tag}] ${event.msg}',
+      time: DateTime.fromMillisecondsSinceEpoch(event.timeMillis.toInt()),
+    );
+  });
 }
 
 void initLocale() {
@@ -193,3 +197,7 @@ extension FileStateName on FileState {
     };
   }
 }
+
+
+/// Backwards-compatible alias.
+void initLogger() => routeRustLogs();
