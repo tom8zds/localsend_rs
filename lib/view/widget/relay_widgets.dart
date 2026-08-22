@@ -63,10 +63,10 @@ class RelayTestTile extends ConsumerWidget {
 
     return ListTile(
       title: Text(context.t.setting.relay.test),
-      subtitle: Text(
+      subtitle: SelectableText(
         subtitle,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
+        maxLines: 3,
+        minLines: 1,
         style: failed
             // Failure separates from ordinary supporting text, like
             // the TLS plain-transport warning.

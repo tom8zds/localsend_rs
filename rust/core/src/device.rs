@@ -64,12 +64,14 @@ impl DeviceActor {
         match msg {
             DeviceMessage::Add { device, respond_to } => {
                 // Idempotent: peers re-announce and re-register every
-                // few seconds; only a real change may ripple to the
-                // UI or the device list visibly flickers.
+                // few seconds — with slightly different payload fields
+                // (announce vs register DTOs disagree on announcement/
+                // announce/download) — so compare only the fields the
+                // UI actually renders, or the list flickers forever.
                 let unchanged = self
                     .device_map
                     .get(&device.fingerprint)
-                    .is_some_and(|old| *old == device);
+                    .is_some_and(|old| same_rendered_device(old, &device));
                 self.device_map.insert(device.fingerprint.clone(), device);
                 if unchanged {
                     debug!("device unchanged");
@@ -223,4 +225,17 @@ impl DeviceActorHandle {
         let _ = self.sender.send(msg).await;
         recv.await.expect("Actor task has been killed")
     }
+}
+
+/// Field-wise equality over what the device list renders. The
+/// announcement/announce/download flags flip between the announce and
+/// register DTOs of the same peer and carry no UI meaning.
+fn same_rendered_device(a: &NodeDevice, b: &NodeDevice) -> bool {
+    a.fingerprint == b.fingerprint
+        && a.alias == b.alias
+        && a.address == b.address
+        && a.port == b.port
+        && a.protocol == b.protocol
+        && a.device_model == b.device_model
+        && a.device_type == b.device_type
 }

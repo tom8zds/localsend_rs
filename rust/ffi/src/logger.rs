@@ -114,8 +114,16 @@ impl SendToDartLogger {
 }
 
 impl Log for SendToDartLogger {
-    fn enabled(&self, _metadata: &Metadata) -> bool {
-        true
+    fn enabled(&self, metadata: &Metadata) -> bool {
+        if metadata.level() > self.level {
+            return false;
+        }
+        // Third-party crates (rustls internals, hyper pools, ...) are
+        // chatter at debug; keep our own crates verbose and demote
+        // the rest to warnings.
+        let target = metadata.target();
+        let ours = target.starts_with("localsend") || target.starts_with("rust_lib");
+        ours || metadata.level() <= LevelFilter::Warn
     }
 
     fn log(&self, record: &Record) {

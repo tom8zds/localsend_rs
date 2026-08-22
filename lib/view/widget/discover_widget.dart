@@ -16,29 +16,35 @@ class DiscoverWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final devices = ref.watch(devicesProvider);
+    // Keep the last non-empty snapshot: stream transitions between
+    // states every few seconds (announce/register cycles), and
+    // flashing an empty placeholder between them reads as flicker.
+    final list = devices.value ?? const <NodeDevice>[];
     return Container(
       decoration: BoxDecoration(
         // Low surface container one step above the page background.
         borderRadius: BorderRadius.circular(AppSpacing.x12),
         color: Theme.of(context).colorScheme.surfaceContainerLow,
       ),
-      child: switch (devices) {
-        AsyncData(:final value) when value.isNotEmpty => ListView.builder(
-            itemBuilder: (context, index) {
-              final item = value.elementAt(index);
-              return DeviceWidget(
-                device: item,
-                onTap:
-                    onDeviceTap == null ? null : () => onDeviceTap!(item),
-              );
+      child: list.isNotEmpty
+          ? ListView.builder(
+              // Keyed items let Flutter reuse element trees when the
+              // stream replays the (identical) list.
+              itemBuilder: (context, index) {
+                final item = list.elementAt(index);
+                return DeviceWidget(
+                  key: ValueKey(item.fingerprint),
+                  device: item,
+                  onTap:
+                      onDeviceTap == null ? null : () => onDeviceTap!(item),
+                );
+              },
+              itemCount: list.length,
+            )
+          : switch (devices) {
+              AsyncError(:final error) => Center(child: Text('$error')),
+              _ => const Center(child: Text("empty")),
             },
-            itemCount: value.length,
-          ),
-        AsyncError(:final error) => Center(child: Text('$error')),
-        _ => const Center(
-            child: Text("empty"),
-          ),
-      },
     );
   }
 }

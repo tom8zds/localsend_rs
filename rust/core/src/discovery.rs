@@ -193,7 +193,6 @@ async fn run_udp_actor(mut actor: DiscoverActor, shutdown_callback: watch::Sende
                     }
                 };
                 if addr.ip().to_string() == current.address {
-                    debug!("self loop");
                     continue;
                 }
                 let message = String::from_utf8_lossy(&buf[..size]);
@@ -211,7 +210,7 @@ async fn run_udp_actor(mut actor: DiscoverActor, shutdown_callback: watch::Sende
                 let exist = device_handle.check_device_exist(device.fingerprint.clone()).await;
 
                 if current.fingerprint == device.fingerprint {
-                    debug!("self loop");
+                    // our own announce looping back on N interfaces
                 } else if exist {
                     // HTTPS peers: the announce already carries the
                     // full identity; skip the legacy register (it
