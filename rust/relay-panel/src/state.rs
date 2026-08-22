@@ -23,7 +23,6 @@ impl PanelConfig {
     }
 
     pub fn from_args_struct(args: PanelArgs) -> Self {
-        let args = PanelArgs::parse();
         PanelConfig {
             admin_password: args.admin_password,
             relay_secret: args.relay_secret,

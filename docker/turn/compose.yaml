@@ -22,26 +22,3 @@ services:
     command: ["--log-file=stdout"]
     volumes:
       - ./turnserver.conf:/etc/coturn/turnserver.conf:ro
-
-  panel:
-    # The CLI embeds the panel since the merge; a dedicated image is
-    # no longer needed. Kept as a comment for deployments that want
-    # the panel separated from coturn's host network.
-    # build:
-    #   context: ../..
-    #   dockerfile: docker/Dockerfile.panel
-    profiles: ["deprecated"]
-    environment:
-      PANEL_ADMIN_PASSWORD: ${PANEL_ADMIN_PASSWORD:-localtest-admin}
-      RELAY_SECRET: ${RELAY_SECRET:-localsend-relay-test-secret}
-      RELAY_PUBLIC_ADDR: ${RELAY_PUBLIC_ADDR:-127.0.0.1:3478}
-      COTURN_PROM_URL: http://127.0.0.1:9641/metrics
-      COTURN_CLI_ADDR: 127.0.0.1:5766
-      COTURN_CLI_PASSWORD_PLAIN: ${COTURN_CLI_PASSWORD_PLAIN:-localtest-cli}
-      PANEL_DB: /data/panel.db
-      PANEL_BIND: 127.0.0.1:8787
-    volumes:
-      - panel-data:/data
-
-volumes:
-  panel-data:

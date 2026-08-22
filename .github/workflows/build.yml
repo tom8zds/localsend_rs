@@ -122,39 +122,6 @@ jobs:
                   name: localsend-cli-linux-musl
                   path: rust/target/x86_64-unknown-linux-musl/release/localsend-cli
 
-    build-panel:
-        runs-on: ubuntu-latest
-
-        defaults:
-            run:
-                working-directory: ./rust
-
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v5
-
-            - name: Set up rust (musl static)
-              uses: dtolnay/rust-toolchain@stable
-              with:
-                  targets: x86_64-unknown-linux-musl
-
-            - name: Install musl toolchain
-              run: sudo apt-get update && sudo apt-get install -y --no-install-recommends musl-tools
-
-            # Static musl binary: runs on any Linux regardless of the
-            # host glibc (field-deployed on older distros).
-            - name: Build Panel
-              run: cargo build --release --target x86_64-unknown-linux-musl -p relay-panel
-              env:
-                  CC_x86_64_unknown_linux_musl: musl-gcc
-                  CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER: musl-gcc
-
-            - name: Upload Panel
-              uses: actions/upload-artifact@v5
-              with:
-                  name: relay-panel-linux-musl
-                  path: rust/target/x86_64-unknown-linux-musl/release/relay-panel
-
     build-windows:
         runs-on: windows-latest
 

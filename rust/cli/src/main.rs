@@ -201,15 +201,14 @@ async fn main() -> Result<()> {
     // Relay forwarding configured → the admin panel rides along in
     // this process (PANEL_DISABLE=1 opts out; PANEL_BIND overrides
     // the loopback default).
-    if matches!(&cli.command, None | Some(Command::Receive { .. }))
-        && effective.relay.is_some()
-        && std::env::var("PANEL_DISABLE").ok().as_deref() != Some("1")
-    {
+    let auto_panel = matches!(&cli.command, None | Some(Command::Receive { .. }))
+        && std::env::var("PANEL_DISABLE").ok().as_deref() != Some("1");
+    if let (true, Some(relay_cfg)) = (auto_panel, effective.relay.as_ref()) {
         let cfg = localsend_panel::state::PanelConfig {
             admin_password: std::env::var("PANEL_ADMIN_PASSWORD")
-                .unwrap_or_else(|_| effective.relay.as_ref().expect("checked").secret.clone()),
-            relay_secret: effective.relay.as_ref().expect("checked").secret.clone(),
-            relay_public_addr: effective.relay.as_ref().expect("checked").addr.clone(),
+                .unwrap_or_else(|_| relay_cfg.secret.clone()),
+            relay_secret: relay_cfg.secret.clone(),
+            relay_public_addr: relay_cfg.addr.clone(),
             prom_url: std::env::var("COTURN_PROM_URL")
                 .unwrap_or_else(|_| "http://127.0.0.1:9641/metrics".into()),
             cli_addr: std::env::var("COTURN_CLI_ADDR").unwrap_or_else(|_| "127.0.0.1:5766".into()),
