@@ -586,6 +586,10 @@ async fn route_transport(
                 tls.tofu.clone(),
                 &target.fingerprint,
                 expected.as_deref(),
+                Some((
+                    tls.identity.cert_der.as_slice(),
+                    tls.identity.key_der.as_slice(),
+                )),
             );
             let via_relay = relay.is_some();
             let port = crate::relay::spawn_tls_bridge(client, sock, relay)

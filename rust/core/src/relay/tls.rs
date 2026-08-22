@@ -145,17 +145,45 @@ pub fn tofu_client_config(
     store: Arc<TofuStore>,
     peer_id: &str,
     expected_fingerprint: Option<&str>,
+    client_identity: Option<(&[u8], &[u8])>,
 ) -> Arc<rustls::ClientConfig> {
-    let builder = rustls::ClientConfig::builder_with_provider(provider::default_provider().into())
-        .with_protocol_versions(&[&rustls::version::TLS13, &rustls::version::TLS12])
-        .expect("built-in versions")
-        .dangerous()
-        .with_custom_certificate_verifier(Arc::new(TofuVerifier {
-            store,
+    // The official app's HTTPS endpoints require client certificates
+    // (mTLS): a certificate-less client is rejected during the
+    // handshake. Present our device certificate when we have one;
+    // otherwise (or on any identity failure) fall back to no client
+    // auth, which peers without mandatory verification accept.
+    let make_verifier = || {
+        Arc::new(TofuVerifier {
+            store: store.clone(),
             peer_id: peer_id.to_string(),
             expected: expected_fingerprint.map(str::to_string),
-        }));
-    Arc::new(builder.with_no_client_auth())
+        })
+    };
+    // `with_*_auth_cert` consumes the builder, so try the identity
+    // first and keep a builder for the no-auth fallback.
+    if let Some((cert_der, key_der)) = client_identity {
+        if let Ok(key) = rustls::pki_types::PrivateKeyDer::try_from(key_der.to_vec()) {
+            let certs = vec![CertificateDer::from(cert_der.to_vec())];
+            let built =
+                rustls::ClientConfig::builder_with_provider(provider::default_provider().into())
+                    .with_protocol_versions(&[&rustls::version::TLS13, &rustls::version::TLS12])
+                    .expect("built-in versions")
+                    .dangerous()
+                    .with_custom_certificate_verifier(make_verifier())
+                    .with_client_auth_cert(certs, key);
+            if let Ok(config) = built {
+                return Arc::new(config);
+            }
+        }
+    }
+    Arc::new(
+        rustls::ClientConfig::builder_with_provider(provider::default_provider().into())
+            .with_protocol_versions(&[&rustls::version::TLS13, &rustls::version::TLS12])
+            .expect("built-in versions")
+            .dangerous()
+            .with_custom_certificate_verifier(make_verifier())
+            .with_no_client_auth(),
+    )
 }
 
 /// A server TLS config presenting the device identity.
