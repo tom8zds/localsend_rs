@@ -13,3 +13,4 @@ serde_json = { workspace = true }
 uuid = { workspace = true }
 qrcode = { workspace = true }
 rusqlite = { workspace = true }
+clap = { version = "4.6.6", features = ["derive", "env"] }

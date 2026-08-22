@@ -18,22 +18,69 @@ pub struct PanelConfig {
 }
 
 impl PanelConfig {
-    pub fn from_env() -> Self {
-        let admin_password = std::env::var("PANEL_ADMIN_PASSWORD").unwrap_or_else(|_| {
-            eprintln!("WARNING: PANEL_ADMIN_PASSWORD unset, using dev default");
-            "changeme".to_string()
-        });
+    pub fn from_args() -> Self {
+        let args = PanelArgs::parse();
         PanelConfig {
-            admin_password,
-            relay_secret: std::env::var("RELAY_SECRET").expect("RELAY_SECRET is required"),
-            relay_public_addr: std::env::var("RELAY_PUBLIC_ADDR")
-                .expect("RELAY_PUBLIC_ADDR is required (e.g. relay.example.com:3478)"),
-            prom_url: std::env::var("COTURN_PROM_URL")
-                .unwrap_or_else(|_| "http://127.0.0.1:9641/metrics".into()),
-            cli_addr: std::env::var("COTURN_CLI_ADDR").unwrap_or_else(|_| "127.0.0.1:5766".into()),
-            cli_password: std::env::var("COTURN_CLI_PASSWORD_PLAIN").unwrap_or_default(),
+            admin_password: args.admin_password,
+            relay_secret: args.relay_secret,
+            relay_public_addr: args.relay_public_addr,
+            prom_url: args.prom_url,
+            cli_addr: args.cli_addr,
+            cli_password: args.cli_password,
         }
     }
+}
+
+/// CLI surface: every setting accepts a flag or the corresponding
+/// environment variable (flags win); clap validates everything up
+/// front so a missing secret prints usage instead of a panic.
+use clap::Parser;
+
+#[derive(Parser)]
+#[command(
+    name = "relay-panel",
+    version,
+    about = "Admin panel for a localsend coturn deployment: credential issuing, live sessions, traffic trends",
+    after_help = "Example:\n  \
+relay-panel --relay-secret s3cr3t --relay-public-addr relay.example.com:3478 \\\n    \
+  --admin-password $(cat /run/secrets/panel-pw) --bind 127.0.0.1:8787\n\n  \
+All flags have RELAY_SECRET / RELAY_PUBLIC_ADDR / PANEL_ADMIN_PASSWORD /\n  \
+PANEL_BIND / COTURN_PROM_URL / COTURN_CLI_ADDR / COTURN_CLI_PASSWORD_PLAIN\n  \
+environment equivalents. Binds loopback by default — use an ssh tunnel,\n  \
+or --bind 0.0.0.0:8787 behind an HTTPS reverse proxy."
+)]
+pub struct PanelArgs {
+    /// Shared TURN secret (must match coturn's static-auth-secret).
+    #[arg(long, env = "RELAY_SECRET")]
+    pub relay_secret: String,
+
+    /// Address clients dial, advertised in issued configs (host:port).
+    #[arg(long, env = "RELAY_PUBLIC_ADDR")]
+    pub relay_public_addr: String,
+
+    /// Admin login password for the panel UI.
+    #[arg(long, env = "PANEL_ADMIN_PASSWORD", default_value = "changeme")]
+    pub admin_password: String,
+
+    /// Listen address.
+    #[arg(long, env = "PANEL_BIND", default_value = "127.0.0.1:8787")]
+    pub bind: String,
+
+    /// coturn Prometheus metrics URL.
+    #[arg(
+        long,
+        env = "COTURN_PROM_URL",
+        default_value = "http://127.0.0.1:9641/metrics"
+    )]
+    pub prom_url: String,
+
+    /// coturn telnet admin CLI address.
+    #[arg(long, env = "COTURN_CLI_ADDR", default_value = "127.0.0.1:5766")]
+    pub cli_addr: String,
+
+    /// coturn admin CLI password (plaintext; the conf stores the hash).
+    #[arg(long, env = "COTURN_CLI_PASSWORD_PLAIN", default_value = "")]
+    pub cli_password: String,
 }
 
 pub struct AppState {

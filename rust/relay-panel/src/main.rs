@@ -34,7 +34,7 @@ use state::AppState;
 
 #[tokio::main]
 async fn main() {
-    let cfg = state::PanelConfig::from_env();
+    let cfg = state::PanelConfig::from_args();
     let state = Arc::new(AppState::new(cfg));
 
     // background: scrape prometheus once a minute into sqlite
