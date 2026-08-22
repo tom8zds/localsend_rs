@@ -214,3 +214,74 @@ async fn embedded_turn_server_answers_stun_ping() {
         .await
         .expect("embedded server must answer STUN binding");
 }
+
+// ---------------------------------------------------------------------------
+// QUIC transport (hole-punch data plane) — direct loopback first
+// ---------------------------------------------------------------------------
+
+#[tokio::test]
+async fn quic_transport_serves_http_over_quic() {
+    use localsend_core::relay::identity::DeviceIdentity;
+    use localsend_core::relay::tls::TofuStore;
+    use localsend_core::relay::{send_request, HttpRequest, QuicTransport};
+
+    let dir = tempfile::tempdir().unwrap();
+    let server_id = DeviceIdentity::load_or_create(dir.path()).unwrap();
+    let client_id = DeviceIdentity::load_or_create(tempfile::tempdir().unwrap().path()).unwrap();
+    let tofu = TofuStore::load(dir.path().join("pins.json")).unwrap();
+
+    let server = QuicTransport::new(
+        "127.0.0.1:0".parse().unwrap(),
+        &server_id,
+        std::sync::Arc::new(tofu),
+        "client",
+        None,
+    )
+    .unwrap();
+    let addr = server.local_addr().unwrap();
+
+    // Serve a trivial router over QUIC.
+    let router = axum::Router::new().route(
+        "/api/localsend/v2/info",
+        axum::routing::get(|| async { r#"{"alias":"quic-peer"}"# }),
+    );
+    let server_transport = std::sync::Arc::new(server);
+    {
+        let t = server_transport.clone();
+        tokio::spawn(async move {
+            while let Some(conn) = t.accept().await {
+                tokio::spawn(localsend_core::relay::quic::serve_http_on(
+                    conn,
+                    router.clone(),
+                ));
+            }
+        });
+    }
+
+    let client = QuicTransport::new(
+        "127.0.0.1:0".parse().unwrap(),
+        &client_id,
+        std::sync::Arc::new(
+            TofuStore::load(tempfile::tempdir().unwrap().path().join("p.json")).unwrap(),
+        ),
+        "server",
+        None,
+    )
+    .unwrap();
+    let conn = client.connect(addr).await.expect("quic connect");
+    let resp = send_request(
+        &conn,
+        HttpRequest {
+            method: "GET".into(),
+            path_and_query: "/api/localsend/v2/info".into(),
+            host: addr.to_string(),
+            content_type: None,
+            content_length: None,
+            body: None,
+        },
+    )
+    .await
+    .expect("quic http");
+    assert_eq!(resp.status, 200);
+    assert!(String::from_utf8_lossy(&resp.body).contains("quic-peer"));
+}

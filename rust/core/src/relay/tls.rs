@@ -199,3 +199,60 @@ pub fn server_config(identity: &DeviceIdentity) -> io::Result<Arc<rustls::Server
         .map_err(|e| io::Error::other(format!("tls server config: {e}")))?;
     Ok(Arc::new(config))
 }
+
+// ---------------------------------------------------------------------------
+// TLS 1.3-only variants for QUIC (the transport mandates it)
+// ---------------------------------------------------------------------------
+
+/// TLS 1.3 server config presenting the device identity (QUIC).
+pub fn server_config_tls13(identity: &DeviceIdentity) -> io::Result<Arc<rustls::ServerConfig>> {
+    let certs = vec![CertificateDer::from(identity.cert_der.clone())];
+    let key = rustls::pki_types::PrivateKeyDer::try_from(identity.key_der.clone())
+        .map_err(|e| io::Error::other(format!("bad private key: {e}")))?;
+    let config = rustls::ServerConfig::builder_with_provider(provider::default_provider().into())
+        .with_protocol_versions(&[&rustls::version::TLS13])
+        .expect("tls13")
+        .with_no_client_auth()
+        .with_single_cert(certs, key)
+        .map_err(|e| io::Error::other(format!("tls server config: {e}")))?;
+    Ok(Arc::new(config))
+}
+
+/// TLS 1.3 TOFU client config (QUIC).
+pub fn tofu_client_config_tls13(
+    store: Arc<TofuStore>,
+    peer_id: &str,
+    expected_fingerprint: Option<&str>,
+    client_identity: Option<(&[u8], &[u8])>,
+) -> Arc<rustls::ClientConfig> {
+    let make_verifier = || {
+        Arc::new(TofuVerifier {
+            store: store.clone(),
+            peer_id: peer_id.to_string(),
+            expected: expected_fingerprint.map(str::to_string),
+        })
+    };
+    if let Some((cert_der, key_der)) = client_identity {
+        if let Ok(key) = rustls::pki_types::PrivateKeyDer::try_from(key_der.to_vec()) {
+            let certs = vec![CertificateDer::from(cert_der.to_vec())];
+            let built =
+                rustls::ClientConfig::builder_with_provider(provider::default_provider().into())
+                    .with_protocol_versions(&[&rustls::version::TLS13])
+                    .expect("tls13")
+                    .dangerous()
+                    .with_custom_certificate_verifier(make_verifier())
+                    .with_client_auth_cert(certs, key);
+            if let Ok(config) = built {
+                return Arc::new(config);
+            }
+        }
+    }
+    Arc::new(
+        rustls::ClientConfig::builder_with_provider(provider::default_provider().into())
+            .with_protocol_versions(&[&rustls::version::TLS13])
+            .expect("tls13")
+            .dangerous()
+            .with_custom_certificate_verifier(make_verifier())
+            .with_no_client_auth(),
+    )
+}
