@@ -52,7 +52,7 @@ impl TofuStore {
 fn fingerprint_of(cert: &CertificateDer<'_>) -> String {
     let mut h = sha2::Sha256::new();
     h.update(cert.as_ref());
-    h.finalize().iter().map(|b| format!("{b:02x}")).collect()
+    h.finalize().iter().map(|b| format!("{b:02X}")).collect()
 }
 
 struct TofuVerifier {

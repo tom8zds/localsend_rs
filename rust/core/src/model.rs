@@ -87,15 +87,28 @@ impl NodeDevice {
 #[serde(rename_all = "camelCase")]
 pub struct NodeAnnounce {
     pub alias: String,
+    #[serde(default)]
     pub version: String,
+    #[serde(default)]
     pub device_model: String,
+    #[serde(default)]
     pub device_type: String,
     pub fingerprint: String,
     pub port: u16,
+    #[serde(default = "default_protocol")]
     pub protocol: String,
+    #[serde(default)]
     pub download: bool,
+    // Official apps omit these in some protocol revisions — parse
+    // leniently or their announcements get dropped entirely.
+    #[serde(default)]
     pub announcement: bool,
+    #[serde(default)]
     pub announce: bool,
+}
+
+fn default_protocol() -> String {
+    "http".to_string()
 }
 
 // ---------------------------------------------------------------------------
@@ -266,4 +279,34 @@ pub enum SessionEvent {
     Progress { file_id: String, bytes: usize },
     /// The session failed with a human-readable reason.
     Failed { reason: String },
+}
+
+#[cfg(test)]
+mod announce_tests {
+    use super::*;
+
+    /// Official apps omit fields across protocol revisions; every
+    /// optional-since-v2.2 field must default instead of failing.
+    #[test]
+    fn sparse_official_announcement_decodes() {
+        let raw = r#"{
+            "alias": "Pixel#8",
+            "fingerprint": "abc123",
+            "port": 53317,
+            "protocol": "https"
+        }"#;
+        let a: NodeAnnounce = serde_json::from_str(raw).unwrap();
+        assert_eq!(a.alias, "Pixel#8");
+        assert_eq!(a.protocol, "https");
+        assert!(!a.download);
+        assert!(!a.announcement);
+        assert!(!a.announce);
+    }
+
+    #[test]
+    fn announce_without_protocol_defaults_to_http() {
+        let raw = r#"{"alias":"x","fingerprint":"f","port":1}"#;
+        let a: NodeAnnounce = serde_json::from_str(raw).unwrap();
+        assert_eq!(a.protocol, "http");
+    }
 }

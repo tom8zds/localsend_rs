@@ -193,7 +193,6 @@ async fn run_udp_actor(mut actor: DiscoverActor, shutdown_callback: watch::Sende
                     }
                 };
                 if addr.ip().to_string() == current.address {
-                    debug!("self loop");
                     continue;
                 }
                 let message = String::from_utf8_lossy(&buf[..size]);
@@ -211,13 +210,20 @@ async fn run_udp_actor(mut actor: DiscoverActor, shutdown_callback: watch::Sende
                 let exist = device_handle.check_device_exist(device.fingerprint.clone()).await;
 
                 if current.fingerprint == device.fingerprint {
-                    debug!("self loop");
+                    // our own announce looping back on N interfaces
                 } else if exist {
-                    let client = client.clone();
-                    let current = current.clone();
-                    tokio::spawn(async move {
-                        register(client, current, device).await;
-                    });
+                    // HTTPS peers: the announce already carries the
+                    // full identity; skip the legacy register (it
+                    // would need TOFU validation reqwest cannot do).
+                    if device.protocol.eq_ignore_ascii_case("https") {
+                        debug!("skip register toward https peer {}", device.alias);
+                    } else {
+                        let client = client.clone();
+                        let current = current.clone();
+                        tokio::spawn(async move {
+                            register(client, current, device).await;
+                        });
+                    }
                 } else {
                     debug!("node discovered {:?}", device);
 

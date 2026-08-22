@@ -116,41 +116,53 @@ Future<String> getDownloadPath() async {
   String storePath;
   if (Platform.isAndroid) {
     storePath = "/storage/emulated/0/Download";
-    if (kDebugMode) {
-      createLogStream().listen((event) {
-        debugPrint(
-            '${event.level} ${event.tag} ${event.msg} ${event.timeMillis}');
-      });
-    }
   } else {
     storePath = (await getDownloadsDirectory())!.absolute.path;
   }
   return storePath;
 }
 
-const levelList = [
-  Level.off,
-  Level.error,
-  Level.warning,
-  Level.info,
-  Level.debug,
-  Level.trace
-];
+/// Shared app logger (package:logger). Pretty-printed, colored by
+/// level; Rust-core records arrive through [routeRustLogs].
+final appLogger = Logger(
+  printer: PrettyPrinter(
+    methodCount: 0,
+    errorMethodCount: 8,
+    lineLength: 100,
+    colors: true,
+    printEmojis: false,
+  ),
+);
 
-void initLogger() {
-  var logger = Logger();
-
-  if (Platform.isAndroid) {
-    if (kDebugMode) {
-      createLogStream().listen((event) {
-        logger.log(
-          levelList[event.level],
-          event.msg,
-          time: DateTime.fromMillisecondsSinceEpoch(event.timeMillis.toInt()),
-        );
-      });
-    }
+/// The FFI logger encodes levels as the FRB template does:
+/// 5000=trace, 10000=debug, 20000=info, 30000=warn, 40000=error.
+Level _rustLevel(int raw) {
+  switch (raw) {
+    case >= 40000:
+      return Level.error;
+    case >= 30000:
+      return Level.warning;
+    case >= 20000:
+      return Level.info;
+    case >= 10000:
+      return Level.debug;
+    default:
+      return Level.trace;
   }
+}
+
+/// Bridge the Rust core's log stream into [appLogger] — the core's
+/// own logging (file-side) already filters third-party chatter, so
+/// everything arriving here is worth showing in debug builds.
+void routeRustLogs() {
+  if (!kDebugMode) return;
+  createLogStream().listen((event) {
+    appLogger.log(
+      _rustLevel(event.level),
+      '[${event.tag}] ${event.msg}',
+      time: DateTime.fromMillisecondsSinceEpoch(event.timeMillis.toInt()),
+    );
+  });
 }
 
 void initLocale() {
@@ -193,3 +205,7 @@ extension FileStateName on FileState {
     };
   }
 }
+
+
+/// Backwards-compatible alias.
+void initLogger() => routeRustLogs();

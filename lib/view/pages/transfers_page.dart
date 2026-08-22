@@ -54,6 +54,7 @@ class IdlePage extends StatelessWidget {
 /// devices, then sessions); wide layouts split into a left column
 /// (send area + device list) and a right session list.
 class TransfersPage extends ConsumerStatefulWidget {
+
   const TransfersPage({super.key});
 
   /// Pending receive sessions first (they need a decision), then
@@ -301,6 +302,7 @@ class _TransfersPageState extends ConsumerState<TransfersPage> {
   Widget build(BuildContext context) {
     final selectedFiles = ref.watch(selectedFilesProvider);
     final sessions = ref.watch(sessionIndexProvider);
+
 
     final sessionCards = switch (sessions) {
       AsyncData(:final value) when value.isNotEmpty => [

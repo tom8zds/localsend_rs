@@ -95,7 +95,9 @@ class _SendPageState extends ConsumerState<SendPage> {
     for (final entry in failures.entries) {
       messenger.showSnackBar(
         SnackBar(
-          content: Text(
+          // Selectable so transport errors (TLS fingerprints, relay
+          // codes...) can be copied straight out of the toast.
+          content: SelectableText(
             t.send.sendFailed(
               alias: entry.key.alias,
               reason: '${entry.value}',

@@ -160,6 +160,10 @@ jobs:
             - name: Build Prepare
               run: flutter pub get
 
+            - name: Build CLI (Windows)
+              run: cargo build --release -p localsend-cli
+              working-directory: ./rust
+
             - name: Build Windows
               run: |
                   flutter build windows --release
@@ -174,3 +178,9 @@ jobs:
               with:
                   name: windows-release
                   path: build\windows\localsend_rs-setup.exe
+
+            - name: Upload CLI (Windows)
+              uses: actions/upload-artifact@v5
+              with:
+                  name: localsend-cli-windows-x64
+                  path: rust/target/release/localsend-cli.exe

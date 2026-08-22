@@ -33,17 +33,10 @@ pub fn init_logger(is_debug: bool) {
             level
         );
 
-        CombinedLogger::init(vec![
-            Box::new(SendToDartLogger::new(level)),
-            // #[cfg(not(any(target_os = "android", target_os = "ios")))]
-            TermLogger::new(
-                level,
-                Config::default(),
-                TerminalMode::Mixed,
-                ColorChoice::Auto,
-            ),
-        ])
-        .unwrap_or_else(|e| {
+        // Only the Dart-side stream: with the terminal logger also
+        // active every record printed twice (terminal + package:logger
+        // on the Dart side). Release builds without a sink stay quiet.
+        CombinedLogger::init(vec![Box::new(SendToDartLogger::new(level))]).unwrap_or_else(|e| {
             error!("init_logger (inside 'once') has error: {:?}", e);
         });
         info!("init_logger (inside 'once') finished");
@@ -114,8 +107,16 @@ impl SendToDartLogger {
 }
 
 impl Log for SendToDartLogger {
-    fn enabled(&self, _metadata: &Metadata) -> bool {
-        true
+    fn enabled(&self, metadata: &Metadata) -> bool {
+        if metadata.level() > self.level {
+            return false;
+        }
+        // Third-party crates (rustls internals, hyper pools, ...) are
+        // chatter at debug; keep our own crates verbose and demote
+        // the rest to warnings.
+        let target = metadata.target();
+        let ours = target.starts_with("localsend") || target.starts_with("rust_lib");
+        ours || metadata.level() <= LevelFilter::Warn
     }
 
     fn log(&self, record: &Record) {

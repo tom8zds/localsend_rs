@@ -97,9 +97,13 @@ fn init_logging() -> Result<()> {
     let layer = tracing_subscriber::fmt::layer()
         .with_writer(std::sync::Mutex::new(file))
         .with_ansi(false);
+    // Our crates stay verbose; rustls/hyper internals only warn.
+    let filter = tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| {
+        tracing_subscriber::EnvFilter::new("localsend_cli=debug,localsend_core=debug,warn")
+    });
     tracing_subscriber::registry()
         .with(layer)
-        .with(tracing_subscriber::filter::LevelFilter::DEBUG)
+        .with(filter)
         .try_init()
         .context("failed to init tracing")?;
     tracing::debug!("logging to {}", log_path.display());

@@ -134,9 +134,19 @@ impl CoreActor {
                 // included) pick plaintext vs TLS from this field.
                 {
                     let mut current = core.device.get_current_device().await;
-                    let https = core.tls().is_some()
-                        && !self.context.config.allow_plain_tls.unwrap_or(false);
-                    current.protocol = if https { "https" } else { "http" }.to_string();
+                    let tls = core
+                        .tls()
+                        .filter(|_| !self.context.config.allow_plain_tls.unwrap_or(false));
+                    // LocalSend v2.2: with HTTPS the announced
+                    // fingerprint IS the SHA-256 of the certificate —
+                    // peers use it to trust us without a CA. Plain
+                    // HTTP keeps the random device identity.
+                    if let Some(tls) = tls {
+                        current.protocol = "https".to_string();
+                        current.fingerprint = tls.identity.fingerprint.clone();
+                    } else {
+                        current.protocol = "http".to_string();
+                    }
                     core.device.set_current_device(current).await;
                 }
 
@@ -366,7 +376,11 @@ impl CoreHandle {
         let config = self.get_config().await;
         let current = self.device.get_current_device().await;
         let message = serde_json::to_string(&current.to_announce()).unwrap_or_default();
-        self.device.clear_devices().await;
+        // Announcing must NOT touch the device map — the periodic
+        // ticker calls this every few seconds and clearing here
+        // wiped the peer list (and repopulated it via the peer's
+        // next register), which is exactly the observed list
+        // flicker.
         tokio::spawn(async move {
             crate::discovery::announce(&config, &message).await;
         });
@@ -560,8 +574,19 @@ async fn route_transport(
 
     let (port, route) = match (&tls, relay_endpoint) {
         (Some(tls), relay) => {
-            let client =
-                crate::relay::tls::tofu_client_config(tls.tofu.clone(), &target.fingerprint, None);
+            // Peers discovered via announce carry the certificate
+            // hash in their fingerprint (v2.2); manual targets have
+            // no announce to anchor on and stay pure TOFU.
+            let expected = target
+                .fingerprint
+                .strip_prefix("manual-")
+                .map(|_| None)
+                .unwrap_or_else(|| Some(target.fingerprint.clone()));
+            let client = crate::relay::tls::tofu_client_config(
+                tls.tofu.clone(),
+                &target.fingerprint,
+                expected.as_deref(),
+            );
             let via_relay = relay.is_some();
             let port = crate::relay::spawn_tls_bridge(client, sock, relay)
                 .await
