@@ -754,15 +754,37 @@ async fn relay_discovery(core: &CoreHandle) {
         crate::relay::generate_credentials(&relay.secret, expiry, "discovery");
 
     let current = core.device.get_current_device().await;
+
+    // STUN-probe our own reflexive address first: the local listen
+    // port is NOT the port the NAT maps for outbound traffic. A peer
+    // discovered via this registry needs the NAT-mapped port, or
+    // TURN Connect to our public address always fails.
+    let (our_port, mapped_addr) = match tokio::time::timeout(
+        std::time::Duration::from_secs(3),
+        crate::relay::probe(&relay.addr),
+    )
+    .await
+    {
+        Ok(Ok((_, Some(mapped)))) => {
+            let port = mapped.port();
+            (port, Some(mapped.to_string()))
+        }
+        _ => (current.port, None),
+    };
+
     let payload = serde_json::json!({
         "fingerprint": current.fingerprint,
         "alias": current.alias,
         "deviceModel": current.device_model,
         "deviceType": current.device_type,
         "protocol": current.protocol,
-        "port": current.port,
+        "port": our_port,
         "username": username,
-        "candidates": [],
+        "candidates": if let Some(m) = mapped_addr {
+            vec![m]
+        } else {
+            vec![]
+        },
     });
 
     let url = format!("http://{}/api/discovery/register", relay.addr);
