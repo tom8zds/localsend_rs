@@ -10,6 +10,7 @@ mod headless;
 mod state;
 mod tui;
 
+use std::net::{Ipv4Addr, SocketAddr};
 use std::path::PathBuf;
 
 use anyhow::{Context, Result};
@@ -73,6 +74,20 @@ enum Command {
     },
     /// Run the relay admin panel only (issuing, sessions, trends).
     Panel,
+    /// Run an embedded TURN relay server (data plane) with the admin
+    /// panel auto-started. This is the all-in-one node: peers relay
+    /// their transfers through this process.
+    Relay {
+        /// TURN listen address (clients dial this).
+        #[arg(long, default_value = "0.0.0.0:3478")]
+        listen: String,
+        /// Address advertised to peers (this host's reachable IP).
+        #[arg(long)]
+        external: Option<String>,
+        /// Shared secret; also defaults from [relay] config.
+        #[arg(long)]
+        secret: Option<String>,
+    },
     /// Mint draft-uberti time-limited TURN credentials from the
     /// shared secret and exit.
     RelayCredential {
@@ -250,6 +265,59 @@ async fn main() -> Result<()> {
             println!("password: {password}");
             return Ok(());
         }
+        (
+            Some(Command::Relay {
+                listen,
+                external,
+                secret: relay_secret,
+            }),
+            _,
+        ) => {
+            let _ = core.shutdown().await;
+            let listen: SocketAddr = listen.clone().parse().context("--listen must be ip:port")?;
+            let secret = relay_secret
+                .clone()
+                .or_else(|| effective.relay.as_ref().map(|r| r.secret.clone()))
+                .context("--secret or a [relay] config entry is required")?;
+            let external_ip: Ipv4Addr = match external.as_deref() {
+                Some(ip) => ip
+                    .parse()
+                    .with_context(|| format!("--external must be an IPv4: {ip}"))?,
+                None => local_ipv4().unwrap_or(std::net::Ipv4Addr::LOCALHOST),
+            };
+            println!("TURN relay on {listen} (advertised {external_ip}), realm localsend");
+            println!("admin panel: http://127.0.0.1:8787 (PANEL_BIND to change)");
+            let panel_cfg = localsend_panel::state::PanelConfig {
+                admin_password: std::env::var("PANEL_ADMIN_PASSWORD")
+                    .unwrap_or_else(|_| secret.clone()),
+                relay_secret: secret.clone(),
+                relay_public_addr: format!("{external_ip}:{}", listen.port()),
+                prom_url: std::env::var("COTURN_PROM_URL")
+                    .unwrap_or_else(|_| format!("http://127.0.0.1:{}/metrics", listen.port())),
+                cli_addr: std::env::var("COTURN_CLI_ADDR")
+                    .unwrap_or_else(|_| "127.0.0.1:5766".into()),
+                cli_password: std::env::var("COTURN_CLI_PASSWORD_PLAIN").unwrap_or_default(),
+            };
+            let db = config::config_path()
+                .parent()
+                .map(|d| d.join("panel.db"))
+                .map(|p| p.to_string_lossy().to_string())
+                .unwrap_or_else(|| "panel.db".into());
+            tokio::spawn(async move {
+                if let Err(e) = localsend_panel::serve(panel_cfg, db).await {
+                    eprintln!("relay panel stopped: {e}");
+                }
+            });
+            localsend_core::relay::serve_turn(localsend_core::relay::TurnServerConfig {
+                listen,
+                external: external_ip,
+                realm: "localsend".to_string(),
+                secret,
+                lifetime: std::time::Duration::from_secs(3600),
+            })
+            .await?;
+            return Ok(());
+        }
         (Some(Command::Panel), _) => {
             let args = localsend_panel::PanelArgs::parse();
             let cfg = localsend_panel::state::PanelConfig::from_args_struct(args);
@@ -303,4 +371,16 @@ async fn main() -> Result<()> {
 
     core.shutdown().await;
     result
+}
+
+/// Best-effort reachable IPv4 for --external auto-detection: connect
+/// a UDP socket toward a public address (no packets sent) and read
+/// the chosen source address.
+fn local_ipv4() -> Option<Ipv4Addr> {
+    let sock = std::net::UdpSocket::bind("0.0.0.0:0").ok()?;
+    sock.connect("8.8.8.8:80").ok()?;
+    match sock.local_addr().ok()?.ip() {
+        std::net::IpAddr::V4(v4) => Some(v4),
+        _ => None,
+    }
 }

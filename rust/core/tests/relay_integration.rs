@@ -112,3 +112,83 @@ async fn two_concurrent_tunnels_are_independent() {
     assert_eq!(&rest, b"d");
     let _ = TcpStream::connect("127.0.0.1:3478").await;
 }
+
+// ---------------------------------------------------------------------------
+// embedded TURN server (turn_server.rs) — client ⇄ own-server loopback
+// ---------------------------------------------------------------------------
+
+/// Full loopback through `localsend-cli relay`'s embedded server:
+/// issue REST credentials, dial an echo server through the embedded
+/// TURN server, and verify the bytes round-trip.
+#[tokio::test]
+async fn embedded_turn_server_relays_bytes() {
+    use localsend_core::relay::{serve_turn, TurnServerConfig};
+
+    let secret = "embedded-test-secret";
+    let port = {
+        let l = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        l.local_addr().unwrap().port()
+    };
+    tokio::spawn(async move {
+        let cfg = TurnServerConfig {
+            listen: format!("127.0.0.1:{port}").parse().unwrap(),
+            external: std::net::Ipv4Addr::LOCALHOST,
+            realm: "localsend".into(),
+            secret: secret.into(),
+            lifetime: std::time::Duration::from_secs(600),
+        };
+        serve_turn(cfg).await.unwrap();
+    });
+    tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+
+    let echo = spawn_echo().await;
+    let relay = endpoint_from_secret(&format!("127.0.0.1:{port}"), secret, 600, "it", "localsend");
+    let mut tunnel = dial_via_relay(&relay, echo)
+        .await
+        .expect("dial embedded relay");
+    let payload = b"hello through the embedded server";
+    tunnel.write_all(payload).await.unwrap();
+    tunnel.flush().await.unwrap();
+    let mut buf = vec![0u8; payload.len()];
+    tokio::time::timeout(
+        std::time::Duration::from_secs(5),
+        tunnel.read_exact(&mut buf),
+    )
+    .await
+    .expect("echo via embedded server timed out")
+    .unwrap();
+    assert_eq!(&buf, payload);
+}
+
+#[tokio::test]
+async fn embedded_turn_server_rejects_bad_secret() {
+    use localsend_core::relay::{serve_turn, TurnServerConfig};
+
+    let secret = "right-secret";
+    let port = {
+        let l = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        l.local_addr().unwrap().port()
+    };
+    tokio::spawn(async move {
+        let cfg = TurnServerConfig {
+            listen: format!("127.0.0.1:{port}").parse().unwrap(),
+            external: std::net::Ipv4Addr::LOCALHOST,
+            realm: "localsend".into(),
+            secret: secret.into(),
+            lifetime: std::time::Duration::from_secs(600),
+        };
+        serve_turn(cfg).await.unwrap();
+    });
+    tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+
+    let echo = spawn_echo().await;
+    let relay = endpoint_from_secret(
+        &format!("127.0.0.1:{port}"),
+        "wrong-secret",
+        600,
+        "it",
+        "localsend",
+    );
+    let result = dial_via_relay(&relay, echo).await;
+    assert!(result.is_err(), "bad-secret dial must fail");
+}
