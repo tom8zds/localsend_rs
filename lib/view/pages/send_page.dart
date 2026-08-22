@@ -140,25 +140,28 @@ class _SendPageState extends ConsumerState<SendPage> {
             )
           else
             for (final path in files)
-              ListTile(
-                dense: true,
-                leading: const Icon(Icons.file_present),
-                title: Text(
-                  fileBaseName(path),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                subtitle: Text(
-                  filesize(safeFileSize(path)),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                trailing: IconButton(
-                  icon: const Icon(Icons.remove_circle_outline),
-                  tooltip: t.send.removeFile,
-                  onPressed: () => ref
-                      .read(selectedFilesProvider.notifier)
-                      .remove(path),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: ListTile(
+                  dense: true,
+                  leading: const Icon(Icons.file_present),
+                  title: Text(
+                    fileBaseName(path),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  subtitle: Text(
+                    filesize(safeFileSize(path)),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.remove_circle_outline),
+                    tooltip: t.send.removeFile,
+                    onPressed: () => ref
+                        .read(selectedFilesProvider.notifier)
+                        .remove(path),
+                  ),
                 ),
               ),
           const Divider(),

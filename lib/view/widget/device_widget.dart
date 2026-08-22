@@ -109,7 +109,7 @@ class DeviceWidget extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppSpacing.x12),
           onTap: onTap,
           child: SizedBox(
-            height: 56,
+            height: 80,
             child: Row(
               children: [
                 SizedBox(
