@@ -19,7 +19,7 @@ sha1 = "0.11.0"
 md-5 = "0.11.0"
 base64 = "0.23.1"
 rand = "0.10.2"
-tokio-rustls = "0.26.4"
+tokio-rustls = { version = "0.26.4", default-features = false, features = ["ring", "tls12"] }
 rustls = { version = "0.23.43", default-features = false, features = ["ring", "std", "tls12", "logging"] }
 rcgen = "0.14.9"
 pem = "4.0.0"
