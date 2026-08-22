@@ -8,7 +8,6 @@ use std::sync::Arc;
 use std::task::{Context, Poll};
 
 use axum::extract::connect_info::Connected;
-use axum::response::IntoResponse as _;
 use axum::{
     body::Bytes,
     extract::{ConnectInfo, Query, Request, State},
