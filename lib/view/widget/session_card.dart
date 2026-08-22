@@ -247,7 +247,7 @@ class _SessionCardState extends ConsumerState<SessionCard> {
               ),
             if (extras.failureReason != null) ...[
               const SizedBox(height: AppSpacing.x4),
-              Text(
+              SelectableText(
                 t.transfers.failedReason(reason: extras.failureReason!),
                 style: Theme.of(context)
                     .textTheme

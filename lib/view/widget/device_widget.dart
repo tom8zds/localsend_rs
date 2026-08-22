@@ -109,19 +109,19 @@ class DeviceWidget extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppSpacing.x12),
           onTap: onTap,
           child: SizedBox(
-            height: 80,
+            height: 56,
             child: Row(
               children: [
                 SizedBox(
-                  height: 80,
-                  width: 80,
+                  height: 56,
+                  width: 56,
                   child: Stack(
                     children: [
                       const Align(
                         alignment: Alignment.center,
                         child: Icon(
                           Icons.smartphone,
-                          size: 48,
+                          size: 40,
                         ),
                       ),
                       getDeviceBadge(context),
@@ -162,6 +162,7 @@ class DeviceWidget extends StatelessWidget {
                     onPressed: onRemove,
                     icon: const Icon(Icons.remove_circle_outline),
                   ),
+                const SizedBox(width: AppSpacing.x8,)
               ],
             ),
           ),
