@@ -80,7 +80,7 @@ pub async fn serve(cfg: TurnServerConfig) -> std::io::Result<()> {
 
 async fn handle_client(
     mut stream: TcpStream,
-    _peer: SocketAddr,
+    peer: SocketAddr,
     cfg: Arc<TurnServerConfig>,
 ) -> Result<(), String> {
     let mut session = Session {
@@ -111,6 +111,13 @@ async fn handle_client(
             return connection_bind(stream, raw, &msg).await;
         }
         let resp = match msg.method {
+            // STUN Binding: liveness probe (the app's connection test);
+            // answered with the caller's reflexive address, no auth.
+            Method::Binding => {
+                let mut m = Message::new(Method::Binding, MessageClass::SuccessResponse, msg.tid);
+                m.push_xor_address(Attr::XorPeerAddress, peer);
+                m.encode(None)
+            }
             Method::Allocate => allocate(&mut session, raw, &msg, &cfg),
             Method::Refresh => refresh(&mut session, raw, &msg, &cfg),
             Method::CreatePermission => permission(&mut session, raw, &msg, &cfg),

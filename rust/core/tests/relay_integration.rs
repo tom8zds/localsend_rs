@@ -192,3 +192,25 @@ async fn embedded_turn_server_rejects_bad_secret() {
     let result = dial_via_relay(&relay, echo).await;
     assert!(result.is_err(), "bad-secret dial must fail");
 }
+
+#[tokio::test]
+async fn embedded_turn_server_answers_stun_ping() {
+    use localsend_core::relay::{serve_turn, TurnServerConfig};
+    let port = {
+        let l = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        l.local_addr().unwrap().port()
+    };
+    tokio::spawn(async move {
+        serve_turn(TurnServerConfig {
+            listen: format!("127.0.0.1:{port}").parse().unwrap(),
+            secret: "s".into(),
+            ..TurnServerConfig::default()
+        })
+        .await
+        .unwrap();
+    });
+    tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+    localsend_core::relay::ping(&format!("127.0.0.1:{port}"))
+        .await
+        .expect("embedded server must answer STUN binding");
+}
