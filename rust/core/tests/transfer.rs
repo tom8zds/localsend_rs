@@ -734,3 +734,62 @@ async fn tls_handshake_smoke() {
 
     b.shutdown().await;
 }
+
+// ---------------------------------------------------------------------------
+// v2.2 fingerprint anchoring (official-app interop semantics)
+// ---------------------------------------------------------------------------
+
+#[tokio::test]
+async fn announce_fingerprint_anchors_the_tls_connection() {
+    let tmp = tempfile::tempdir().unwrap();
+    let (dir_a, dir_b) = (tmp.path().join("a"), tmp.path().join("b"));
+    let (id_a, id_b) = (tmp.path().join("id-a"), tmp.path().join("id-b"));
+    for d in [&dir_a, &dir_b, &id_a, &id_b] {
+        tokio::fs::create_dir_all(d).await.unwrap();
+    }
+    let (port_a, port_b) = (free_port(), free_port());
+    let a = make_tls_core("alice", port_a, &dir_a, &id_a).await;
+    let b = make_tls_core("bob", port_b, &dir_b, &id_b).await;
+    let accept = auto_accept(b.clone());
+
+    // The peer's announced fingerprint IS its certificate hash.
+    let b_fp = localsend_core::relay::identity::DeviceIdentity::load_or_create(&id_b)
+        .unwrap()
+        .fingerprint;
+    let mut target = https_target(&format!("127.0.0.1:{port_b}"));
+    target.fingerprint = b_fp.clone();
+
+    let file = write_file(&dir_a, "anchored.txt", b"v2.2 semantics").await;
+    let id = a.send_files(target, vec![file]).await.unwrap();
+    wait_session(&a, &id, |s| s.state == MissionState::Finished).await;
+    assert!(tokio::fs::read(dir_b.join("anchored.txt")).await.is_ok());
+
+    // A mismatching announced fingerprint (MITM or a non-compliant
+    // peer) must be rejected without pinning anything.
+    let mut spoofed = https_target(&format!("127.0.0.1:{port_b}"));
+    spoofed.fingerprint = "f".repeat(64);
+    let file = write_file(&dir_a, "spoof.txt", b"x").await;
+    let id = a.send_files(spoofed, vec![file]).await.unwrap();
+    let state = tokio::time::timeout(TIMEOUT, async {
+        let mut rx = a.session_index().await;
+        loop {
+            if let Some(s) = rx.borrow().iter().find(|s| s.id == id) {
+                if matches!(s.state, MissionState::Failed | MissionState::Finished) {
+                    return s.state;
+                }
+            }
+            rx.changed().await.unwrap();
+        }
+    })
+    .await
+    .expect("terminal state");
+    assert_ne!(
+        state,
+        MissionState::Finished,
+        "spoofed fingerprint must fail"
+    );
+
+    accept.abort();
+    a.shutdown().await;
+    b.shutdown().await;
+}

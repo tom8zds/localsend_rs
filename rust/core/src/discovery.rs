@@ -213,11 +213,18 @@ async fn run_udp_actor(mut actor: DiscoverActor, shutdown_callback: watch::Sende
                 if current.fingerprint == device.fingerprint {
                     debug!("self loop");
                 } else if exist {
-                    let client = client.clone();
-                    let current = current.clone();
-                    tokio::spawn(async move {
-                        register(client, current, device).await;
-                    });
+                    // HTTPS peers: the announce already carries the
+                    // full identity; skip the legacy register (it
+                    // would need TOFU validation reqwest cannot do).
+                    if device.protocol.eq_ignore_ascii_case("https") {
+                        debug!("skip register toward https peer {}", device.alias);
+                    } else {
+                        let client = client.clone();
+                        let current = current.clone();
+                        tokio::spawn(async move {
+                            register(client, current, device).await;
+                        });
+                    }
                 } else {
                     debug!("node discovered {:?}", device);
 
