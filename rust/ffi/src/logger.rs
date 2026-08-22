@@ -33,16 +33,10 @@ pub fn init_logger(is_debug: bool) {
             level
         );
 
-        CombinedLogger::init(vec![
-            Box::new(SendToDartLogger::new(level)),
-            // #[cfg(not(any(target_os = "android", target_os = "ios")))]
-            TermLogger::new(
-                level,
-                Config::default(),
-                TerminalMode::Mixed,
-                ColorChoice::Auto,
-            ),
-        ])
+        // Only the Dart-side stream: with the terminal logger also
+        // active every record printed twice (terminal + package:logger
+        // on the Dart side). Release builds without a sink stay quiet.
+        CombinedLogger::init(vec![Box::new(SendToDartLogger::new(level))])
         .unwrap_or_else(|e| {
             error!("init_logger (inside 'once') has error: {:?}", e);
         });
