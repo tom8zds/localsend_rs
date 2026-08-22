@@ -530,7 +530,9 @@ impl Actor {
             Message::MarkViaRelay { id } => {
                 if let Some(session) = self.sessions.get_mut(&id) {
                     session.via_relay = true;
-                    session.route = "turn".to_string();
+                    if session.route == "local" {
+                        session.route = "turn".to_string();
+                    }
                 }
                 self.broadcast_index();
             }

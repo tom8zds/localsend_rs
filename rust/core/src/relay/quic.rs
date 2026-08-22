@@ -117,10 +117,18 @@ async fn serve_stream(
     // Read the request head (to the blank line).
     let mut head = Vec::with_capacity(1024);
     let mut chunk = [0u8; 1024];
-    while !head.ends_with(b"\r\n\r\n") {
+    loop {
+        if head.windows(4).any(|w| w == b"\r\n\r\n") {
+            break;
+        }
         let n = stream.read(&mut chunk).await?;
         if n == 0 {
-            return Err("request head truncated".into());
+            return Err(format!(
+                "request head truncated after {} bytes: {:?}",
+                head.len(),
+                String::from_utf8_lossy(&head)
+            )
+            .into());
         }
         head.extend_from_slice(&chunk[..n]);
     }
@@ -134,6 +142,7 @@ async fn serve_stream(
 
     // Content-Length announces the body, if any.
     let mut content_length: usize = 0;
+    let mut content_type: Option<String> = None;
     for line in lines {
         if line.is_empty() {
             break;
@@ -141,6 +150,8 @@ async fn serve_stream(
         if let Some((k, v)) = line.split_once(':') {
             if k.trim().eq_ignore_ascii_case("content-length") {
                 content_length = v.trim().parse().unwrap_or(0);
+            } else if k.trim().eq_ignore_ascii_case("content-type") {
+                content_type = Some(v.trim().to_string());
             }
         }
     }
@@ -163,9 +174,19 @@ async fn serve_stream(
     if content_length > 0 {
         req = req.header("content-length", content_length);
     }
-    let req = req
-        .body(http_body_util::Full::new(bytes::Bytes::from(body)))
-        .map_err(|e| format!("build request: {e}"))?;
+    if let Some(ct) = &content_type {
+        req = req.header("content-type", ct);
+    }
+    let (mut parts, _) = req
+        .body(())
+        .map_err(|e| format!("build request: {e}"))?
+        .into_parts();
+    parts
+        .extensions
+        .insert(axum::extract::ConnectInfo(crate::server::ConnAddr(
+            "0.0.0.0:0".parse().unwrap(),
+        )));
+    let req = http::Request::from_parts(parts, http_body_util::Full::new(bytes::Bytes::from(body)));
     let resp = router.call(req).await.map_err(|e| format!("router: {e}"))?;
     let (parts, resp_body) = resp.into_parts();
     let body_bytes = http_body_util::BodyExt::collect(resp_body)

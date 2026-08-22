@@ -794,3 +794,85 @@ async fn announce_fingerprint_anchors_the_tls_connection() {
     a.shutdown().await;
     b.shutdown().await;
 }
+
+// ---------------------------------------------------------------------------
+// STUN hole punch (QUIC) end-to-end
+// ---------------------------------------------------------------------------
+
+#[tokio::test]
+async fn cross_network_send_punches_and_reports_stun() {
+    let tmp = tempfile::tempdir().unwrap();
+    let (dir_a, dir_b) = (tmp.path().join("a"), tmp.path().join("b"));
+    let (id_a, id_b) = (tmp.path().join("id-a"), tmp.path().join("id-b"));
+    for d in [&dir_a, &dir_b, &id_a, &id_b] {
+        tokio::fs::create_dir_all(d).await.unwrap();
+    }
+    let (port_a, port_b) = (free_port(), free_port());
+    let a = make_tls_core("alice", port_a, &dir_a, &id_a).await;
+    let b = make_tls_core("bob", port_b, &dir_b, &id_b).await;
+    let accept = auto_accept(b.clone());
+
+    // Alice has a relay configured (cross-network mode) but the relay
+    // itself is unreachable — the hole punch must still succeed over
+    // the loopback candidates and beat the TURN fallback timeout.
+    a.change_config(localsend_core::CoreConfig {
+        relay_addr: Some("127.0.0.1:1".into()),
+        relay_secret: Some("unused".into()),
+        ..test_config(port_a, &dir_a)
+    })
+    .await;
+
+    let file = write_file(&dir_a, "punch.txt", b"hole!").await;
+    let id = a
+        .send_files_via(
+            https_target(&format!("127.0.0.1:{port_b}")),
+            vec![file],
+            true,
+        )
+        .await
+        .unwrap();
+    let summary = tokio::time::timeout(Duration::from_secs(30), async {
+        let mut rx = a.session_index().await;
+        loop {
+            if let Some(s) = rx.borrow().iter().find(|s| s.id == id) {
+                if matches!(
+                    s.state,
+                    MissionState::Finished | MissionState::Failed | MissionState::Canceled
+                ) {
+                    return s.clone();
+                }
+            }
+            rx.changed().await.unwrap();
+        }
+    })
+    .await
+    .expect("session must finish");
+
+    // The transfer succeeded and rode the punched hole.
+    let reason = a
+        .session_events(&summary.id)
+        .await
+        .map(|mut ev| {
+            let _ = ev.borrow_and_update();
+            format!("{:?}", ev.borrow().clone())
+        })
+        .unwrap_or_default();
+    assert_eq!(
+        summary.state,
+        MissionState::Finished,
+        "state={:?} events={}",
+        summary.state,
+        reason
+    );
+    assert!(
+        tokio::fs::read(dir_b.join("punch.txt")).await.is_ok(),
+        "file must land"
+    );
+    // Loopback punches are deterministic: the route must be stun, not
+    // turn (the relay is unreachable, so turn is impossible).
+    assert_eq!(summary.route, "stun", "punched session carries route stun");
+
+    accept.abort();
+    a.shutdown().await;
+    b.shutdown().await;
+}

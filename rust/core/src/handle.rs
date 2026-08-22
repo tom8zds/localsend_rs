@@ -313,7 +313,12 @@ impl CoreHandle {
 
         // Reflexive address via the configured relay, when present.
         if let Some(relay) = self.get_config().await.relay_settings() {
-            if let Ok((_, Some(mapped))) = crate::relay::probe(&relay.addr).await {
+            let probed = tokio::time::timeout(
+                std::time::Duration::from_secs(2),
+                crate::relay::probe(&relay.addr),
+            )
+            .await;
+            if let Ok(Ok((_, Some(mapped)))) = probed {
                 out.push(mapped.to_string());
             }
         }
@@ -381,6 +386,23 @@ impl CoreHandle {
             .expect("bind quic"),
         );
         *guard = Some(quic.clone());
+
+        // Serve HTTP on every peer connection punching toward us —
+        // without an accept loop the handshakes are never answered.
+        {
+            let quic = quic.clone();
+            let core = self.clone();
+            tokio::spawn(async move {
+                loop {
+                    if let Some(conn) = quic.accept().await {
+                        let router = crate::server::app(core.clone());
+                        tokio::spawn(async move {
+                            crate::relay::quic::serve_http_on(conn, router).await;
+                        });
+                    }
+                }
+            });
+        }
         quic
     }
 
@@ -620,6 +642,7 @@ impl CoreHandle {
 async fn try_hole_punch(
     core: &CoreHandle,
     peer: SocketAddr,
+    peer_is_https: bool,
 ) -> Result<Option<quinn::Connection>, String> {
     let Some(tls) = core.tls() else {
         return Ok(None);
@@ -627,7 +650,29 @@ async fn try_hole_punch(
     let quic = core.ensure_quic(tls).await;
 
     let our_candidates = core.our_candidates().await;
-    let url = format!("http://{peer}/api/localsend/v2/hole-punch");
+    // The exchange rides the peer's advertised scheme. HTTPS peers
+    // are reached through a short-lived TLS bridge (TOFU config, no
+    // relay) — reqwest itself has no TLS backend here.
+    let port = if peer_is_https {
+        let Some(tls) = core.tls() else {
+            return Ok(None);
+        };
+        let client_cfg = crate::relay::tls::tofu_client_config(
+            tls.tofu.clone(),
+            "hole-punch-exchange",
+            None,
+            Some((
+                tls.identity.cert_der.as_slice(),
+                tls.identity.key_der.as_slice(),
+            )),
+        );
+        crate::relay::spawn_tls_bridge(client_cfg, peer, None)
+            .await
+            .map_err(|e| format!("exchange bridge: {e}"))?
+    } else {
+        peer.port()
+    };
+    let url = format!("http://127.0.0.1:{port}/api/localsend/v2/hole-punch");
     let client = reqwest::Client::new();
     let resp = client
         .post(&url)
@@ -657,17 +702,21 @@ async fn try_hole_punch(
     }
     // First successful connect wins; consume losers to keep them from
     // lingering.
-    while !attempts.is_empty() {
-        let (res, _idx, remaining) = futures::future::select_all(attempts).await;
-        attempts = remaining;
-        if let Ok(conn) = res {
-            return Ok(Some(conn));
+    // First successful connect wins; each attempt is individually
+    // bounded so dead candidates cannot stall the race.
+    let overall = tokio::time::timeout(std::time::Duration::from_secs(5), async {
+        while !attempts.is_empty() {
+            let (res, _idx, remaining) = futures::future::select_all(attempts).await;
+            attempts = remaining;
+            if let Ok(conn) = res {
+                return Some(conn);
+            }
         }
-        if attempts.is_empty() {
-            return Ok(None);
-        }
-    }
-    Ok(None)
+        None
+    })
+    .await
+    .unwrap_or(None);
+    Ok(overall)
 }
 
 /// Resolve the transport route for `target` and return the local
@@ -711,14 +760,18 @@ async fn route_transport(
     // STUN hole punch: exchange candidates through the peer's HTTP
     // endpoint over the (possibly relayed) TCP path, then try QUIC
     // direct. Only attempted on the cross-network path.
+    let peer_https = target.protocol.eq_ignore_ascii_case("https");
     if relay_endpoint.is_some() {
-        if let Ok(Some(quic_conn)) = try_hole_punch(core, sock).await {
-            debug!("send routed via stun (QUIC hole punch) to {sock}");
-            if let Some(id) = session_id {
-                core.sessions().mark_route(id, "stun").await;
+        match try_hole_punch(core, sock, peer_https).await {
+            Ok(Some(quic_conn)) => {
+                debug!("send routed via stun (QUIC hole punch) to {sock}");
+                if let Some(id) = session_id {
+                    core.sessions().mark_route(id, "stun").await;
+                }
+                let port = crate::relay::spawn_quic_bridge(quic_conn).await;
+                return Ok(crate::relay::bridged_view(target, port));
             }
-            let port = crate::relay::spawn_quic_bridge(quic_conn).await;
-            return Ok(crate::relay::bridged_view(target, port));
+            other => debug!("hole punch did not connect: {other:?}"),
         }
     }
 
@@ -726,7 +779,6 @@ async fn route_transport(
     // the TLS bridge; peers advertising http — notably the official
     // LocalSend app — get plaintext, direct or relayed.
     let tls_disabled = core.get_config().await.allow_plain_tls.unwrap_or(false);
-    let peer_https = target.protocol.eq_ignore_ascii_case("https");
     let tls = if tls_disabled || !peer_https {
         None
     } else {
@@ -828,7 +880,20 @@ async fn run_send_driver(
         .await
         {
             Ok(bridged) => {
-                sessions.mark_via_relay(&session_id).await;
+                // mark_route("stun") may already have been set by a
+                // successful punch inside route_transport; only mark
+                // turn when it wasn't.
+                let already_stun = sessions
+                    .session_index()
+                    .await
+                    .borrow()
+                    .iter()
+                    .find(|s| s.id == session_id)
+                    .map(|s| s.route == "stun")
+                    .unwrap_or(false);
+                if !already_stun {
+                    sessions.mark_via_relay(&session_id).await;
+                }
                 target = bridged;
             }
             Err(reason) => bail!(reason),
