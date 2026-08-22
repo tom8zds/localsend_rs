@@ -134,14 +134,22 @@ final appLogger = Logger(
   ),
 );
 
-const _levelList = [
-  Level.off,
-  Level.error,
-  Level.warning,
-  Level.info,
-  Level.debug,
-  Level.trace
-];
+/// The FFI logger encodes levels as the FRB template does:
+/// 5000=trace, 10000=debug, 20000=info, 30000=warn, 40000=error.
+Level _rustLevel(int raw) {
+  switch (raw) {
+    case >= 40000:
+      return Level.error;
+    case >= 30000:
+      return Level.warning;
+    case >= 20000:
+      return Level.info;
+    case >= 10000:
+      return Level.debug;
+    default:
+      return Level.trace;
+  }
+}
 
 /// Bridge the Rust core's log stream into [appLogger] — the core's
 /// own logging (file-side) already filters third-party chatter, so
@@ -150,7 +158,7 @@ void routeRustLogs() {
   if (!kDebugMode) return;
   createLogStream().listen((event) {
     appLogger.log(
-      _levelList[event.level],
+      _rustLevel(event.level),
       '[${event.tag}] ${event.msg}',
       time: DateTime.fromMillisecondsSinceEpoch(event.timeMillis.toInt()),
     );
