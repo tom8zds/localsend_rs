@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../common/spacing.dart';
+import '../../core/providers/core_provider.dart';
 import '../../core/providers/selection_providers.dart';
 import '../../core/providers/session_providers.dart';
 import '../../core/rust/actor/model.dart';
@@ -54,6 +55,8 @@ class IdlePage extends StatelessWidget {
 /// devices, then sessions); wide layouts split into a left column
 /// (send area + device list) and a right session list.
 class TransfersPage extends ConsumerStatefulWidget {
+  static int _diagBuilds = 0;
+
   const TransfersPage({super.key});
 
   /// Pending receive sessions first (they need a decision), then
@@ -301,6 +304,13 @@ class _TransfersPageState extends ConsumerState<TransfersPage> {
   Widget build(BuildContext context) {
     final selectedFiles = ref.watch(selectedFilesProvider);
     final sessions = ref.watch(sessionIndexProvider);
+    // TEMPORARY flicker diagnosis: correlate page rebuilds with the
+    // discover widget counter below
+    TransfersPage._diagBuilds++;
+    debugPrint(
+        'TRANSFERS-BUILD #${TransfersPage._diagBuilds} devices-hash='
+        '${ref.watch(devicesProvider).hasValue}');
+
 
     final sessionCards = switch (sessions) {
       AsyncData(:final value) when value.isNotEmpty => [
