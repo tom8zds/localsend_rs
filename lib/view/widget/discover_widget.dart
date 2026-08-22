@@ -13,19 +13,9 @@ class DiscoverWidget extends ConsumerWidget {
 
   const DiscoverWidget({super.key, this.onDeviceTap});
 
-  static int _buildCount = 0;
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final devices = ref.watch(devicesProvider);
-    // TEMPORARY flicker diagnosis
-    _buildCount++;
-    debugPrint('DISCOVER-BUILD #$_buildCount state=${devices.runtimeType} hasValue=${devices.hasValue} n=${devices.value?.length}');
-    devices.whenData((list) {
-      for (final d in list) {
-        debugPrint('  device: ${d.alias} ${d.fingerprint.substring(0, 8)}');
-      }
-    });
     // Keep the last non-empty snapshot: stream transitions between
     // states every few seconds (announce/register cycles), and
     // flashing an empty placeholder between them reads as flicker.

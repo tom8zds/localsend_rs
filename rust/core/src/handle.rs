@@ -376,7 +376,11 @@ impl CoreHandle {
         let config = self.get_config().await;
         let current = self.device.get_current_device().await;
         let message = serde_json::to_string(&current.to_announce()).unwrap_or_default();
-        self.device.clear_devices().await;
+        // Announcing must NOT touch the device map — the periodic
+        // ticker calls this every few seconds and clearing here
+        // wiped the peer list (and repopulated it via the peer's
+        // next register), which is exactly the observed list
+        // flicker.
         tokio::spawn(async move {
             crate::discovery::announce(&config, &message).await;
         });
