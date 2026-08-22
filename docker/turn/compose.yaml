@@ -24,11 +24,13 @@ services:
       - ./turnserver.conf:/etc/coturn/turnserver.conf:ro
 
   panel:
-    build:
-      context: ../..
-      dockerfile: docker/Dockerfile.panel
-    restart: unless-stopped
-    network_mode: host
+    # The CLI embeds the panel since the merge; a dedicated image is
+    # no longer needed. Kept as a comment for deployments that want
+    # the panel separated from coturn's host network.
+    # build:
+    #   context: ../..
+    #   dockerfile: docker/Dockerfile.panel
+    profiles: ["deprecated"]
     environment:
       PANEL_ADMIN_PASSWORD: ${PANEL_ADMIN_PASSWORD:-localtest-admin}
       RELAY_SECRET: ${RELAY_SECRET:-localsend-relay-test-secret}

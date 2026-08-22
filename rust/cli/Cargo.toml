@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 localsend_core = { workspace = true }
+relay-panel = { path = "../relay-panel" }
 tokio = { workspace = true }
 futures = { workspace = true }
 uuid = { workspace = true }

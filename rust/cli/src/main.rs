@@ -71,6 +71,8 @@ enum Command {
         #[arg(long)]
         once: bool,
     },
+    /// Run the relay admin panel only (issuing, sessions, trends).
+    Panel,
     /// Mint draft-uberti time-limited TURN credentials from the
     /// shared secret and exit.
     RelayCredential {
@@ -196,6 +198,35 @@ async fn main() -> Result<()> {
         });
     }
 
+    // Relay forwarding configured → the admin panel rides along in
+    // this process (PANEL_DISABLE=1 opts out; PANEL_BIND overrides
+    // the loopback default).
+    if matches!(&cli.command, None | Some(Command::Receive { .. }))
+        && effective.relay.is_some()
+        && std::env::var("PANEL_DISABLE").ok().as_deref() != Some("1")
+    {
+        let cfg = localsend_panel::state::PanelConfig {
+            admin_password: std::env::var("PANEL_ADMIN_PASSWORD")
+                .unwrap_or_else(|_| effective.relay.as_ref().expect("checked").secret.clone()),
+            relay_secret: effective.relay.as_ref().expect("checked").secret.clone(),
+            relay_public_addr: effective.relay.as_ref().expect("checked").addr.clone(),
+            prom_url: std::env::var("COTURN_PROM_URL")
+                .unwrap_or_else(|_| "http://127.0.0.1:9641/metrics".into()),
+            cli_addr: std::env::var("COTURN_CLI_ADDR").unwrap_or_else(|_| "127.0.0.1:5766".into()),
+            cli_password: std::env::var("COTURN_CLI_PASSWORD_PLAIN").unwrap_or_default(),
+        };
+        let db = config::config_path()
+            .parent()
+            .map(|d| d.join("panel.db"))
+            .map(|p| p.to_string_lossy().to_string())
+            .unwrap_or_else(|| "panel.db".into());
+        tokio::spawn(async move {
+            if let Err(e) = localsend_panel::serve(cfg, db).await {
+                eprintln!("relay panel stopped: {e}");
+            }
+        });
+    }
+
     let result = match (&cli.command, &cli.common.to) {
         (
             Some(Command::RelayCredential {
@@ -218,6 +249,18 @@ async fn main() -> Result<()> {
                 localsend_core::relay::generate_credentials(&secret, expiry, suffix);
             println!("username: {username}");
             println!("password: {password}");
+            return Ok(());
+        }
+        (Some(Command::Panel), _) => {
+            let args = localsend_panel::PanelArgs::parse();
+            let cfg = localsend_panel::state::PanelConfig::from_args_struct(args);
+            let db = config::config_path()
+                .parent()
+                .map(|d| d.join("panel.db"))
+                .map(|p| p.to_string_lossy().to_string())
+                .unwrap_or_else(|| "panel.db".into());
+            let _ = core.shutdown().await;
+            localsend_panel::serve(cfg, db).await?;
             return Ok(());
         }
         (Some(Command::Send), _) => {

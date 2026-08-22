@@ -3,7 +3,11 @@ name = "relay-panel"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+name = "localsend_panel"
+
 [dependencies]
+
 localsend_core = { workspace = true }
 axum = { workspace = true }
 tokio = { workspace = true }

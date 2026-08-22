@@ -19,6 +19,10 @@ pub struct PanelConfig {
 
 impl PanelConfig {
     pub fn from_args() -> Self {
+        Self::from_args_struct(PanelArgs::parse())
+    }
+
+    pub fn from_args_struct(args: PanelArgs) -> Self {
         let args = PanelArgs::parse();
         PanelConfig {
             admin_password: args.admin_password,
@@ -95,10 +99,10 @@ const SESSION_TTL: Duration = Duration::from_secs(12 * 3600);
 const SESSIONS_TTL: Duration = Duration::from_secs(5);
 
 impl AppState {
-    pub fn new(cfg: PanelConfig) -> Self {
-        let db_path = std::env::var("PANEL_DB").unwrap_or_else(|_| "panel.db".into());
-        AppState {
-            store: Store::open(std::path::Path::new(&db_path)).expect("open panel db"),
+    pub fn with_db(cfg: PanelConfig, db_path: String) -> std::io::Result<Self> {
+        Ok(AppState {
+            store: Store::open(std::path::Path::new(&db_path))
+                .map_err(|e| std::io::Error::other(format!("open panel db {db_path}: {e}")))?,
             cfg,
             sessions: Mutex::new(HashMap::new()),
             http: reqwest::Client::builder()
@@ -106,7 +110,7 @@ impl AppState {
                 .build()
                 .unwrap(),
             session_cache: tokio::sync::Mutex::new(None),
-        }
+        })
     }
 
     pub fn login(&self, password: &str) -> Option<String> {
