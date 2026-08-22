@@ -48,6 +48,11 @@ impl DeviceIdentity {
             rcgen::DnType::CommonName,
             rcgen::DnValue::Utf8String("localsend".into()),
         );
+        // Match the official app's validity span: near-eternal, so
+        // clock skew between peers can never flunk validity checks
+        // (the official verifier DOES check NotBefore/NotAfter).
+        params.not_before = rcgen::date_time_ymd(1975, 1, 1);
+        params.not_after = rcgen::date_time_ymd(4096, 1, 1);
         let key_pair =
             rcgen::KeyPair::generate().map_err(|e| io::Error::other(format!("key pair: {e}")))?;
         let cert = params
