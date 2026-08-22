@@ -40,7 +40,7 @@ $files
 Root: HKCR; Subkey: "localsend-relay"; ValueType: string; ValueName: ""; ValueData: "URL:localsend-relay Protocol"; Flags: createvalueifdoesntexist uninsdeletekey
 Root: HKCR; Subkey: "localsend-relay"; ValueType: string; ValueName: "URL Protocol"; ValueData: ""; Flags: createvalueifdoesntexist uninsdeletekey
 Root: HKCR; Subkey: "localsend-relay\\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\\$executable"; Flags: createvalueifdoesntexist uninsdeletekey
-Root: HKCR; Subkey: "localsend-relay\\shell\\open\\command"; ValueType: string; ValueName: ""; ValueData: "\\"{app}\\$executable\\" \\"%1\\""; Flags: createvalueifdoesntexist uninsdeletekey
+Root: HKCR; Subkey: "localsend-relay\\shell\\open\\command"; ValueType: string; ValueName: ""; ValueData: """{app}\\$executable"" ""%1"""; Flags: createvalueifdoesntexist uninsdeletekey
 
 ${InnoSetupIconsBuilder(app)}
 
@@ -55,11 +55,16 @@ ${runAfterInstall ? InnoSetupRunBuilder(app) : ''}
 
     File('build/innosetup.iss').writeAsStringSync('$iss');
 
-    await Process.start(
+    final result = await Process.run(
       'iscc',
       ['build/innosetup.iss'],
-      mode: ProcessStartMode.inheritStdio,
+      runInShell: true,
     );
+    stdout.write(result.stdout);
+    stderr.write(result.stderr);
+    if (result.exitCode != 0) {
+      throw StateError('iscc failed with exit code \${result.exitCode}');
+    }
   }
 }
 
