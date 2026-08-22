@@ -3,6 +3,7 @@
 //! decisions, event subscriptions and sending files.
 
 use std::collections::HashMap;
+use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
@@ -208,6 +209,7 @@ struct CoreInner {
     client: Client,
     options: CoreOptions,
     tls: Option<TlsContext>,
+    quic: tokio::sync::Mutex<Option<std::sync::Arc<crate::relay::quic::QuicTransport>>>,
     server_error_rx: watch::Receiver<Option<String>>,
     /// Serializes send sessions per target device (fingerprint or
     /// `address:port` for manual targets). Different targets run
@@ -265,6 +267,7 @@ impl CoreHandle {
                 client: Client::new(),
                 options,
                 tls,
+                quic: tokio::sync::Mutex::new(None),
                 server_error_rx,
                 target_locks: Mutex::new(HashMap::new()),
             }),
@@ -293,6 +296,86 @@ impl CoreHandle {
     /// TLS material when the device identity is configured.
     pub(crate) fn tls(&self) -> Option<&TlsContext> {
         self.inner.tls.as_ref()
+    }
+
+    /// Hole-punch exchange: given the peer's UDP candidates, return
+    /// ours (reflexive address via the relay + all local IPv4s) and
+    /// make sure our QUIC endpoint is listening and punching toward
+    /// the peer's candidates.
+    pub async fn hole_punch_candidates(&self, peer_candidates: Vec<String>) -> Vec<String> {
+        let mut out = Vec::new();
+
+        // Reflexive address via the configured relay, when present.
+        if let Some(relay) = self.get_config().await.relay_settings() {
+            if let Ok((_, Some(mapped))) = crate::relay::probe(&relay.addr).await {
+                out.push(mapped.to_string());
+            }
+        }
+
+        // All local IPv4 candidates.
+        if let Ok(ifs) = if_addrs::get_if_addrs() {
+            for i in ifs {
+                if let std::net::IpAddr::V4(v4) = i.ip() {
+                    out.push(SocketAddr::new(std::net::IpAddr::V4(v4), 0).to_string());
+                }
+            }
+        }
+
+        // Start / reuse the QUIC endpoint and punch toward the peer.
+        if let Some(tls) = self.tls() {
+            let quic = self.ensure_quic(tls).await;
+            for cand in &peer_candidates {
+                if let Ok(addr) = cand.parse::<SocketAddr>() {
+                    let quic = quic.clone();
+                    tokio::spawn(async move {
+                        // Punch: an unanswered connect attempt still
+                        // sends Initial packets that open our NAT for
+                        // the peer's return traffic.
+                        let _ = tokio::time::timeout(
+                            std::time::Duration::from_secs(8),
+                            quic.connect(addr),
+                        )
+                        .await;
+                    });
+                }
+            }
+        }
+
+        // Advertise the QUIC socket's real port (it was bound on :0).
+        if let Some(q) = self.inner.quic.lock().await.as_ref() {
+            if let Ok(addr) = q.local_addr() {
+                // Replace the :0 placeholders with the real port.
+                let port = addr.port();
+                out = out
+                    .into_iter()
+                    .map(|c| c.replace(":0", &format!(":{port}")))
+                    .collect();
+            }
+        }
+        out
+    }
+
+    /// The process-wide QUIC endpoint (lazily bound).
+    async fn ensure_quic(
+        &self,
+        tls: &TlsContext,
+    ) -> std::sync::Arc<crate::relay::quic::QuicTransport> {
+        let mut guard = self.inner.quic.lock().await;
+        if let Some(q) = guard.as_ref() {
+            return q.clone();
+        }
+        let quic = std::sync::Arc::new(
+            crate::relay::quic::QuicTransport::new(
+                SocketAddr::from(([0, 0, 0, 0], 0)),
+                &tls.identity,
+                tls.tofu.clone(),
+                "any",
+                None,
+            )
+            .expect("bind quic"),
+        );
+        *guard = Some(quic.clone());
+        quic
     }
 
     pub(crate) fn sessions(&self) -> &SessionHandle {

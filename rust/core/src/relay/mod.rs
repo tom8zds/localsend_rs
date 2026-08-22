@@ -18,5 +18,5 @@ pub mod turn_server;
 pub use bridge::{bridged_view, spawn_bridge, spawn_tls_bridge, RelaySettings};
 pub use credentials::{endpoint_from_secret, generate_credentials};
 pub use quic::{send_request, HttpRequest, HttpResponse, QuicTransport};
-pub use turn::{dial_via_relay, ping, RelayEndpoint, RelayError, RelayStream};
+pub use turn::{dial_via_relay, ping, probe, RelayEndpoint, RelayError, RelayStream};
 pub use turn_server::{serve as serve_turn, TurnServerConfig};

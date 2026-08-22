@@ -120,10 +120,10 @@ impl From<std::io::Error> for RelayError {
 const IO_TIMEOUT: Duration = Duration::from_secs(10);
 
 /// Round-trip probe of a TURN server: an unauthenticated STUN
-/// Binding request over TCP. Returns the round-trip time. This
-/// exercises the listener (not authentication) — enough for a
-/// "server reachable" indicator.
-pub async fn ping(addr: &str) -> Result<std::time::Duration, RelayError> {
+/// Binding request over TCP. Returns the round-trip time and, when
+/// the server answers it, the caller's reflexive (mapped) address —
+/// the seed for hole-punch candidates.
+pub async fn probe(addr: &str) -> Result<(std::time::Duration, Option<SocketAddr>), RelayError> {
     let sock: SocketAddr = match addr.parse() {
         Ok(s) => s,
         Err(_) => tokio::net::lookup_host(addr)
@@ -157,7 +157,15 @@ pub async fn ping(addr: &str) -> Result<std::time::Duration, RelayError> {
         let (class, num, reason) = resp.error_code().unwrap_or((4, 0, String::new()));
         return Err(RelayError::Server(class as u16 * 100 + num, reason));
     }
-    Ok(started.elapsed())
+    let mapped = resp
+        .xor_address(Attr::XorMappedAddress)
+        .or_else(|| resp.xor_address(Attr::XorPeerAddress));
+    Ok((started.elapsed(), mapped))
+}
+
+/// Liveness-only probe (the settings-page connection test).
+pub async fn ping(addr: &str) -> Result<std::time::Duration, RelayError> {
+    probe(addr).await.map(|(rt, _)| rt)
 }
 
 /// Dial `target` through the TURN relay and return a transparent

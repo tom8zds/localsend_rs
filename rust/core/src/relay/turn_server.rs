@@ -115,6 +115,7 @@ async fn handle_client(
             // answered with the caller's reflexive address, no auth.
             Method::Binding => {
                 let mut m = Message::new(Method::Binding, MessageClass::SuccessResponse, msg.tid);
+                m.push_xor_address(Attr::XorMappedAddress, peer);
                 m.push_xor_address(Attr::XorPeerAddress, peer);
                 m.encode(None)
             }

@@ -45,6 +45,7 @@ pub enum Attr {
     Realm = 0x0014,
     Nonce = 0x0015,
     XorRelayedAddress = 0x0016,
+    XorMappedAddress = 0x0020,
     RequestedTransport = 0x0019,
     DontFragment = 0x001A,
     ConnectionId = 0x002A,

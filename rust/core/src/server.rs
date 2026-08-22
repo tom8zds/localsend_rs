@@ -8,6 +8,7 @@ use std::sync::Arc;
 use std::task::{Context, Poll};
 
 use axum::extract::connect_info::Connected;
+use axum::response::IntoResponse as _;
 use axum::{
     body::Bytes,
     extract::{ConnectInfo, Query, Request, State},
@@ -306,6 +307,7 @@ pub fn app(core: CoreHandle) -> Router {
     let v2 = Router::new()
         .route("/info", get(handle_info))
         .route("/register", post(handle_register))
+        .route("/hole-punch", post(handle_hole_punch))
         .route("/prepare-upload", post(prepare_upload))
         .route("/upload", post(handle_upload))
         .route("/cancel", post(handle_cancel))
@@ -322,6 +324,31 @@ pub fn app(core: CoreHandle) -> Router {
 async fn handle_info(State(state): State<Arc<AppState>>) -> Json<NodeAnnounce> {
     let current = state.core.device.get_current_device().await;
     Json(current.to_announce())
+}
+
+/// `POST /api/localsend/v2/hole-punch` — candidate exchange for
+/// STUN hole punching. The initiator POSTs its UDP candidates; the
+/// responder answers with its own so both sides punch
+/// simultaneously. The responder's own QUIC endpoint is started
+/// lazily on first exchange.
+async fn handle_hole_punch(
+    State(state): State<Arc<AppState>>,
+    axum::Json(req): axum::Json<HolePunchRequest>,
+) -> Json<HolePunchResponse> {
+    let candidates = state.core.hole_punch_candidates(req.candidates).await;
+    Json(HolePunchResponse { candidates })
+}
+
+#[derive(serde::Deserialize, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+struct HolePunchRequest {
+    candidates: Vec<String>,
+}
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+struct HolePunchResponse {
+    candidates: Vec<String>,
 }
 
 async fn handle_register(
