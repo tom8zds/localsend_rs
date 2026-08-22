@@ -109,6 +109,21 @@ impl CoreActor {
                     server.shutdown().await;
                 }
 
+                // Relay rendezvous: heartbeat our identity to the
+                // configured relay and merge the online device list
+                // back — the only discovery channel that works across
+                // networks.
+                {
+                    let core = core.clone();
+                    tokio::spawn(async move {
+                        let mut tick = tokio::time::interval(std::time::Duration::from_secs(30));
+                        loop {
+                            tick.tick().await;
+                            relay_discovery(&core).await;
+                        }
+                    });
+                }
+
                 // Periodic self-announce lives in the core so every
                 // frontend (CLI, FFI, future ones) gets continuous
                 // discovery; a single reactive discovery actor never
@@ -717,6 +732,103 @@ async fn try_hole_punch(
     .await
     .unwrap_or(None);
     Ok(overall)
+}
+
+/// One relay-rendezvous cycle: mint fresh REST credentials, POST our
+/// identity to the relay's discovery endpoint, merge the returned
+/// device list into the local table (marking them reachable).
+async fn relay_discovery(core: &CoreHandle) {
+    let Some(relay) = core.get_config().await.relay_settings() else {
+        return;
+    };
+    let Some(tls_fp) = core.tls().map(|t| t.identity.fingerprint.clone()) else {
+        return;
+    };
+
+    let expiry = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs()
+        + 120; // short-lived: regenerated every heartbeat
+    let (username, password) =
+        crate::relay::generate_credentials(&relay.secret, expiry, "discovery");
+
+    let current = core.device.get_current_device().await;
+    let payload = serde_json::json!({
+        "fingerprint": current.fingerprint,
+        "alias": current.alias,
+        "deviceModel": current.device_model,
+        "deviceType": current.device_type,
+        "protocol": current.protocol,
+        "port": current.port,
+        "username": username,
+        "candidates": [],
+    });
+
+    let url = format!("http://{}/api/discovery/register", relay.addr);
+    let client = reqwest::Client::new();
+    let Ok(resp) = client
+        .post(&url)
+        .header("Authorization", format!("Bearer {password}"))
+        .json(&payload)
+        .timeout(std::time::Duration::from_secs(10))
+        .send()
+        .await
+    else {
+        log::debug!("relay discovery heartbeat failed");
+        return;
+    };
+    let Ok(body) = resp.json::<serde_json::Value>().await else {
+        return;
+    };
+
+    // Merge the returned list (skip ourselves).
+    if let Some(list) = body.as_array() {
+        for dev in list {
+            let fp = dev
+                .get("fingerprint")
+                .and_then(|v| v.as_str())
+                .unwrap_or("");
+            if fp.is_empty() || fp == current.fingerprint {
+                continue;
+            }
+            let peer = crate::model::NodeDevice {
+                alias: dev
+                    .get("alias")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("?")
+                    .to_string(),
+                version: "2.2".to_string(),
+                device_model: dev
+                    .get("deviceModel")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string(),
+                device_type: dev
+                    .get("deviceType")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string(),
+                fingerprint: fp.to_string(),
+                address: dev
+                    .get("address")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string(),
+                port: dev.get("port").and_then(|v| v.as_u64()).unwrap_or(53317) as u16,
+                protocol: dev
+                    .get("protocol")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("https")
+                    .to_string(),
+                download: true,
+                announcement: true,
+                announce: true,
+            };
+            let _ = tls_fp;
+            core.device.add_node_device(peer).await;
+        }
+    }
 }
 
 /// Resolve the transport route for `target` and return the local

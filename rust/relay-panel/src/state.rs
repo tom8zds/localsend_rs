@@ -88,6 +88,7 @@ pub struct PanelArgs {
 
 pub struct AppState {
     pub cfg: PanelConfig,
+    pub discovery: std::sync::Mutex<crate::discovery::Registry>,
     pub store: Store,
     pub sessions: Mutex<HashMap<String, Instant>>,
     pub http: reqwest::Client,
@@ -100,6 +101,7 @@ const SESSIONS_TTL: Duration = Duration::from_secs(5);
 impl AppState {
     pub fn with_db(cfg: PanelConfig, db_path: String) -> std::io::Result<Self> {
         Ok(AppState {
+            discovery: std::sync::Mutex::new(crate::discovery::Registry::default()),
             store: Store::open(std::path::Path::new(&db_path))
                 .map_err(|e| std::io::Error::other(format!("open panel db {db_path}: {e}")))?,
             cfg,

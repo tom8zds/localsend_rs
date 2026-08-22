@@ -249,6 +249,11 @@ fn qr_svg(data: &str, size: u32) -> String {
     }
 }
 
+pub fn base64_of(data: &[u8]) -> String {
+    use base64::Engine as _;
+    base64::engine::general_purpose::STANDARD.encode(data)
+}
+
 fn urlencode(s: &str) -> String {
     let mut out = String::new();
     for b in s.bytes() {

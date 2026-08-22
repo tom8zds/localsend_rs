@@ -18,6 +18,7 @@ pub use state::PanelArgs;
 
 pub mod cli;
 pub mod collector;
+pub mod discovery;
 pub mod pages;
 pub mod state;
 pub mod store;
@@ -60,6 +61,8 @@ pub async fn serve(cfg: state::PanelConfig, db_path: String) -> std::io::Result<
         .route("/api/sessions", get(api_sessions))
         .route("/api/sessions/{sid}/kick", post(api_kick))
         .route("/api/overview", get(api_overview))
+        .route("/api/discovery/register", post(discovery::register_device))
+        .route("/api/discovery/devices", get(discovery::list_devices))
         .route("/style.css", get(css))
         .with_state(state);
 
