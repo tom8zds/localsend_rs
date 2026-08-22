@@ -116,6 +116,9 @@ class _Translations$transfers$zh implements Translations$transfers$en {
 	@override String get viaRelay => '经中继';
 	@override String get selectAll => '全选';
 	@override String get selectNone => '全不选';
+	@override String get routeLocal => '直连';
+	@override String get routeTurn => '中继';
+	@override String get routeStun => 'STUN';
 }
 
 // Path: mission
@@ -325,6 +328,9 @@ extension on TranslationsZh {
 			'transfers.viaRelay' => '经中继',
 			'transfers.selectAll' => '全选',
 			'transfers.selectNone' => '全不选',
+			'transfers.routeLocal' => '直连',
+			'transfers.routeTurn' => '中继',
+			'transfers.routeStun' => 'STUN',
 			'mission.accept' => '接收',
 			'mission.cancel' => '取消',
 			'mission.complete' => '完成',

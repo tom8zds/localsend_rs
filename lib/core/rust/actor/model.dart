@@ -161,6 +161,9 @@ class SessionSummary {
   /// configured TURN relay.
   final bool viaRelay;
 
+  /// Connection path label: "local" | "turn" ("stun" reserved).
+  final String route;
+
   /// Per-file metadata and state, sorted by file name. Live byte
   /// counters are not included; subscribe to the per-session event
   /// stream for those.
@@ -173,6 +176,7 @@ class SessionSummary {
     required this.fileCount,
     required this.state,
     required this.viaRelay,
+    required this.route,
     required this.files,
   });
 
@@ -184,6 +188,7 @@ class SessionSummary {
       fileCount.hashCode ^
       state.hashCode ^
       viaRelay.hashCode ^
+      route.hashCode ^
       files.hashCode;
 
   @override
@@ -197,5 +202,6 @@ class SessionSummary {
           fileCount == other.fileCount &&
           state == other.state &&
           viaRelay == other.viaRelay &&
+          route == other.route &&
           files == other.files;
 }

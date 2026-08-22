@@ -4,6 +4,8 @@ import 'package:localsend_rs/view/widget/device_widget.dart';
 
 import '../../common/spacing.dart';
 import '../../core/providers/core_provider.dart';
+import '../../core/providers/session_providers.dart';
+import '../../core/rust/actor/model.dart';
 import '../../core/rust/actor/model.dart';
 
 /// Live list of discovered devices. [onDeviceTap] is forwarded to each
@@ -20,6 +22,11 @@ class DiscoverWidget extends ConsumerWidget {
     // states every few seconds (announce/register cycles), and
     // flashing an empty placeholder between them reads as flicker.
     final list = devices.value ?? const <NodeDevice>[];
+    // Latest connection path per peer (from its most recent session).
+    final latestRoute = <String, String>{
+      for (final s in ref.watch(sessionIndexProvider).value ?? const <SessionSummary>[])
+        if (s.viaRelay || s.route.isNotEmpty) s.peer.fingerprint: s.route,
+    };
     return Container(
       decoration: BoxDecoration(
         // Low surface container one step above the page background.
@@ -35,6 +42,7 @@ class DiscoverWidget extends ConsumerWidget {
                 return DeviceWidget(
                   key: ValueKey(item.fingerprint),
                   device: item,
+                  route: latestRoute[item.fingerprint],
                   onTap:
                       onDeviceTap == null ? null : () => onDeviceTap!(item),
                 );

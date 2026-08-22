@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../i18n/strings.g.dart';
 import 'package:localsend_rs/core/rust/actor/model.dart';
 import 'package:simple_icons/simple_icons.dart';
 
@@ -54,12 +55,17 @@ class DeviceWidget extends StatelessWidget {
   final bool selected;
   final VoidCallback? onRemove;
 
+  /// Latest connection path for this peer ("local" | "turn" | "stun"),
+  /// from its most recent session; null when never transferred to.
+  final String? route;
+
   const DeviceWidget({
     super.key,
     required this.device,
     this.onTap,
     this.selected = false,
     this.onRemove,
+    this.route,
   });
 
   Widget getDeviceBadge(BuildContext context) {
@@ -117,10 +123,19 @@ class DeviceWidget extends StatelessWidget {
                   width: 56,
                   child: Stack(
                     children: [
-                      const Align(
+                      Align(
                         alignment: Alignment.center,
                         child: Icon(
-                          Icons.smartphone,
+                          // v2.2 deviceType: mobile | desktop | web |
+                          // headless (official enum) — anything else
+                          // falls back to the generic devices icon.
+                          switch (device.deviceType.toLowerCase()) {
+                            'mobile' => Icons.smartphone,
+                            'desktop' => Icons.desktop_windows,
+                            'web' => Icons.public,
+                            'headless' => Icons.terminal,
+                            _ => Icons.devices,
+                          },
                           size: 40,
                         ),
                       ),
@@ -144,6 +159,7 @@ class DeviceWidget extends StatelessWidget {
                         children: [
                           Tag(title: device.address),
                           Tag(title: device.deviceModel),
+                          if (route case final r?) RouteTag(route: r),
                         ],
                       ),
                     ],
@@ -167,6 +183,47 @@ class DeviceWidget extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+
+/// Path label chip on a device row: local / turn / (future) stun.
+class RouteTag extends StatelessWidget {
+  final String route;
+
+  const RouteTag({super.key, required this.route});
+
+  @override
+  Widget build(BuildContext context) {
+    final (icon, label) = switch (route) {
+      'turn' => (Icons.alt_route, context.t.transfers.routeTurn),
+      'stun' => (Icons.hub, context.t.transfers.routeStun),
+      _ => (Icons.lan, context.t.transfers.routeLocal),
+    };
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.x8,
+        vertical: AppSpacing.x4,
+      ),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppSpacing.x8),
+        color: scheme.tertiaryContainer,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: scheme.onTertiaryContainer),
+          const SizedBox(width: AppSpacing.x4),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: scheme.onTertiaryContainer,
+                ),
+          ),
+        ],
       ),
     );
   }

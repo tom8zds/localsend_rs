@@ -708,6 +708,7 @@ async fn tls_handshake_smoke() {
         std::sync::Arc::new(tofu),
         "manual-127.0.0.1",
         None,
+        None,
     );
     let tcp = tokio::net::TcpStream::connect(("127.0.0.1", port_b))
         .await

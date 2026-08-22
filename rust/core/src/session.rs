@@ -96,6 +96,7 @@ struct Session {
     peer: NodeDevice,
     state: MissionState,
     via_relay: bool,
+    route: String,
     files: HashMap<String, FileEntry>,
     token_index: HashMap<String, String>,
     decision: Option<oneshot::Sender<Decision>>,
@@ -127,6 +128,7 @@ impl Session {
             file_count: self.files.len(),
             state: self.state,
             via_relay: self.via_relay,
+            route: self.route.clone(),
             files: self.file_infos(),
         }
     }
@@ -387,6 +389,7 @@ impl Actor {
                     peer: sender,
                     state: MissionState::Pending,
                     via_relay: false,
+                    route: "local".to_string(),
                     files,
                     token_index,
                     decision: Some(decision_tx),
@@ -429,6 +432,7 @@ impl Actor {
                     peer: target,
                     state: MissionState::Pending,
                     via_relay: false,
+                    route: "local".to_string(),
                     files,
                     token_index: HashMap::new(),
                     decision: None,
@@ -522,6 +526,7 @@ impl Actor {
             Message::MarkViaRelay { id } => {
                 if let Some(session) = self.sessions.get_mut(&id) {
                     session.via_relay = true;
+                    session.route = "turn".to_string();
                 }
                 self.broadcast_index();
             }

@@ -152,6 +152,8 @@ pub struct SessionSummary {
     /// True when this session's traffic is tunneled through the
     /// configured TURN relay.
     pub via_relay: bool,
+    /// Connection path label: "local" | "turn" ("stun" reserved).
+    pub route: String,
     /// Per-file metadata and state, sorted by file name. Live byte
     /// counters are not included; subscribe to the per-session event
     /// stream for those.
@@ -167,6 +169,7 @@ impl From<localsend_core::SessionSummary> for SessionSummary {
             file_count: s.file_count as u32,
             state: s.state.into(),
             via_relay: s.via_relay,
+            route: s.route,
             files: s.files.into_iter().map(Into::into).collect(),
         }
     }
