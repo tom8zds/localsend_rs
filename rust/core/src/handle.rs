@@ -792,6 +792,12 @@ async fn relay_discovery(core: &CoreHandle) {
             if fp.is_empty() || fp == current.fingerprint {
                 continue;
             }
+            // A pre-TLS heartbeat may have registered a random-UUID
+            // self entry; also skip if the alias matches ours.
+            let alias = dev.get("alias").and_then(|v| v.as_str()).unwrap_or("");
+            if !alias.is_empty() && alias == current.alias {
+                continue;
+            }
             let peer = crate::model::NodeDevice {
                 alias: dev
                     .get("alias")
@@ -829,6 +835,23 @@ async fn relay_discovery(core: &CoreHandle) {
             core.device.add_node_device(peer).await;
         }
     }
+}
+
+/// True for RFC-1918/loopback/link-local addresses — peers on those
+/// are reachable directly on the LAN.
+fn is_private_or_lan(addr: &str) -> bool {
+    addr.starts_with("127.")
+        || addr.starts_with("10.")
+        || addr.starts_with("192.168.")
+        || addr.starts_with("169.254.")
+        || addr.starts_with("0.0.0.0")
+        || (addr.starts_with("172.")
+            && addr
+                .split('.')
+                .nth(1)
+                .and_then(|o| o.parse::<u8>().ok())
+                .map(|o| (16..=31).contains(&o))
+                .unwrap_or(false))
 }
 
 /// Resolve the transport route for `target` and return the local
@@ -1016,7 +1039,12 @@ async fn run_send_driver(
         let tls_on = core.tls().is_some()
             && !core.get_config().await.allow_plain_tls.unwrap_or(false)
             && target.protocol.eq_ignore_ascii_case("https");
-        if tls_on {
+        // Relay-discovered peers sit behind NAT: a direct TCP attempt
+        // always burns the 3s timeout. Go straight to the relay path
+        // (the peer's 30s heartbeat keeps the NAT mapping alive, so
+        // the TURN Connect can reach it).
+        let is_relay_discovered = relay_settings.is_some() && !is_private_or_lan(&target.address);
+        if tls_on && !is_relay_discovered {
             match route_transport(&core, relay_settings.as_ref(), &target, false, None).await {
                 Ok(bridged) => {
                     // Keep the pristine target: if this bridge fails we

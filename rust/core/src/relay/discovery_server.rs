@@ -107,7 +107,19 @@ pub async fn handle_register(
         port: reg.port,
         candidates: reg.candidates,
     };
+    let source_ip = source.ip().to_string();
     let list = with_registry(|map| {
+        // A re-registration from the same source IP (app restart, cert
+        // rotation) retires any older entry from that IP under a
+        // different fingerprint — prevents duplicate "ghost" entries.
+        let stale: Vec<String> = map
+            .iter()
+            .filter(|(fp, (e, _))| e.address == source_ip && **fp != reg.fingerprint)
+            .map(|(fp, _)| fp.clone())
+            .collect();
+        for fp in stale {
+            map.remove(&fp);
+        }
         map.insert(reg.fingerprint, (entry, Instant::now()));
         map.values().map(|(e, _)| e.clone()).collect::<Vec<_>>()
     });
