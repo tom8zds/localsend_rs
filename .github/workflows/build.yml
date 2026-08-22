@@ -15,7 +15,7 @@ jobs:
 
         steps:
             - name: Checkout code
-              uses: actions/checkout@v4
+              uses: actions/checkout@v5
 
             - name: Set up Flutter SDK
               uses: subosito/flutter-action@v2.16.0
@@ -29,7 +29,7 @@ jobs:
                   targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
 
             - name: Set up java 17
-              uses: actions/setup-java@v4
+              uses: actions/setup-java@v5
               with:
                   distribution: "zulu" # See "Supported distributions" for available options.
                   java-version: "17"
@@ -46,7 +46,7 @@ jobs:
                   cp -r ./build/app/outputs/flutter-apk /tmp/flutter-apk
 
             - name: Upload Android
-              uses: actions/upload-artifact@v4.3.3
+              uses: actions/upload-artifact@v5
               with:
                   name: android-release
                   path: /tmp/flutter-apk/*.apk
@@ -56,7 +56,7 @@ jobs:
 
         steps:
             - name: Checkout code
-              uses: actions/checkout@v4
+              uses: actions/checkout@v5
 
             - name: Set up Flutter SDK
               uses: subosito/flutter-action@v2.16.0
@@ -86,7 +86,7 @@ jobs:
                   tar czf build/linux/localsend_rs-linux-x64.tar.gz -C build/linux/x64/release/bundle .
 
             - name: Upload Linux
-              uses: actions/upload-artifact@v4.3.3
+              uses: actions/upload-artifact@v5
               with:
                   name: linux-release
                   path: build/linux/localsend_rs-linux-x64.tar.gz
@@ -100,7 +100,7 @@ jobs:
 
         steps:
             - name: Checkout code
-              uses: actions/checkout@v4
+              uses: actions/checkout@v5
 
             - name: Set up rust
               uses: dtolnay/rust-toolchain@stable
@@ -109,7 +109,7 @@ jobs:
               run: cargo build --release -p localsend-cli
 
             - name: Upload CLI
-              uses: actions/upload-artifact@v4.3.3
+              uses: actions/upload-artifact@v5
               with:
                   name: localsend-cli-linux-x64
                   path: rust/target/release/localsend-cli
@@ -123,7 +123,7 @@ jobs:
 
         steps:
             - name: Checkout code
-              uses: actions/checkout@v4
+              uses: actions/checkout@v5
 
             - name: Set up rust
               uses: dtolnay/rust-toolchain@stable
@@ -132,7 +132,7 @@ jobs:
               run: cargo build --release -p relay-panel
 
             - name: Upload Panel
-              uses: actions/upload-artifact@v4.3.3
+              uses: actions/upload-artifact@v5
               with:
                   name: relay-panel-linux-x64
                   path: rust/target/release/relay-panel
@@ -142,7 +142,7 @@ jobs:
 
         steps:
             - name: Checkout code
-              uses: actions/checkout@v4
+              uses: actions/checkout@v5
 
             - name: Set up Flutter SDK
               uses: subosito/flutter-action@v2.16.0
@@ -170,7 +170,7 @@ jobs:
                   ls build\windows
 
             - name: Upload Windows
-              uses: actions/upload-artifact@v4.3.3
+              uses: actions/upload-artifact@v5
               with:
                   name: windows-release
                   path: build\windows\localsend_rs-setup.exe
