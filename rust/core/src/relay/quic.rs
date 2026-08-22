@@ -11,6 +11,8 @@
 
 use std::net::SocketAddr;
 
+use std::sync::Arc;
+
 use log::debug;
 
 use super::identity::DeviceIdentity;
