@@ -8,6 +8,7 @@
 
 pub mod bridge;
 pub mod credentials;
+pub mod discovery_server;
 pub mod identity;
 pub mod quic;
 pub mod stun;

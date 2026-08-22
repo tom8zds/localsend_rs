@@ -83,6 +83,15 @@ async fn handle_client(
     peer: SocketAddr,
     cfg: Arc<TurnServerConfig>,
 ) -> Result<(), String> {
+    // Protocol demux: discovery heartbeats arrive as plain HTTP on
+    // this port; TURN speaks binary STUN. Peek the first bytes.
+    use tokio::io::AsyncReadExt as _;
+    let mut peek = [0u8; 5];
+    if let Ok(n) = stream.peek(&mut peek).await {
+        if n >= 4 && (&peek[..4] == b"GET " || &peek[..4] == b"POST") {
+            return handle_http(stream, peer, &cfg).await;
+        }
+    }
     let mut session = Session {
         nonce: format!("{:016x}", rand_nonce()),
         username: None,
@@ -379,4 +388,79 @@ fn error_resp(req: &Incoming, code: u16, reason: &str) -> Vec<u8> {
             .collect(),
     );
     m.encode(None)
+}
+
+// ---------------------------------------------------------------------------
+// HTTP on the TURN port — discovery rendezvous
+// ---------------------------------------------------------------------------
+
+/// Minimal HTTP/1.1 handling for the discovery endpoints, sharing the
+/// registry with the panel process.
+async fn handle_http(
+    mut stream: TcpStream,
+    peer: SocketAddr,
+    cfg: &TurnServerConfig,
+) -> Result<(), String> {
+    let mut buf = vec![0u8; 8192];
+    let n = stream.read(&mut buf).await.map_err(|e| e.to_string())?;
+    if n == 0 {
+        return Ok(());
+    }
+    let text = String::from_utf8_lossy(&buf[..n]);
+    let mut lines = text.split("\r\n");
+    let request_line = lines.next().unwrap_or_default();
+    let method = request_line.split_whitespace().next().unwrap_or("");
+    let path = request_line.split_whitespace().nth(1).unwrap_or("");
+
+    let mut auth = None;
+    let mut content_length = 0usize;
+    for line in lines {
+        if line.is_empty() {
+            break;
+        }
+        if let Some((k, v)) = line.split_once(':') {
+            if k.trim().eq_ignore_ascii_case("authorization") {
+                auth = Some(v.trim().to_string());
+            } else if k.trim().eq_ignore_ascii_case("content-length") {
+                content_length = v.trim().parse().unwrap_or(0);
+            }
+        }
+    }
+    let head_end = buf[..n]
+        .windows(4)
+        .position(|w| w == b"\r\n\r\n")
+        .map(|p| p + 4)
+        .unwrap_or(n);
+    let mut body = buf[head_end..n].to_vec();
+    // For simplicity assume the body arrived with the head (small JSON).
+    let body_text = String::from_utf8_lossy(&body).to_string();
+    let _ = content_length;
+
+    let (status, resp_body) = match (method, path) {
+        ("POST", "/api/discovery/register") => {
+            crate::relay::discovery_server::handle_register(
+                &cfg.secret,
+                &body_text,
+                auth.as_deref(),
+                peer,
+            )
+            .await
+        }
+        ("GET", "/api/discovery/devices") => {
+            crate::relay::discovery_server::handle_list(&cfg.secret, auth.as_deref()).await
+        }
+        _ => (404, r#"{"error":"not found"}"#.to_string()),
+    };
+
+    let resp = format!(
+        "HTTP/1.1 {status} status\r\ncontent-type: application/json\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{}",
+        resp_body.len(),
+        resp_body
+    );
+    use tokio::io::AsyncWriteExt as _;
+    stream
+        .write_all(resp.as_bytes())
+        .await
+        .map_err(|e| e.to_string())?;
+    Ok(())
 }
