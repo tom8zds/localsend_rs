@@ -123,10 +123,19 @@ class DeviceWidget extends StatelessWidget {
                   width: 80,
                   child: Stack(
                     children: [
-                      const Align(
+                      Align(
                         alignment: Alignment.center,
                         child: Icon(
-                          Icons.smartphone,
+                          // v2.2 deviceType: mobile | desktop | web |
+                          // headless (official enum) — anything else
+                          // falls back to the generic devices icon.
+                          switch (device.deviceType.toLowerCase()) {
+                            'mobile' => Icons.smartphone,
+                            'desktop' => Icons.desktop_windows,
+                            'web' => Icons.public,
+                            'headless' => Icons.terminal,
+                            _ => Icons.devices,
+                          },
                           size: 48,
                         ),
                       ),

@@ -35,3 +35,23 @@ Widget deviceCardLargePreview() => previewShell(
       height: 300,
       child: DeviceWidgetLarge(device: mockDevice()),
     );
+
+@Preview(name: 'Device card (desktop peer)')
+Widget deviceCardDesktopPreview() => previewShell(
+      name: 'deviceCardDesktop',
+      height: 120,
+      child: DeviceWidget(
+        device: mockDevice(alias: 'Workstation', type: 'desktop'),
+        route: 'local',
+      ),
+    );
+
+@Preview(name: 'Device card (headless peer, via relay)')
+Widget deviceCardHeadlessPreview() => previewShell(
+      name: 'deviceCardHeadless',
+      height: 120,
+      child: DeviceWidget(
+        device: mockDevice(alias: 'homeserver', type: 'headless'),
+        route: 'turn',
+      ),
+    );
