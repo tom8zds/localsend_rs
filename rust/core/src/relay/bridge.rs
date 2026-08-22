@@ -207,3 +207,80 @@ pub async fn spawn_tls_bridge(
 
     Ok(port)
 }
+
+/// Local plaintext TCP bridge into an established QUIC connection:
+/// one QUIC bidirectional stream per accepted TCP connection. The
+/// HTTP layer keeps talking plain http://127.0.0.1:<port>; QUIC (the
+/// punched hole) carries the actual bytes.
+pub async fn spawn_quic_bridge(conn: quinn::Connection) -> u16 {
+    let listener = TcpListener::bind(("127.0.0.1", 0))
+        .await
+        .expect("bind quic bridge");
+    let port = listener.local_addr().expect("quic bridge addr").port();
+    tokio::spawn(async move {
+        while let Ok((mut incoming, _)) = listener.accept().await {
+            let conn = conn.clone();
+            tokio::spawn(async move {
+                if let Ok((mut tx, mut rx)) = conn.open_bi().await {
+                    let mut io = RelayQuicIo {
+                        send: &mut tx,
+                        recv: &mut rx,
+                    };
+                    let _ = tokio::io::copy_bidirectional(&mut incoming, &mut io).await;
+                }
+            });
+        }
+    });
+    port
+}
+
+/// Adapter presenting a (SendStream, RecvStream) pair as one
+/// AsyncRead + AsyncWrite object for copy_bidirectional.
+struct RelayQuicIo<'a> {
+    send: &'a mut quinn::SendStream,
+    recv: &'a mut quinn::RecvStream,
+}
+
+impl tokio::io::AsyncRead for RelayQuicIo<'_> {
+    fn poll_read(
+        mut self: std::pin::Pin<&mut Self>,
+        cx: &mut std::task::Context<'_>,
+        buf: &mut tokio::io::ReadBuf<'_>,
+    ) -> std::task::Poll<std::io::Result<()>> {
+        std::pin::Pin::new(&mut self.recv).poll_read(cx, buf)
+    }
+}
+
+impl tokio::io::AsyncWrite for RelayQuicIo<'_> {
+    fn poll_write(
+        mut self: std::pin::Pin<&mut Self>,
+        cx: &mut std::task::Context<'_>,
+        buf: &[u8],
+    ) -> std::task::Poll<Result<usize, std::io::Error>> {
+        <quinn::SendStream as tokio::io::AsyncWrite>::poll_write(
+            std::pin::Pin::new(&mut self.send),
+            cx,
+            buf,
+        )
+    }
+
+    fn poll_flush(
+        mut self: std::pin::Pin<&mut Self>,
+        cx: &mut std::task::Context<'_>,
+    ) -> std::task::Poll<Result<(), std::io::Error>> {
+        <quinn::SendStream as tokio::io::AsyncWrite>::poll_flush(
+            std::pin::Pin::new(&mut self.send),
+            cx,
+        )
+    }
+
+    fn poll_shutdown(
+        mut self: std::pin::Pin<&mut Self>,
+        cx: &mut std::task::Context<'_>,
+    ) -> std::task::Poll<Result<(), std::io::Error>> {
+        <quinn::SendStream as tokio::io::AsyncWrite>::poll_shutdown(
+            std::pin::Pin::new(&mut self.send),
+            cx,
+        )
+    }
+}

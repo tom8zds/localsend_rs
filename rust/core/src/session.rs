@@ -168,6 +168,10 @@ enum Message {
     MarkViaRelay {
         id: String,
     },
+    MarkRoute {
+        id: String,
+        route: String,
+    },
     StartFile {
         id: String,
         token: String,
@@ -530,6 +534,12 @@ impl Actor {
                 }
                 self.broadcast_index();
             }
+            Message::MarkRoute { id, route } => {
+                if let Some(session) = self.sessions.get_mut(&id) {
+                    session.route = route;
+                }
+                self.broadcast_index();
+            }
             Message::StartFile {
                 id,
                 token,
@@ -761,6 +771,17 @@ impl SessionHandle {
         let _ = self
             .sender
             .send(Message::MarkViaRelay { id: id.to_string() })
+            .await;
+    }
+
+    /// Record the connection route ("local" | "turn" | "stun").
+    pub async fn mark_route(&self, id: &str, route: &str) {
+        let _ = self
+            .sender
+            .send(Message::MarkRoute {
+                id: id.to_string(),
+                route: route.to_string(),
+            })
             .await;
     }
 

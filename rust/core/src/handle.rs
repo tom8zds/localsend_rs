@@ -298,6 +298,12 @@ impl CoreHandle {
         self.inner.tls.as_ref()
     }
 
+    /// Our advertised hole-punch candidates (reflexive + locals with
+    /// the QUIC port). Used by both sides of the exchange.
+    pub async fn our_candidates(&self) -> Vec<String> {
+        self.hole_punch_candidates(Vec::new()).await
+    }
+
     /// Hole-punch exchange: given the peer's UDP candidates, return
     /// ours (reflexive address via the relay + all local IPv4s) and
     /// make sure our QUIC endpoint is listening and punching toward
@@ -607,6 +613,63 @@ impl CoreHandle {
     }
 }
 
+/// Try a QUIC hole punch toward the peer: exchange candidates via
+/// the peer's HTTP endpoint over the existing (possibly relayed)
+/// TCP path, then race QUIC connects toward every peer candidate —
+/// the first success is the punched hole. None = fall back.
+async fn try_hole_punch(
+    core: &CoreHandle,
+    peer: SocketAddr,
+) -> Result<Option<quinn::Connection>, String> {
+    let Some(tls) = core.tls() else {
+        return Ok(None);
+    };
+    let quic = core.ensure_quic(tls).await;
+
+    let our_candidates = core.our_candidates().await;
+    let url = format!("http://{peer}/api/localsend/v2/hole-punch");
+    let client = reqwest::Client::new();
+    let resp = client
+        .post(&url)
+        .json(&serde_json::json!({ "candidates": our_candidates }))
+        .timeout(std::time::Duration::from_secs(10))
+        .send()
+        .await
+        .map_err(|e| format!("hole-punch exchange: {e}"))?;
+    let body: serde_json::Value = resp.json().await.map_err(|e| e.to_string())?;
+    let peers: Vec<String> = body
+        .get("candidates")
+        .and_then(|c| c.as_array())
+        .map(|a| {
+            a.iter()
+                .filter_map(|v| v.as_str().map(String::from))
+                .collect()
+        })
+        .unwrap_or_default();
+
+    let mut attempts: Vec<_> = peers
+        .iter()
+        .filter_map(|c| c.parse::<SocketAddr>().ok())
+        .map(|addr| Box::pin(quic.connect(addr)))
+        .collect();
+    if attempts.is_empty() {
+        return Ok(None);
+    }
+    // First successful connect wins; consume losers to keep them from
+    // lingering.
+    while !attempts.is_empty() {
+        let (res, _idx, remaining) = futures::future::select_all(attempts).await;
+        attempts = remaining;
+        if let Ok(conn) = res {
+            return Ok(Some(conn));
+        }
+        if attempts.is_empty() {
+            return Ok(None);
+        }
+    }
+    Ok(None)
+}
+
 /// Resolve the transport route for `target` and return the local
 /// view the HTTP client should dial:
 ///
@@ -619,6 +682,7 @@ async fn route_transport(
     settings: Option<&crate::relay::RelaySettings>,
     target: &NodeDevice,
     use_relay: bool,
+    session_id: Option<&str>,
 ) -> Result<NodeDevice, String> {
     let addr = format!("{}:{}", target.address, target.port);
     // XOR-PEER-ADDRESS carries a literal IP only; resolve hostnames
@@ -643,6 +707,20 @@ async fn route_transport(
         )),
         _ => None,
     };
+
+    // STUN hole punch: exchange candidates through the peer's HTTP
+    // endpoint over the (possibly relayed) TCP path, then try QUIC
+    // direct. Only attempted on the cross-network path.
+    if relay_endpoint.is_some() {
+        if let Ok(Some(quic_conn)) = try_hole_punch(core, sock).await {
+            debug!("send routed via stun (QUIC hole punch) to {sock}");
+            if let Some(id) = session_id {
+                core.sessions().mark_route(id, "stun").await;
+            }
+            let port = crate::relay::spawn_quic_bridge(quic_conn).await;
+            return Ok(crate::relay::bridged_view(target, port));
+        }
+    }
 
     // Negotiate: peers advertising https (our own with TLS on) get
     // the TLS bridge; peers advertising http — notably the official
@@ -740,7 +818,15 @@ async fn run_send_driver(
         if relay_settings.is_none() {
             bail!("via-relay requested but no relay is configured".to_string());
         }
-        match route_transport(&core, relay_settings.as_ref(), &target, true).await {
+        match route_transport(
+            &core,
+            relay_settings.as_ref(),
+            &target,
+            true,
+            Some(&session_id),
+        )
+        .await
+        {
             Ok(bridged) => {
                 sessions.mark_via_relay(&session_id).await;
                 target = bridged;
@@ -754,7 +840,7 @@ async fn run_send_driver(
             && !core.get_config().await.allow_plain_tls.unwrap_or(false)
             && target.protocol.eq_ignore_ascii_case("https");
         if tls_on {
-            match route_transport(&core, relay_settings.as_ref(), &target, false).await {
+            match route_transport(&core, relay_settings.as_ref(), &target, false, None).await {
                 Ok(bridged) => {
                     // Keep the pristine target: if this bridge fails we
                     // must fall back against the real peer, not the
@@ -799,7 +885,7 @@ async fn run_send_driver(
             let pristine = direct_bridge_target
                 .clone()
                 .unwrap_or_else(|| target.clone());
-            match route_transport(&core, Some(settings), &pristine, true).await {
+            match route_transport(&core, Some(settings), &pristine, true, Some(&session_id)).await {
                 Ok(bridged) => {
                     sessions.mark_via_relay(&session_id).await;
                     target = bridged;
