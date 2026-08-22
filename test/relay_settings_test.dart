@@ -90,7 +90,7 @@ void main() {
       ));
       await tester.pumpAndSettle();
 
-      expect(find.text('Via relay'), findsOneWidget);
+      expect(find.text('Relay'), findsOneWidget);
     });
 
     testWidgets('direct sessions carry no marker', (tester) async {
@@ -109,7 +109,7 @@ void main() {
       ));
       await tester.pumpAndSettle();
 
-      expect(find.text('Via relay'), findsNothing);
+      expect(find.text('Relay'), findsNothing);
     });
   });
 

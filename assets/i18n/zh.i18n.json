@@ -1,124 +1,127 @@
 {
-    "appTitle": {
-        "parta": "快传",
-        "partb": "锈"
+  "appTitle": {
+    "parta": "快传",
+    "partb": "锈"
+  },
+  "home": {
+    "title": "主页",
+    "sendFile": "发送文件",
+    "sendFolder": "发送文件夹",
+    "next": "下一步",
+    "add": "添加",
+    "clear": "清空",
+    "nearbyDevices": "附近的设备",
+    "tapToSend": "点击设备直接发送所选文件",
+    "filesSummary": "文件: $count  大小: $size"
+  },
+  "send": {
+    "title": "发送",
+    "noFiles": "未选择文件",
+    "selectTargets": "选择目标设备",
+    "manualTarget": "手动添加目标",
+    "manualTargetHint": "IP 或 IP:端口",
+    "invalidAddress": "地址无效",
+    "addTarget": "添加",
+    "confirm": "发送到 $count 台设备",
+    "sentTo": "正在向 $alias 发送 $count 个文件",
+    "sentToDevices": "已开始向 $devices 台设备发送 $count 个文件",
+    "sendFailed": "发送到 $alias 失败: $reason",
+    "removeFile": "移除"
+  },
+  "transfers": {
+    "title": "传输",
+    "empty": "暂无传输任务",
+    "incoming": "接收",
+    "outgoing": "发送",
+    "accept": "接收",
+    "decline": "拒绝",
+    "cancel": "取消",
+    "peerWantsToSend": "$alias 想要发送给你 $count 个文件",
+    "toPeer": "发送到 $alias",
+    "failedReason": "失败: $reason",
+    "viaRelay": "经中继",
+    "selectAll": "全选",
+    "selectNone": "全不选",
+    "routeLocal": "直连",
+    "routeTurn": "中继",
+    "routeStun": "STUN"
+  },
+  "mission": {
+    "accept": "接收",
+    "cancel": "取消",
+    "complete": "完成",
+    "finished": "已完成",
+    "tranfer": "传输中",
+    "pending": "等待中",
+    "failed": "失败",
+    "skip": "跳过",
+    "busy": "忙碌",
+    "advance": "高级"
+  },
+  "common": {
+    "file": "文件",
+    "size": "大小"
+  },
+  "setting": {
+    "title": "设置",
+    "common": "通用",
+    "brightness": {
+      "title": "明暗",
+      "subTitle": "当前模式: $mode",
+      "themeMode": {
+        "system": "跟随系统",
+        "light": "浅色模式",
+        "dark": "深色模式"
+      }
     },
-    "home": {
-        "title": "主页",
-        "sendFile": "发送文件",
-        "sendFolder": "发送文件夹",
-        "next": "下一步",
-        "add": "添加",
-        "clear": "清空",
-        "nearbyDevices": "附近的设备",
-        "tapToSend": "点击设备直接发送所选文件",
-        "filesSummary": "文件: $count  大小: $size"
+    "language": {
+      "title": "语言",
+      "subTitle": "当前语言: $language"
     },
-    "send": {
-        "title": "发送",
-        "noFiles": "未选择文件",
-        "selectTargets": "选择目标设备",
-        "manualTarget": "手动添加目标",
-        "manualTargetHint": "IP 或 IP:端口",
-        "invalidAddress": "地址无效",
-        "addTarget": "添加",
-        "confirm": "发送到 $count 台设备",
-        "sentTo": "正在向 $alias 发送 $count 个文件",
-        "sentToDevices": "已开始向 $devices 台设备发送 $count 个文件",
-        "sendFailed": "发送到 $alias 失败: $reason",
-        "removeFile": "移除"
+    "receive": {
+      "title": "接收设置",
+      "quickSave": "快速保存",
+      "quickSaveHint": "不需要等待确认直接接受",
+      "saveFolder": "保存目录",
+      "selectSaveFolder": "选择"
     },
-    "transfers": {
-        "title": "传输",
-        "empty": "暂无传输任务",
-        "incoming": "接收",
-        "outgoing": "发送",
-        "accept": "接收",
-        "decline": "拒绝",
-        "cancel": "取消",
-        "peerWantsToSend": "$alias 想要发送给你 $count 个文件",
-        "toPeer": "发送到 $alias",
-        "failedReason": "失败: $reason",
-        "viaRelay": "经中继",
-        "selectAll": "全选",
-        "selectNone": "全不选"
+    "relay": {
+      "title": "中继服务器",
+      "address": "服务器地址",
+      "addressHint": "主机:端口",
+      "secret": "共享密钥",
+      "notSet": "未设置",
+      "edit": "编辑",
+      "save": "保存",
+      "cancel": "取消",
+      "restartHint": "修改后重启应用生效",
+      "importTitle": "导入配置",
+      "importHint": "邀请链接或 主机:端口|密钥",
+      "import": "导入",
+      "importInvalid": "无法识别的中继配置",
+      "scanQr": "扫描二维码",
+      "scanTitle": "扫描二维码",
+      "scanError": "相机不可用",
+      "confirmTitle": "应用中继配置？",
+      "apply": "应用",
+      "savedRestart": "中继已保存，重启应用后生效",
+      "test": "连接测试",
+      "testHint": "向中继发送 STUN 探测",
+      "testAction": "测试",
+      "testResult": "$ms ms",
+      "testFailed": "失败: $reason"
     },
-    "mission": {
-        "accept": "接收",
-        "cancel": "取消",
-        "complete": "完成",
-        "finished": "已完成",
-        "tranfer": "传输中",
-        "pending": "等待中",
-        "failed": "失败",
-        "skip": "跳过",
-        "busy": "忙碌",
-        "advance": "高级"
+    "security": {
+      "title": "安全",
+      "tls": "端到端加密 (TLS)",
+      "plainWarning": "明文传输，仅建议调试使用",
+      "restartHint": "修改后重启应用生效"
     },
-    "common": {
-        "file": "文件",
-        "size": "大小"
-    },
-    "setting": {
-        "title": "设置",
-        "common": "通用",
-        "brightness": {
-            "title": "明暗",
-            "subTitle": "当前模式: $mode",
-            "themeMode": {
-                "system": "跟随系统",
-                "light": "浅色模式",
-                "dark": "深色模式"
-            }
-        },
-        "language": {
-            "title": "语言",
-            "subTitle": "当前语言: $language"
-        },
-        "receive": {
-            "title": "接收设置",
-            "quickSave": "快速保存",
-            "quickSaveHint": "不需要等待确认直接接受",
-            "saveFolder": "保存目录",
-            "selectSaveFolder": "选择"
-        },
-        "relay": {
-            "title": "中继服务器",
-            "address": "服务器地址",
-            "addressHint": "主机:端口",
-            "secret": "共享密钥",
-            "notSet": "未设置",
-            "edit": "编辑",
-            "save": "保存",
-            "cancel": "取消",
-            "restartHint": "修改后重启应用生效",
-            "importTitle": "导入配置",
-            "importHint": "邀请链接或 主机:端口|密钥",
-            "import": "导入",
-            "importInvalid": "无法识别的中继配置",
-            "scanQr": "扫描二维码",
-            "scanTitle": "扫描二维码",
-            "scanError": "相机不可用",
-            "confirmTitle": "应用中继配置？",
-            "apply": "应用",
-            "savedRestart": "中继已保存，重启应用后生效",
-            "test": "连接测试",
-            "testHint": "向中继发送 STUN 探测",
-            "testAction": "测试",
-            "testResult": "$ms ms",
-            "testFailed": "失败: $reason"
-        },
-        "security": {
-            "title": "安全",
-            "tls": "端到端加密 (TLS)",
-            "plainWarning": "明文传输，仅建议调试使用",
-            "restartHint": "修改后重启应用生效"
-        },
-        "core": {
-            "title": "核心设置",
-            "server": {
-                "title": "服务器"
-            }
-        }
+    "core": {
+      "title": "核心设置",
+      "server": {
+        "title": "服务器"
+      }
     }
+  }
 }

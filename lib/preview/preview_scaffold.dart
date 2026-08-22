@@ -58,6 +58,7 @@ SessionSummary mockSession({
   required MissionState state,
   NodeDevice? peer,
   bool viaRelay = false,
+  String? route,
   List<MissionFileInfo>? files,
 }) {
   final fileList = files ??
@@ -72,6 +73,7 @@ SessionSummary mockSession({
     fileCount: fileList.length,
     state: state,
     viaRelay: viaRelay,
+    route: route ?? (viaRelay ? 'turn' : 'local'),
     files: fileList,
   );
 }

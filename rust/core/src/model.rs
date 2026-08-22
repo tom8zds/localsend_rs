@@ -262,6 +262,9 @@ pub struct SessionSummary {
     /// True when this session's traffic is being tunneled through the
     /// configured TURN relay.
     pub via_relay: bool,
+    /// Connection path label: "local" (direct) or "turn" (relayed);
+    /// "stun" is reserved for future P2P hole-punching.
+    pub route: String,
     /// Per-file metadata and state, sorted by file name. Live byte
     /// counters are not included; subscribe to
     /// [`crate::CoreHandle::session_events`] for those.

@@ -191,6 +191,15 @@ class Translations$transfers$en {
 
 	/// en: 'None'
 	String get selectNone => 'None';
+
+	/// en: 'Local'
+	String get routeLocal => 'Local';
+
+	/// en: 'Relay'
+	String get routeTurn => 'Relay';
+
+	/// en: 'STUN'
+	String get routeStun => 'STUN';
 }
 
 // Path: mission
@@ -515,6 +524,9 @@ extension on Translations {
 			'transfers.viaRelay' => 'Via relay',
 			'transfers.selectAll' => 'All',
 			'transfers.selectNone' => 'None',
+			'transfers.routeLocal' => 'Local',
+			'transfers.routeTurn' => 'Relay',
+			'transfers.routeStun' => 'STUN',
 			'mission.accept' => 'Accept',
 			'mission.cancel' => 'Cancel',
 			'mission.complete' => 'Complete',

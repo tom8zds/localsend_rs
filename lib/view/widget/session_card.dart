@@ -93,7 +93,10 @@ class SessionFileTile extends StatelessWidget {
 /// relay. Same tonal-container treatment as [Tag], on the secondary
 /// container so it stays distinct from the primary tags.
 class RelayBadge extends StatelessWidget {
-  const RelayBadge({super.key});
+  const RelayBadge({super.key, this.route});
+
+  /// "local" | "turn" | "stun" (from the session summary).
+  final String? route;
 
   @override
   Widget build(BuildContext context) {
@@ -111,13 +114,17 @@ class RelayBadge extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            Icons.alt_route,
+            route == 'turn' ? Icons.alt_route : Icons.lan,
             size: 16,
             color: Theme.of(context).colorScheme.onSecondaryContainer,
           ),
           const SizedBox(width: AppSpacing.x4),
           Text(
-            context.t.transfers.viaRelay,
+            switch (route) {
+              'turn' => context.t.transfers.routeTurn,
+              'stun' => context.t.transfers.routeStun,
+              _ => context.t.transfers.routeLocal,
+            },
             // Tonal pairing: on-secondary-container on
             // secondary-container.
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
@@ -209,7 +216,7 @@ class _SessionCardState extends ConsumerState<SessionCard> {
                   ),
                 ),
                 if (summary.viaRelay) ...[
-                  const RelayBadge(),
+                  RelayBadge(route: summary.route),
                   const SizedBox(width: AppSpacing.x8),
                 ],
                 // Flexible so the ellipsizing title and the relay badge
