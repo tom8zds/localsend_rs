@@ -71,7 +71,7 @@ impl DeviceIdentity {
         let fingerprint = h
             .finalize()
             .iter()
-            .map(|b| format!("{b:02x}"))
+            .map(|b| format!("{b:02X}"))
             .collect::<String>();
         DeviceIdentity {
             cert_der,

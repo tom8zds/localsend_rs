@@ -63,10 +63,23 @@ impl DeviceActor {
     async fn handle_message(&mut self, msg: DeviceMessage) {
         match msg {
             DeviceMessage::Add { device, respond_to } => {
+                // Idempotent: peers re-announce and re-register every
+                // few seconds; only a real change may ripple to the
+                // UI or the device list visibly flickers.
+                let unchanged = self
+                    .device_map
+                    .get(&device.fingerprint)
+                    .is_some_and(|old| *old == device);
                 self.device_map.insert(device.fingerprint.clone(), device);
-                debug!("device added");
+                if unchanged {
+                    debug!("device unchanged");
+                } else {
+                    debug!("device added");
+                }
                 let _ = respond_to.send(());
-                self.notify_change().await;
+                if !unchanged {
+                    self.notify_change().await;
+                }
             }
             DeviceMessage::Get {
                 fingerprint,
