@@ -22,6 +22,13 @@ if (flutterVersionName == null) {
     flutterVersionName = '1.0'
 }
 
+// Fixed signing: CI decodes the release keystore to a temp file and
+// sets ANDROID_KEYSTORE_PATH; without it we use debug keys.
+def keystoreFile = System.getenv("ANDROID_KEYSTORE_PATH") ? file(System.getenv("ANDROID_KEYSTORE_PATH")) : null
+def keystorePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD") ?: "localsend2024"
+def keyAlias = System.getenv("ANDROID_KEY_ALIAS") ?: "localsend"
+def keyPassword = System.getenv("ANDROID_KEY_PASSWORD") ?: keystorePassword
+
 android {
     namespace "github.tom8zds.localsend_rs"
     compileSdkVersion flutter.compileSdkVersion
@@ -51,11 +58,24 @@ android {
         versionName flutterVersionName
     }
 
+    signingConfigs {
+        if (keystoreFile != null && keystoreFile.exists()) {
+            release {
+                storeFile keystoreFile
+                storePassword keystorePassword
+                keyAlias keyAlias
+                keyPassword keyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig signingConfigs.debug
+            // Use the fixed release keystore when CI provides it
+            // (ANDROID_KEYSTORE_PATH); debug keys otherwise.
+            signingConfig keystoreFile != null
+                ? signingConfigs.release
+                : signingConfigs.debug
         }
     }
 }

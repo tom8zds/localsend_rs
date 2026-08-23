@@ -39,7 +39,17 @@ jobs:
                   flutter pub get
                   flutter doctor -v
 
+            - name: Decode signing keystore
+              run: |
+                  echo "${{ secrets.ANDROID_KEYSTORE_B64 }}" | base64 -d > /tmp/localsend-release.keystore
+              if: env.ANDROID_KEYSTORE_B64 != ''
+
             - name: Build APK
+              env:
+                  ANDROID_KEYSTORE_PATH: /tmp/localsend-release.keystore
+                  ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+                  ANDROID_KEY_ALIAS: localsend
+                  ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
               run: |
                   flutter build apk
                   ls -alh ./build/app/outputs/flutter-apk/*.apk
