@@ -999,9 +999,9 @@ pub(crate) async fn dial_bridge(
     .await
     .map_err(|_| "bridge response timeout".to_string())?
     .map_err(|e| e.to_string())?;
-    if &resp[..n.min(11)] == b"BRIDGE OK" {
+    if &resp[..n.min(9)] == b"BRIDGE OK" {
         Ok(conn)
-    } else if &resp[..n.min(18)] == b"BRIDGE NOT_FOUND" {
+    } else if &resp[..n.min(17)] == b"BRIDGE NOT_FOUND" {
         Err("bridge: target not listening".to_string())
     } else {
         Err(format!(
@@ -1183,8 +1183,7 @@ async fn route_transport(
                     if let Some(id) = session_id {
                         core.sessions().mark_route(id, "turn").await;
                     }
-                    let port =
-                        spawn_raw_bridge(settings.addr.clone(), target.fingerprint.clone()).await;
+                    let port = spawn_raw_bridge(settings.addr.clone(), bridge_fp.clone()).await;
                     return Ok(crate::relay::bridged_view(target, port));
                 }
                 Err(e) => debug!("bridge dial failed, trying hole punch: {e}"),
