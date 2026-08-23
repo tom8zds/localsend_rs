@@ -921,8 +921,9 @@ async fn maintain_bridge_listener(core: &CoreHandle) {
         let _ = local.set_nodelay(true);
         let _ = tokio::io::copy_bidirectional(&mut conn, &mut local).await;
 
-        // Tunnel closed — reconnect.
-        tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+        // Tunnel closed — reconnect immediately (the sender may
+        // dial a fresh bridge for the very next request).
+        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
     }
 }
 
@@ -931,6 +932,7 @@ pub(crate) async fn dial_bridge(
     relay_addr: &str,
     target_fingerprint: &str,
 ) -> Result<tokio::net::TcpStream, String> {
+    // Returns the raw tunnel stream on success.
     let addr: SocketAddr = relay_addr
         .parse::<SocketAddr>()
         .map_err(|e: std::net::AddrParseError| e.to_string())?;
@@ -948,18 +950,33 @@ pub(crate) async fn dial_bridge(
 }
 
 /// Local plaintext port pumping into a raw tunnel stream.
-async fn spawn_raw_bridge(tunnel: tokio::net::TcpStream) -> u16 {
+async fn spawn_raw_bridge(relay_addr: String, target_fingerprint: String) -> u16 {
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
         .await
         .expect("bind raw bridge");
     let port = listener.local_addr().expect("raw bridge addr").port();
-    let tunnel = std::sync::Arc::new(tokio::sync::Mutex::new(tunnel));
     tokio::spawn(async move {
+        // Each local HTTP connection gets a FRESH bridge tunnel. The
+        // relay tears down the splice after each request (HTTP
+        // connection:close), so a shared tunnel only survives the
+        // first request.
         while let Ok((mut incoming, _)) = listener.accept().await {
-            let tunnel = tunnel.clone();
+            let addr = relay_addr.clone();
+            let fp = target_fingerprint.clone();
             tokio::spawn(async move {
-                let mut t = tunnel.lock().await;
-                let _ = tokio::io::copy_bidirectional(&mut incoming, &mut *t).await;
+                // The receiver may still be reconnecting its listener
+                // after a previous splice — retry briefly.
+                for _ in 0..10 {
+                    match dial_bridge(&addr, &fp).await {
+                        Ok(mut tunnel) => {
+                            let _ = tokio::io::copy_bidirectional(&mut incoming, &mut tunnel).await;
+                            return;
+                        }
+                        Err(_) => {
+                            tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+                        }
+                    }
+                }
             });
         }
     });
@@ -1031,7 +1048,7 @@ async fn route_transport(
     if let Some(settings) = settings {
         if !is_private_or_lan(&target.address) {
             match dial_bridge(&settings.addr, &target.fingerprint).await {
-                Ok(tunnel) => {
+                Ok(_) => {
                     debug!(
                         "send routed via relay bridge to {} ({})",
                         target.alias, target.fingerprint
@@ -1039,7 +1056,8 @@ async fn route_transport(
                     if let Some(id) = session_id {
                         core.sessions().mark_route(id, "turn").await;
                     }
-                    let port = spawn_raw_bridge(tunnel).await;
+                    let port =
+                        spawn_raw_bridge(settings.addr.clone(), target.fingerprint.clone()).await;
                     return Ok(crate::relay::bridged_view(target, port));
                 }
                 Err(e) => debug!("bridge dial failed, trying hole punch: {e}"),
