@@ -906,7 +906,18 @@ async fn relay_discovery(core: &CoreHandle) {
                 announce: true,
             };
             let _ = tls_fp;
-            core.device.add_node_device(peer).await;
+            // If multicast already discovered this device with a LAN
+            // address, don't overwrite it with the relay-registered
+            // public address — that would turn a direct LAN transfer
+            // into a relay transfer for no reason.
+            let existing = core.device.get_device(peer.fingerprint.clone()).await;
+            let is_lan_peer = existing
+                .as_ref()
+                .map(|d| is_private_or_lan(&d.address))
+                .unwrap_or(false);
+            if !is_lan_peer {
+                core.device.add_node_device(peer).await;
+            }
         }
     }
 }
