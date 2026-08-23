@@ -25,9 +25,10 @@ if (flutterVersionName == null) {
 // Fixed signing: CI decodes the release keystore to a temp file and
 // sets ANDROID_KEYSTORE_PATH; without it we use debug keys.
 def keystoreFile = System.getenv("ANDROID_KEYSTORE_PATH") ? file(System.getenv("ANDROID_KEYSTORE_PATH")) : null
-def keystorePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD") ?: "localsend2024"
-def keyAlias = System.getenv("ANDROID_KEY_ALIAS") ?: "localsend"
-def keyPassword = System.getenv("ANDROID_KEY_PASSWORD") ?: keystorePassword
+def ksPassword = System.getenv("ANDROID_KEYSTORE_PASSWORD") ?: "localsend2024"
+def ksAlias = System.getenv("ANDROID_KEY_ALIAS") ?: "localsend"
+def ksKeyPassword = System.getenv("ANDROID_KEY_PASSWORD") ?: ksPassword
+def hasKeystore = keystoreFile != null && keystoreFile.exists()
 
 android {
     namespace "github.tom8zds.localsend_rs"
@@ -59,23 +60,23 @@ android {
     }
 
     signingConfigs {
-        if (keystoreFile != null && keystoreFile.exists()) {
-            release {
+        release {
+            if (hasKeystore) {
                 storeFile keystoreFile
-                storePassword keystorePassword
-                keyAlias keyAlias
-                keyPassword keyPassword
+                storePassword ksPassword
+                keyAlias ksAlias
+                keyPassword ksKeyPassword
             }
         }
     }
 
     buildTypes {
         release {
-            // Use the fixed release keystore when CI provides it
-            // (ANDROID_KEYSTORE_PATH); debug keys otherwise.
-            signingConfig keystoreFile != null
-                ? signingConfigs.release
-                : signingConfigs.debug
+            if (hasKeystore) {
+                signingConfig signingConfigs.release
+            } else {
+                signingConfig signingConfigs.debug
+            }
         }
     }
 }
