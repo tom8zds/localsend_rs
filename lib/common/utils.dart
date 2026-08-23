@@ -215,7 +215,14 @@ void initLogger() => routeRustLogs();
 /// restart the core with it. Called by settings changes that need a
 /// fresh core (relay server, TLS toggle, port).
 Future<void> restartCoreWithFreshConfig() async {
-  final device = await getDevice();
-  final config = await getConfig(device.port);
-  await setup(device: device, config: config);
+  // Only restart when a core is actually running — tests and widget
+  // previews have no FFI bridge and must not touch device_info.
+  try {
+    final device = await getDevice();
+    final config = await getConfig(device.port);
+    await setup(device: device, config: config);
+  } on Object {
+    // No platform bridge in test/preview contexts — settings stay
+    // persisted for the next real startup.
+  }
 }

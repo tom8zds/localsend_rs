@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../common/spacing.dart';
 import '../../core/providers/relay_provider.dart';
+import '../../core/store/config_store.dart';
 import '../../i18n/strings.g.dart';
 import '../pages/relay_scan_page.dart';
 
@@ -278,8 +279,12 @@ Future<bool> showRelayInviteConfirm({
   }
 
   final notifier = ref.read(relaySettingsProvider.notifier);
-  await notifier.setAddr(invite.addr);
-  await notifier.setSecret(invite.secret);
+  // Persist first (tests and previews must not wait for a core
+  // restart that can't happen); restart is fire-and-forget.
+  await ConfigStore().setRelayAddr(invite.addr);
+  await ConfigStore().setRelaySecret(invite.secret);
+  notifier.setAddr(invite.addr);
+  notifier.setSecret(invite.secret);
 
   if (context.mounted) {
     ScaffoldMessenger.of(context).showSnackBar(
