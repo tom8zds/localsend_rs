@@ -1,5 +1,7 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../common/utils.dart';
+
 import '../store/config_store.dart';
 
 part 'tls_provider.g.dart';
@@ -18,5 +20,6 @@ class TlsSettings extends _$TlsSettings {
   Future<void> setEnabled(bool value) async {
     await ConfigStore().setTlsEnabled(value);
     state = value;
+    await restartCoreWithFreshConfig();
   }
 }

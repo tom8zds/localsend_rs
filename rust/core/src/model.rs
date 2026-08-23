@@ -19,6 +19,13 @@ pub struct NodeDevice {
     pub download: bool,
     pub announcement: bool,
     pub announce: bool,
+    /// Discovery source: "lan" (multicast) or "relay" (rendezvous).
+    #[serde(default = "default_discovery_source")]
+    pub discovery_source: String,
+}
+
+fn default_discovery_source() -> String {
+    "lan".to_string()
 }
 
 impl NodeDevice {
@@ -43,6 +50,7 @@ impl NodeDevice {
             download: true,
             announcement: false,
             announce: false,
+            discovery_source: default_discovery_source(),
         })
     }
 
@@ -59,6 +67,7 @@ impl NodeDevice {
             download: announce.download,
             announcement: announce.announcement,
             announce: announce.announce,
+            discovery_source: default_discovery_source(),
         }
     }
 
@@ -156,6 +165,7 @@ impl SenderInfo {
             download: self.download,
             announcement: false,
             announce: false,
+            discovery_source: default_discovery_source(),
         }
     }
 }
@@ -265,6 +275,8 @@ pub struct SessionSummary {
     /// Connection path label: "local" (direct) or "turn" (relayed);
     /// "stun" is reserved for future P2P hole-punching.
     pub route: String,
+    /// Smoothed transfer rate in bytes/sec (0 when idle/unknown).
+    pub speed_bps: u64,
     /// Per-file metadata and state, sorted by file name. Live byte
     /// counters are not included; subscribe to
     /// [`crate::CoreHandle::session_events`] for those.

@@ -23,6 +23,8 @@ pub struct NodeDevice {
     pub download: bool,
     pub announcement: bool,
     pub announce: bool,
+    /// "lan" or "relay".
+    pub discovery_source: String,
 }
 
 impl NodeDevice {
@@ -39,6 +41,7 @@ impl NodeDevice {
             download: self.download,
             announcement: self.announcement,
             announce: self.announce,
+            discovery_source: self.discovery_source.clone(),
         }
     }
 }
@@ -57,6 +60,7 @@ impl From<localsend_core::NodeDevice> for NodeDevice {
             download: d.download,
             announcement: d.announcement,
             announce: d.announce,
+            discovery_source: d.discovery_source,
         }
     }
 }
@@ -154,6 +158,8 @@ pub struct SessionSummary {
     pub via_relay: bool,
     /// Connection path label: "local" | "turn" ("stun" reserved).
     pub route: String,
+    /// Smoothed transfer rate in bytes/sec.
+    pub speed_bps: u64,
     /// Per-file metadata and state, sorted by file name. Live byte
     /// counters are not included; subscribe to the per-session event
     /// stream for those.
@@ -170,6 +176,7 @@ impl From<localsend_core::SessionSummary> for SessionSummary {
             state: s.state.into(),
             via_relay: s.via_relay,
             route: s.route,
+            speed_bps: s.speed_bps,
             files: s.files.into_iter().map(Into::into).collect(),
         }
     }

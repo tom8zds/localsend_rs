@@ -151,6 +151,7 @@ fn build_device(config: &config::EffectiveConfig) -> NodeDevice {
         download: true,
         announcement: true,
         announce: true,
+        discovery_source: "lan".to_string(),
     }
 }
 

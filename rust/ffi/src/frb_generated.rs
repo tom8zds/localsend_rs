@@ -1022,6 +1022,7 @@ impl SseDecode for crate::actor::model::NodeDevice {
         let mut var_download = <bool>::sse_decode(deserializer);
         let mut var_announcement = <bool>::sse_decode(deserializer);
         let mut var_announce = <bool>::sse_decode(deserializer);
+        let mut var_discoverySource = <String>::sse_decode(deserializer);
         return crate::actor::model::NodeDevice {
             alias: var_alias,
             version: var_version,
@@ -1034,6 +1035,7 @@ impl SseDecode for crate::actor::model::NodeDevice {
             download: var_download,
             announcement: var_announcement,
             announce: var_announce,
+            discovery_source: var_discoverySource,
         };
     }
 }
@@ -1151,6 +1153,7 @@ impl SseDecode for crate::actor::model::SessionSummary {
         let mut var_state = <crate::actor::model::MissionState>::sse_decode(deserializer);
         let mut var_viaRelay = <bool>::sse_decode(deserializer);
         let mut var_route = <String>::sse_decode(deserializer);
+        let mut var_speedBps = <u64>::sse_decode(deserializer);
         let mut var_files = <Vec<crate::actor::model::MissionFileInfo>>::sse_decode(deserializer);
         return crate::actor::model::SessionSummary {
             id: var_id,
@@ -1160,6 +1163,7 @@ impl SseDecode for crate::actor::model::SessionSummary {
             state: var_state,
             via_relay: var_viaRelay,
             route: var_route,
+            speed_bps: var_speedBps,
             files: var_files,
         };
     }
@@ -1402,6 +1406,7 @@ impl flutter_rust_bridge::IntoDart for crate::actor::model::NodeDevice {
             self.download.into_into_dart().into_dart(),
             self.announcement.into_into_dart().into_dart(),
             self.announce.into_into_dart().into_dart(),
+            self.discovery_source.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
@@ -1488,6 +1493,7 @@ impl flutter_rust_bridge::IntoDart for crate::actor::model::SessionSummary {
             self.state.into_into_dart().into_dart(),
             self.via_relay.into_into_dart().into_dart(),
             self.route.into_into_dart().into_dart(),
+            self.speed_bps.into_into_dart().into_dart(),
             self.files.into_into_dart().into_dart(),
         ]
         .into_dart()
@@ -1753,6 +1759,7 @@ impl SseEncode for crate::actor::model::NodeDevice {
         <bool>::sse_encode(self.download, serializer);
         <bool>::sse_encode(self.announcement, serializer);
         <bool>::sse_encode(self.announce, serializer);
+        <String>::sse_encode(self.discovery_source, serializer);
     }
 }
 
@@ -1861,6 +1868,7 @@ impl SseEncode for crate::actor::model::SessionSummary {
         <crate::actor::model::MissionState>::sse_encode(self.state, serializer);
         <bool>::sse_encode(self.via_relay, serializer);
         <String>::sse_encode(self.route, serializer);
+        <u64>::sse_encode(self.speed_bps, serializer);
         <Vec<crate::actor::model::MissionFileInfo>>::sse_encode(self.files, serializer);
     }
 }

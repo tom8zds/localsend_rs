@@ -63,6 +63,7 @@ Future<NodeDevice> getDevice() async {
     download: true,
     announcement: true,
     announce: true,
+    discoverySource: 'lan',
   );
 }
 

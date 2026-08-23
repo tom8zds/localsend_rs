@@ -206,7 +206,8 @@ async fn run_udp_actor(mut actor: DiscoverActor, shutdown_callback: watch::Sende
                     }
                 };
 
-                let device = NodeDevice::from_announce(&node_announce, &addr.ip().to_string());
+                let mut device = NodeDevice::from_announce(&node_announce, &addr.ip().to_string());
+            device.discovery_source = "lan".to_string();
                 let exist = device_handle.check_device_exist(device.fingerprint.clone()).await;
 
                 if current.fingerprint == device.fingerprint {

@@ -35,6 +35,7 @@ fn test_device(alias: &str, port: u16) -> NodeDevice {
         download: true,
         announcement: false,
         announce: false,
+        discovery_source: "lan".to_string(),
     }
 }
 

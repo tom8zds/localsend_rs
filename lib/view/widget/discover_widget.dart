@@ -6,7 +6,6 @@ import '../../common/spacing.dart';
 import '../../core/providers/core_provider.dart';
 import '../../core/providers/session_providers.dart';
 import '../../core/rust/actor/model.dart';
-import '../../core/rust/actor/model.dart';
 
 /// Live list of discovered devices. [onDeviceTap] is forwarded to each
 /// [DeviceWidget] (e.g. quick-send when files are staged).

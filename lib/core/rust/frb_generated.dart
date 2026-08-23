@@ -822,8 +822,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   NodeDevice dco_decode_node_device(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 11)
-      throw Exception('unexpected arr length: expect 11 but see ${arr.length}');
+    if (arr.length != 12)
+      throw Exception('unexpected arr length: expect 12 but see ${arr.length}');
     return NodeDevice(
       alias: dco_decode_String(arr[0]),
       version: dco_decode_String(arr[1]),
@@ -836,6 +836,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       download: dco_decode_bool(arr[8]),
       announcement: dco_decode_bool(arr[9]),
       announce: dco_decode_bool(arr[10]),
+      discoverySource: dco_decode_String(arr[11]),
     );
   }
 
@@ -906,8 +907,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   SessionSummary dco_decode_session_summary(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 8)
-      throw Exception('unexpected arr length: expect 8 but see ${arr.length}');
+    if (arr.length != 9)
+      throw Exception('unexpected arr length: expect 9 but see ${arr.length}');
     return SessionSummary(
       id: dco_decode_String(arr[0]),
       direction: dco_decode_session_direction(arr[1]),
@@ -916,7 +917,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       state: dco_decode_mission_state(arr[4]),
       viaRelay: dco_decode_bool(arr[5]),
       route: dco_decode_String(arr[6]),
-      files: dco_decode_list_mission_file_info(arr[7]),
+      speedBps: dco_decode_u_64(arr[7]),
+      files: dco_decode_list_mission_file_info(arr[8]),
     );
   }
 
@@ -1213,6 +1215,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_download = sse_decode_bool(deserializer);
     var var_announcement = sse_decode_bool(deserializer);
     var var_announce = sse_decode_bool(deserializer);
+    var var_discoverySource = sse_decode_String(deserializer);
     return NodeDevice(
         alias: var_alias,
         version: var_version,
@@ -1224,7 +1227,8 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         protocol: var_protocol,
         download: var_download,
         announcement: var_announcement,
-        announce: var_announce);
+        announce: var_announce,
+        discoverySource: var_discoverySource);
   }
 
   @protected
@@ -1326,6 +1330,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_state = sse_decode_mission_state(deserializer);
     var var_viaRelay = sse_decode_bool(deserializer);
     var var_route = sse_decode_String(deserializer);
+    var var_speedBps = sse_decode_u_64(deserializer);
     var var_files = sse_decode_list_mission_file_info(deserializer);
     return SessionSummary(
         id: var_id,
@@ -1335,6 +1340,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         state: var_state,
         viaRelay: var_viaRelay,
         route: var_route,
+        speedBps: var_speedBps,
         files: var_files);
   }
 
@@ -1630,6 +1636,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_bool(self.download, serializer);
     sse_encode_bool(self.announcement, serializer);
     sse_encode_bool(self.announce, serializer);
+    sse_encode_String(self.discoverySource, serializer);
   }
 
   @protected
@@ -1727,6 +1734,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_mission_state(self.state, serializer);
     sse_encode_bool(self.viaRelay, serializer);
     sse_encode_String(self.route, serializer);
+    sse_encode_u_64(self.speedBps, serializer);
     sse_encode_list_mission_file_info(self.files, serializer);
   }
 

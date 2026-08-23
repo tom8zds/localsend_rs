@@ -280,6 +280,7 @@ mod tests {
             file_count: 2,
             via_relay: false,
             route: "local".to_string(),
+            speed_bps: 0,
             state,
             files: vec![
                 file("f1", "a.txt", 100, FileState::Pending),

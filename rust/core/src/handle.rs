@@ -872,7 +872,8 @@ async fn relay_discovery(core: &CoreHandle) {
             if !alias.is_empty() && alias == current.alias {
                 continue;
             }
-            let peer = crate::model::NodeDevice {
+            let mut peer = crate::model::NodeDevice {
+                discovery_source: "relay".to_string(),
                 alias: dev
                     .get("alias")
                     .and_then(|v| v.as_str())
@@ -906,14 +907,13 @@ async fn relay_discovery(core: &CoreHandle) {
                 announce: true,
             };
             let _ = tls_fp;
-            // If multicast already discovered this device with a LAN
-            // address, don't overwrite it with the relay-registered
-            // public address — that would turn a direct LAN transfer
-            // into a relay transfer for no reason.
+            peer.discovery_source = "relay".to_string();
+            // Never overwrite a multicast-discovered LAN peer with the
+            // relay-registered public address.
             let existing = core.device.get_device(peer.fingerprint.clone()).await;
             let is_lan_peer = existing
                 .as_ref()
-                .map(|d| is_private_or_lan(&d.address))
+                .map(|d| d.discovery_source == "lan" && is_private_or_lan(&d.address))
                 .unwrap_or(false);
             if !is_lan_peer {
                 core.device.add_node_device(peer).await;

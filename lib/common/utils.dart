@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:localsend_rs/core/rust/actor/model.dart';
 import 'package:localsend_rs/core/store/config_store.dart';
 import 'package:logger/logger.dart';
+import 'device_info_utils.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -209,3 +210,12 @@ extension FileStateName on FileState {
 
 /// Backwards-compatible alias.
 void initLogger() => routeRustLogs();
+
+/// Rebuild the core config from the current ConfigStore values and
+/// restart the core with it. Called by settings changes that need a
+/// fresh core (relay server, TLS toggle, port).
+Future<void> restartCoreWithFreshConfig() async {
+  final device = await getDevice();
+  final config = await getConfig(device.port);
+  await setup(device: device, config: config);
+}

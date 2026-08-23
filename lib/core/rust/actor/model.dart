@@ -68,6 +68,9 @@ class NodeDevice {
   final bool announcement;
   final bool announce;
 
+  /// "lan" or "relay".
+  final String discoverySource;
+
   const NodeDevice({
     required this.alias,
     required this.version,
@@ -80,6 +83,7 @@ class NodeDevice {
     required this.download,
     required this.announcement,
     required this.announce,
+    required this.discoverySource,
   });
 
   @override
@@ -94,7 +98,8 @@ class NodeDevice {
       protocol.hashCode ^
       download.hashCode ^
       announcement.hashCode ^
-      announce.hashCode;
+      announce.hashCode ^
+      discoverySource.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -111,7 +116,8 @@ class NodeDevice {
           protocol == other.protocol &&
           download == other.download &&
           announcement == other.announcement &&
-          announce == other.announce;
+          announce == other.announce &&
+          discoverySource == other.discoverySource;
 }
 
 /// NOTE: variant order is the FRB wire index; do not reorder.
@@ -164,6 +170,9 @@ class SessionSummary {
   /// Connection path label: "local" | "turn" ("stun" reserved).
   final String route;
 
+  /// Smoothed transfer rate in bytes/sec.
+  final BigInt speedBps;
+
   /// Per-file metadata and state, sorted by file name. Live byte
   /// counters are not included; subscribe to the per-session event
   /// stream for those.
@@ -177,6 +186,7 @@ class SessionSummary {
     required this.state,
     required this.viaRelay,
     required this.route,
+    required this.speedBps,
     required this.files,
   });
 
@@ -189,6 +199,7 @@ class SessionSummary {
       state.hashCode ^
       viaRelay.hashCode ^
       route.hashCode ^
+      speedBps.hashCode ^
       files.hashCode;
 
   @override
@@ -203,5 +214,6 @@ class SessionSummary {
           state == other.state &&
           viaRelay == other.viaRelay &&
           route == other.route &&
+          speedBps == other.speedBps &&
           files == other.files;
 }

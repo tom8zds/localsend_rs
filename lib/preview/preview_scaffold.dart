@@ -33,6 +33,7 @@ NodeDevice mockDevice({
     download: true,
     announcement: true,
     announce: true,
+    discoverySource: 'lan',
   );
 }
 
@@ -74,6 +75,7 @@ SessionSummary mockSession({
     state: state,
     viaRelay: viaRelay,
     route: route ?? (viaRelay ? 'turn' : 'local'),
+    speedBps: BigInt.zero,
     files: fileList,
   );
 }

@@ -1,5 +1,7 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../common/utils.dart';
+
 import '../rust/bridge.dart';
 import '../store/config_store.dart';
 
@@ -115,11 +117,13 @@ class RelaySettings extends _$RelaySettings {
   Future<void> setAddr(String value) async {
     await ConfigStore().setRelayAddr(value);
     state = state.copyWith(addr: value);
+    await restartCoreWithFreshConfig();
   }
 
   Future<void> setSecret(String value) async {
     await ConfigStore().setRelaySecret(value);
     state = state.copyWith(secret: value);
+    await restartCoreWithFreshConfig();
   }
 }
 
