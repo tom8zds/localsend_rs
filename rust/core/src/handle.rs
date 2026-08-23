@@ -694,8 +694,50 @@ async fn try_hole_punch(
             .await
             .map_err(|e| format!("exchange bridge: {e}"))?
     } else {
-        peer.port()
+        // HTTP peer: connect to the peer's actual address (the TLS
+        // bridge above already tunnels to the peer; for plaintext we
+        // must use the peer address, not localhost).
+        let url = format!("http://{peer}/api/localsend/v2/hole-punch");
+        let client = reqwest::Client::new();
+        let resp = client
+            .post(&url)
+            .json(&serde_json::json!({ "candidates": our_candidates }))
+            .timeout(std::time::Duration::from_secs(5))
+            .send()
+            .await
+            .map_err(|e| format!("hole-punch exchange: {e}"))?;
+        let body: serde_json::Value = resp.json().await.map_err(|e| e.to_string())?;
+        let peers: Vec<String> = body
+            .get("candidates")
+            .and_then(|c| c.as_array())
+            .map(|a| a.iter().filter_map(|v| v.as_str().map(String::from)).collect())
+            .unwrap_or_default();
+        let mut attempts: Vec<_> = peers
+            .iter()
+            .filter_map(|c| c.parse::<SocketAddr>().ok())
+            .map(|addr| Box::pin(quic.connect(addr)))
+            .collect();
+        if attempts.is_empty() {
+            return Ok(None);
+        }
+        let overall = tokio::time::timeout(
+            std::time::Duration::from_secs(5),
+            async {
+                while !attempts.is_empty() {
+                    let (res, _idx, remaining) = futures::future::select_all(attempts).await;
+                    attempts = remaining;
+                    if let Ok(conn) = res {
+                        return Some(conn);
+                    }
+                }
+                None
+            },
+        )
+        .await
+        .unwrap_or(None);
+        return Ok(overall);
     };
+    // HTTPS path: use the TLS bridge port.
     let url = format!("http://127.0.0.1:{port}/api/localsend/v2/hole-punch");
     let client = reqwest::Client::new();
     let resp = client
