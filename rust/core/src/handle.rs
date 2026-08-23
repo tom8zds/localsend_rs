@@ -1065,8 +1065,22 @@ async fn route_transport(
     // — both peers connect OUT to the relay, which splices them. This
     // is the only path that works when both peers are behind NAT.
     if let Some(settings) = settings {
-        if !is_private_or_lan(&target.address) {
-            match dial_bridge(&settings.addr, &target.fingerprint).await {
+        if use_relay || !is_private_or_lan(&target.address) {
+            // Manual targets carry a fabricated fingerprint; look up the
+            // actual device in our discovered table so the bridge dial
+            // matches the receiver's registered fingerprint.
+            let bridge_fp = if target.fingerprint.starts_with("manual-") {
+                core.device
+                    .get_device_map()
+                    .await
+                    .values()
+                    .find(|d| d.address == target.address && d.port == target.port)
+                    .map(|d| d.fingerprint.clone())
+                    .unwrap_or_else(|| target.fingerprint.clone())
+            } else {
+                target.fingerprint.clone()
+            };
+            match dial_bridge(&settings.addr, &bridge_fp).await {
                 Ok(_) => {
                     debug!(
                         "send routed via relay bridge to {} ({})",
