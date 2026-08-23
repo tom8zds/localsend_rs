@@ -44,16 +44,17 @@ jobs:
                   echo "${{ secrets.ANDROID_KEYSTORE_B64 }}" | base64 -d > /tmp/localsend-release.keystore
               if: env.ANDROID_KEYSTORE_B64 != ''
 
-            - name: Build APK
+            - name: Build APK (split per ABI)
               env:
                   ANDROID_KEYSTORE_PATH: /tmp/localsend-release.keystore
                   ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
                   ANDROID_KEY_ALIAS: localsend
                   ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
               run: |
-                  flutter build apk
+                  flutter build apk --split-per-abi --target-platform android-arm,android-arm64,android-x64
                   ls -alh ./build/app/outputs/flutter-apk/*.apk
-                  cp -r ./build/app/outputs/flutter-apk /tmp/flutter-apk
+                  mkdir -p /tmp/flutter-apk
+                  cp ./build/app/outputs/flutter-apk/app-*-release.apk /tmp/flutter-apk/
 
             - name: Upload Android
               uses: actions/upload-artifact@v5
