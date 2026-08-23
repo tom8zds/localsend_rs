@@ -549,15 +549,19 @@ async fn handle_bridge(mut stream: TcpStream, _peer: SocketAddr) -> Result<(), S
                 // Target not listening.
                 use tokio::io::AsyncWriteExt as _;
                 let _ = stream.write_all(b"BRIDGE NOT_FOUND\n").await;
+                let _ = stream.shutdown().await;
                 return Ok(());
             };
-            // Send our stream to the listener's channel; the listener
-            // will splice it with its own connection.
-            if tx.send(stream).await.is_err() {
-                // Listener went away between lookup and send.
+            // Confirm to the sender that the splice is being set up,
+            // so it can distinguish success from NOT_FOUND.
+            use tokio::io::AsyncWriteExt as _;
+            if stream.write_all(b"BRIDGE OK\n").await.is_err() {
                 return Ok(());
             }
-            // The listener now owns our stream and will splice it.
+            // Hand our stream to the listener; it will splice.
+            if tx.send(stream).await.is_err() {
+                return Ok(());
+            }
             Ok(())
         }
         _ => Err("unknown bridge command".into()),

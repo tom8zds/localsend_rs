@@ -946,7 +946,26 @@ pub(crate) async fn dial_bridge(
     tokio::io::AsyncWriteExt::write_all(&mut conn, header.as_bytes())
         .await
         .map_err(|e| e.to_string())?;
-    Ok(conn)
+    // Read the relay's response: BRIDGE OK (splice ready) or
+    // BRIDGE NOT_FOUND (target listener absent — retry later).
+    let mut resp = [0u8; 64];
+    let n = tokio::time::timeout(
+        std::time::Duration::from_secs(3),
+        tokio::io::AsyncReadExt::read(&mut conn, &mut resp),
+    )
+    .await
+    .map_err(|_| "bridge response timeout".to_string())?
+    .map_err(|e| e.to_string())?;
+    if &resp[..n.min(11)] == b"BRIDGE OK" {
+        Ok(conn)
+    } else if &resp[..n.min(18)] == b"BRIDGE NOT_FOUND" {
+        Err("bridge: target not listening".to_string())
+    } else {
+        Err(format!(
+            "bridge: unexpected response: {:?}",
+            String::from_utf8_lossy(&resp[..n])
+        ))
+    }
 }
 
 /// Local plaintext port pumping into a raw tunnel stream.
