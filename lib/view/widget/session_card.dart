@@ -177,6 +177,38 @@ class _SessionCardState extends ConsumerState<SessionCard> {
     _selected.addAll(summary.files.map((f) => f.info.id));
   }
 
+  String _statusLine() {
+    final base = summary.state.getName();
+    if (summary.state != MissionState.transfering) {
+      return base;
+    }
+    final bps = summary.speedBps.toInt();
+    if (bps <= 0) return base;
+    final total = summary.files.fold<int>(
+        0, (sum, f) => sum + f.info.size.toInt());
+    final done = summary.files
+        .where((f) => f.state.toString().contains('Finish'))
+        .fold<int>(0, (sum, f) => sum + f.info.size.toInt());
+    final remaining = total - done;
+    final parts = <String>[base, '${_fmtRate(bps)}/s'];
+    if (remaining > 0) {
+      final etaSec = remaining ~/ bps;
+      if (etaSec > 0) parts.add('~${_fmtDuration(etaSec)}');
+    }
+    return parts.join(' · ');
+  }
+
+  static String _fmtRate(int b) {
+    if (b >= 1 << 20) return '${(b / (1 << 20)).toStringAsFixed(1)} MB';
+    if (b >= 1 << 10) return '${(b / (1 << 10)).toStringAsFixed(0)} KB';
+    return '$b B';
+  }
+
+  static String _fmtDuration(int secs) {
+    if (secs >= 60) return '${secs ~/ 60}m ${secs % 60}s';
+    return '${secs}s';
+  }
+
   @override
   Widget build(BuildContext context) {
     final extras = ref.watch(sessionExtrasProvider(summary.id));
@@ -223,10 +255,9 @@ class _SessionCardState extends ConsumerState<SessionCard> {
                 // can never push the state label into overflow.
                 Flexible(
                   child: Text(
-                    summary.state.getName(),
+                    _statusLine(),
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color:
-                              Theme.of(context).colorScheme.onSurfaceVariant,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
