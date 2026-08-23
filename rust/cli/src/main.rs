@@ -6,6 +6,7 @@
 //! subcommands run non-interactively for scripting and smoke tests.
 
 mod config;
+mod diagnose;
 mod headless;
 mod state;
 mod tui;
@@ -87,6 +88,16 @@ enum Command {
         /// Shared secret; also defaults from [relay] config.
         #[arg(long)]
         secret: Option<String>,
+    },
+    /// Step-by-step relay link diagnostics — tests TCP, STUN, BRIDGE
+    /// protocol, discovery, and data round-trip independently.
+    Diagnose {
+        /// Relay address (host:port).
+        #[arg(long)]
+        relay: String,
+        /// Relay shared secret.
+        #[arg(long)]
+        secret: String,
     },
     /// Mint draft-uberti time-limited TURN credentials from the
     /// shared secret and exit.
@@ -242,6 +253,10 @@ async fn main() -> Result<()> {
     }
 
     let result = match (&cli.command, &cli.common.to) {
+        (Some(Command::Diagnose { relay, secret }), _) => {
+            diagnose::run(relay, secret).await?;
+            return Ok(());
+        }
         (
             Some(Command::RelayCredential {
                 secret,
