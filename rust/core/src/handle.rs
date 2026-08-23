@@ -124,6 +124,15 @@ impl CoreActor {
                     });
                 }
 
+                // Bridge listener: peers behind NAT reach us through
+                // the relay's splice.
+                {
+                    let core = core.clone();
+                    tokio::spawn(async move {
+                        maintain_bridge_listener(&core).await;
+                    });
+                }
+
                 // Periodic self-announce lives in the core so every
                 // frontend (CLI, FFI, future ones) gets continuous
                 // discovery; a single reactive discovery actor never
@@ -859,6 +868,104 @@ async fn relay_discovery(core: &CoreHandle) {
     }
 }
 
+/// Maintain a persistent BRIDGE LISTEN connection to the relay.
+/// When a sender pairs with us, the relay splices their tunnel to
+/// our listener; we then proxy the tunnel to our own HTTP server.
+async fn maintain_bridge_listener(core: &CoreHandle) {
+    loop {
+        let Some(relay) = core.get_config().await.relay_settings() else {
+            tokio::time::sleep(std::time::Duration::from_secs(30)).await;
+            continue;
+        };
+        let current = core.device.get_current_device().await;
+        let fingerprint = current.fingerprint.clone();
+        let port = core.get_config().await.port;
+
+        let addr: SocketAddr = match relay.addr.parse() {
+            Ok(a) => a,
+            Err(_) => match tokio::net::lookup_host(&relay.addr).await {
+                Ok(mut it) => it
+                    .next()
+                    .unwrap_or_else(|| SocketAddr::from(([127, 0, 0, 1], 3478))),
+                Err(_) => {
+                    tokio::time::sleep(std::time::Duration::from_secs(30)).await;
+                    continue;
+                }
+            },
+        };
+
+        let Ok(mut conn) = tokio::net::TcpStream::connect(addr).await else {
+            tokio::time::sleep(std::time::Duration::from_secs(15)).await;
+            continue;
+        };
+        let _ = conn.set_nodelay(true);
+
+        let mut header = String::from("BRIDGE LISTEN ");
+        header.push_str(&fingerprint);
+        header.push(char::from(10));
+        if tokio::io::AsyncWriteExt::write_all(&mut conn, header.as_bytes())
+            .await
+            .is_err()
+        {
+            tokio::time::sleep(std::time::Duration::from_secs(15)).await;
+            continue;
+        }
+        log::debug!("bridge listener registered on relay {}", relay.addr);
+
+        let Ok(mut local) =
+            tokio::net::TcpStream::connect(SocketAddr::from(([127, 0, 0, 1], port))).await
+        else {
+            tokio::time::sleep(std::time::Duration::from_secs(15)).await;
+            continue;
+        };
+        let _ = local.set_nodelay(true);
+        let _ = tokio::io::copy_bidirectional(&mut conn, &mut local).await;
+
+        // Tunnel closed — reconnect.
+        tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+    }
+}
+
+/// Dial a relay bridge to `target_fingerprint`.
+pub(crate) async fn dial_bridge(
+    relay_addr: &str,
+    target_fingerprint: &str,
+) -> Result<tokio::net::TcpStream, String> {
+    let addr: SocketAddr = relay_addr
+        .parse::<SocketAddr>()
+        .map_err(|e: std::net::AddrParseError| e.to_string())?;
+    let mut conn = tokio::net::TcpStream::connect(addr)
+        .await
+        .map_err(|e| format!("bridge connect: {e}"))?;
+    let _ = conn.set_nodelay(true);
+    let mut header = String::from("BRIDGE CONNECT ");
+    header.push_str(target_fingerprint);
+    header.push(char::from(10));
+    tokio::io::AsyncWriteExt::write_all(&mut conn, header.as_bytes())
+        .await
+        .map_err(|e| e.to_string())?;
+    Ok(conn)
+}
+
+/// Local plaintext port pumping into a raw tunnel stream.
+async fn spawn_raw_bridge(tunnel: tokio::net::TcpStream) -> u16 {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("bind raw bridge");
+    let port = listener.local_addr().expect("raw bridge addr").port();
+    let tunnel = std::sync::Arc::new(tokio::sync::Mutex::new(tunnel));
+    tokio::spawn(async move {
+        while let Ok((mut incoming, _)) = listener.accept().await {
+            let tunnel = tunnel.clone();
+            tokio::spawn(async move {
+                let mut t = tunnel.lock().await;
+                let _ = tokio::io::copy_bidirectional(&mut incoming, &mut *t).await;
+            });
+        }
+    });
+    port
+}
+
 /// True for RFC-1918/loopback/link-local addresses — peers on those
 /// are reachable directly on the LAN.
 fn is_private_or_lan(addr: &str) -> bool {
@@ -918,6 +1025,27 @@ async fn route_transport(
     // endpoint over the (possibly relayed) TCP path, then try QUIC
     // direct. Only attempted on the cross-network path.
     let peer_https = target.protocol.eq_ignore_ascii_case("https");
+    // Relay-discovered peer (public IP): use the bidirectional bridge
+    // — both peers connect OUT to the relay, which splices them. This
+    // is the only path that works when both peers are behind NAT.
+    if let Some(settings) = settings {
+        if !is_private_or_lan(&target.address) {
+            match dial_bridge(&settings.addr, &target.fingerprint).await {
+                Ok(tunnel) => {
+                    debug!(
+                        "send routed via relay bridge to {} ({})",
+                        target.alias, target.fingerprint
+                    );
+                    if let Some(id) = session_id {
+                        core.sessions().mark_route(id, "turn").await;
+                    }
+                    let port = spawn_raw_bridge(tunnel).await;
+                    return Ok(crate::relay::bridged_view(target, port));
+                }
+                Err(e) => debug!("bridge dial failed, trying hole punch: {e}"),
+            }
+        }
+    }
     if relay_endpoint.is_some() {
         match try_hole_punch(core, sock, peer_https).await {
             Ok(Some(quic_conn)) => {

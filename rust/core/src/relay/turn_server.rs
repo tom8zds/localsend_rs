@@ -86,10 +86,13 @@ async fn handle_client(
     // Protocol demux: discovery heartbeats arrive as plain HTTP on
     // this port; TURN speaks binary STUN. Peek the first bytes.
     use tokio::io::AsyncReadExt as _;
-    let mut peek = [0u8; 5];
+    let mut peek = [0u8; 7];
     if let Ok(n) = stream.peek(&mut peek).await {
         if n >= 4 && (&peek[..4] == b"GET " || &peek[..4] == b"POST") {
             return handle_http(stream, peer, &cfg).await;
+        }
+        if n >= 7 && &peek[..7] == b"BRIDGE " {
+            return handle_bridge(stream, peer).await;
         }
     }
     let mut session = Session {
@@ -463,4 +466,100 @@ async fn handle_http(
         .await
         .map_err(|e| e.to_string())?;
     Ok(())
+}
+
+// ---------------------------------------------------------------------------
+// Bidirectional relay bridge — both peers connect OUT to the relay,
+// the relay splices them. This is the only path that reliably works
+// when both peers are behind NAT.
+// ---------------------------------------------------------------------------
+
+use std::collections::HashMap as BridgeMap;
+use tokio::sync::mpsc;
+
+/// Parked listener connections, keyed by the listener's fingerprint.
+static BRIDGE_LISTENERS: std::sync::Mutex<
+    Option<BridgeMap<String, mpsc::Sender<tokio::net::TcpStream>>>,
+> = std::sync::Mutex::new(None);
+
+/// Handle a `BRIDGE ` connection:
+///   `BRIDGE LISTEN <fingerprint>\n` — register as a listener (the
+///     receiver holds this connection open; it's reused for one
+///     pairing, then the receiver reconnects)
+///   `BRIDGE CONNECT <target-fingerprint>\n` — pair with the target
+///     listener; both connections become a raw byte tunnel
+async fn handle_bridge(mut stream: TcpStream, _peer: SocketAddr) -> Result<(), String> {
+    use tokio::io::AsyncReadExt as _;
+    let mut buf = [0u8; 256];
+    let n = stream.read(&mut buf).await.map_err(|e| e.to_string())?;
+    let header = String::from_utf8_lossy(&buf[..n]);
+    let line = header.lines().next().unwrap_or_default();
+    let parts: Vec<&str> = line.split_whitespace().collect();
+    if parts.len() < 3 || parts[0] != "BRIDGE" {
+        return Err("bad bridge header".into());
+    }
+
+    match parts[1] {
+        "LISTEN" => {
+            let fingerprint = parts[2].to_string();
+            let (tx, mut rx) = mpsc::channel::<TcpStream>(1);
+            {
+                let mut guard = BRIDGE_LISTENERS.lock().unwrap();
+                let listeners = guard.get_or_insert_with(BridgeMap::new);
+                // Replace any stale listener for this fingerprint.
+                listeners.insert(fingerprint.clone(), tx);
+            }
+            log::debug!("bridge: listener registered {fingerprint}");
+            // Wait for a sender to be paired (or the connection to close).
+            match rx.recv().await {
+                Some(sender_stream) => {
+                    // Splice: this connection ↔ sender's connection.
+                    // Drop the tx so the registry entry is stale.
+                    {
+                        let mut guard = BRIDGE_LISTENERS.lock().unwrap();
+                        if let Some(l) = guard.as_mut() {
+                            l.remove(&fingerprint);
+                        }
+                    }
+                    let mut peer_stream = sender_stream;
+                    let _ = stream.set_nodelay(true);
+                    let _ = peer_stream.set_nodelay(true);
+                    tokio::io::copy_bidirectional(&mut stream, &mut peer_stream)
+                        .await
+                        .map(|_| ())
+                        .map_err(|e| e.to_string())
+                }
+                None => {
+                    // Channel closed (sender dropped without pairing).
+                    let mut guard = BRIDGE_LISTENERS.lock().unwrap();
+                    if let Some(l) = guard.as_mut() {
+                        l.remove(&fingerprint);
+                    }
+                    Ok(())
+                }
+            }
+        }
+        "CONNECT" => {
+            let target = parts[2].to_string();
+            let tx = {
+                let guard = BRIDGE_LISTENERS.lock().unwrap();
+                guard.as_ref().and_then(|l| l.get(&target).cloned())
+            };
+            let Some(tx) = tx else {
+                // Target not listening.
+                use tokio::io::AsyncWriteExt as _;
+                let _ = stream.write_all(b"BRIDGE NOT_FOUND\n").await;
+                return Ok(());
+            };
+            // Send our stream to the listener's channel; the listener
+            // will splice it with its own connection.
+            if tx.send(stream).await.is_err() {
+                // Listener went away between lookup and send.
+                return Ok(());
+            }
+            // The listener now owns our stream and will splice it.
+            Ok(())
+        }
+        _ => Err("unknown bridge command".into()),
+    }
 }
