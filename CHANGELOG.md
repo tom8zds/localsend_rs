@@ -2,6 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.1] — 2026-08-23
+
+### ✨ Features
+
+- **Dual device lists**: devices are tagged by discovery source (LAN multicast vs relay rendezvous); `lanDevicesProvider` and `relayDevicesProvider` let the UI present them separately
+- **Config changes apply without app restart**: relay server address/secret and TLS toggle now rebuild the core config from ConfigStore and restart the core in-process
+- **Transfer speed + ETA on session cards**: smoothed byte rate (EMA) and estimated remaining time shown during transfers
+- **`diagnose` CLI command**: 6-step relay link test (TCP → STUN → BRIDGE → handshake → discovery → data round-trip) with per-step explanations
+
+### 🐞 Bug Fixes
+
+- **Relay heartbeat target**: discovery heartbeat went to the TURN port (3478) but the discovery API was only on the panel port — the TURN server now demuxes HTTP on 3478, one port serves both
+- **Bridge handshake byte compare**: `BRIDGE OK` (10 bytes with trailing newline) vs 9-byte literal — success was always treated as error
+- **Bridge fingerprint lookup**: manual targets queried the (empty) local device table; now queries the relay registry directly
+- **Per-request bridge tunnels**: the first request used a shared tunnel that the relay tore down after; each HTTP request now dials a fresh bridge
+- **Hole punch exchange URL**: was posting to localhost instead of the peer — transfers looped back to self
+- **Cancel shown as error**: session cancel now reports Canceled, not Failed
+- **Relay confirm dialog persisted before restarting**: in test/preview contexts the restart await hung; settings now persist first, restart is fire-and-forget
+- **LAN priority**: relay-discovered entries no longer overwrite multicast-discovered LAN addresses
+- **Android signing**: Gradle variable name collisions broke the release build; fixed with ks-prefixed names
+
 ## [1.0.0] — 2026-08-23
 
 First stable release: cross-platform file sharing with self-hosted relay, end-to-end encryption, and NAT traversal.
