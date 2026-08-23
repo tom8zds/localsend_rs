@@ -710,7 +710,11 @@ async fn try_hole_punch(
         let peers: Vec<String> = body
             .get("candidates")
             .and_then(|c| c.as_array())
-            .map(|a| a.iter().filter_map(|v| v.as_str().map(String::from)).collect())
+            .map(|a| {
+                a.iter()
+                    .filter_map(|v| v.as_str().map(String::from))
+                    .collect()
+            })
             .unwrap_or_default();
         let mut attempts: Vec<_> = peers
             .iter()
@@ -720,19 +724,16 @@ async fn try_hole_punch(
         if attempts.is_empty() {
             return Ok(None);
         }
-        let overall = tokio::time::timeout(
-            std::time::Duration::from_secs(5),
-            async {
-                while !attempts.is_empty() {
-                    let (res, _idx, remaining) = futures::future::select_all(attempts).await;
-                    attempts = remaining;
-                    if let Ok(conn) = res {
-                        return Some(conn);
-                    }
+        let overall = tokio::time::timeout(std::time::Duration::from_secs(5), async {
+            while !attempts.is_empty() {
+                let (res, _idx, remaining) = futures::future::select_all(attempts).await;
+                attempts = remaining;
+                if let Ok(conn) = res {
+                    return Some(conn);
                 }
-                None
-            },
-        )
+            }
+            None
+        })
         .await
         .unwrap_or(None);
         return Ok(overall);
@@ -1046,6 +1047,55 @@ async fn spawn_raw_bridge(relay_addr: String, target_fingerprint: String) -> u16
 
 /// True for RFC-1918/loopback/link-local addresses — peers on those
 /// are reachable directly on the LAN.
+/// Query the relay's discovery registry for the fingerprint of the
+/// device at `address`. Sends a heartbeat registration (which returns
+/// the full device list as its response) and searches by address.
+async fn lookup_fingerprint_on_relay(
+    relay_addr: &str,
+    secret: &str,
+    address: &str,
+) -> Result<String, String> {
+    let expiry = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs()
+        + 60;
+    let (username, password) = crate::relay::generate_credentials(secret, expiry, "bridge-lookup");
+
+    let url = format!("http://{relay_addr}/api/discovery/register");
+    let payload = serde_json::json!({
+        "fingerprint": "lookup-probe",
+        "alias": "lookup-probe",
+        "deviceModel": "cli",
+        "deviceType": "headless",
+        "protocol": "https",
+        "port": 0,
+        "username": username,
+        "candidates": [],
+    });
+    let client = reqwest::Client::new();
+    let resp = client
+        .post(&url)
+        .header("Authorization", format!("Bearer {password}"))
+        .json(&payload)
+        .timeout(std::time::Duration::from_secs(5))
+        .send()
+        .await
+        .map_err(|e| format!("lookup: {e}"))?;
+    let list: serde_json::Value = resp.json().await.map_err(|e| e.to_string())?;
+    if let Some(arr) = list.as_array() {
+        for dev in arr {
+            let dev_addr = dev.get("address").and_then(|v| v.as_str()).unwrap_or("");
+            if dev_addr == address {
+                if let Some(fp) = dev.get("fingerprint").and_then(|v| v.as_str()) {
+                    return Ok(fp.to_string());
+                }
+            }
+        }
+    }
+    Err(format!("no device at {address} in relay registry"))
+}
+
 fn is_private_or_lan(addr: &str) -> bool {
     addr.starts_with("127.")
         || addr.starts_with("10.")
@@ -1112,13 +1162,15 @@ async fn route_transport(
             // actual device in our discovered table so the bridge dial
             // matches the receiver's registered fingerprint.
             let bridge_fp = if target.fingerprint.starts_with("manual-") {
-                core.device
-                    .get_device_map()
+                match lookup_fingerprint_on_relay(&settings.addr, &settings.secret, &target.address)
                     .await
-                    .values()
-                    .find(|d| d.address == target.address && d.port == target.port)
-                    .map(|d| d.fingerprint.clone())
-                    .unwrap_or_else(|| target.fingerprint.clone())
+                {
+                    Ok(fp) => fp,
+                    Err(e) => {
+                        debug!("relay fingerprint lookup failed: {e}");
+                        target.fingerprint.clone()
+                    }
+                }
             } else {
                 target.fingerprint.clone()
             };
