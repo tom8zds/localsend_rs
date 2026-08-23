@@ -509,7 +509,7 @@ async fn handle_bridge(mut stream: TcpStream, _peer: SocketAddr) -> Result<(), S
                 // Replace any stale listener for this fingerprint.
                 listeners.insert(fingerprint.clone(), tx);
             }
-            log::debug!("bridge: listener registered {fingerprint}");
+            log::info!("[BRIDGE] listener registered: fp={fingerprint}");
             // Wait for a sender to be paired (or the connection to close).
             match rx.recv().await {
                 Some(sender_stream) => {
@@ -547,6 +547,7 @@ async fn handle_bridge(mut stream: TcpStream, _peer: SocketAddr) -> Result<(), S
             };
             let Some(tx) = tx else {
                 // Target not listening.
+                log::info!("[BRIDGE] CONNECT target={target} NOT_FOUND (no listener)");
                 use tokio::io::AsyncWriteExt as _;
                 let _ = stream.write_all(b"BRIDGE NOT_FOUND\n").await;
                 let _ = stream.shutdown().await;
@@ -558,6 +559,7 @@ async fn handle_bridge(mut stream: TcpStream, _peer: SocketAddr) -> Result<(), S
             if stream.write_all(b"BRIDGE OK\n").await.is_err() {
                 return Ok(());
             }
+            log::info!("[BRIDGE] CONNECT target={target} OK — splicing");
             // Hand our stream to the listener; it will splice.
             if tx.send(stream).await.is_err() {
                 return Ok(());

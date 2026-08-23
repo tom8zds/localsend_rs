@@ -849,7 +849,7 @@ async fn relay_discovery(core: &CoreHandle) {
         .send()
         .await
     else {
-        log::debug!("relay discovery heartbeat failed");
+        log::info!("[DISCOVERY] heartbeat to relay FAILED");
         return;
     };
     let Ok(body) = resp.json::<serde_json::Value>().await else {
@@ -953,7 +953,11 @@ async fn maintain_bridge_listener(core: &CoreHandle) {
             tokio::time::sleep(std::time::Duration::from_secs(15)).await;
             continue;
         }
-        log::debug!("bridge listener registered on relay {}", relay.addr);
+        log::info!(
+            "[BRIDGE] listener registered on relay={} fp={}",
+            relay.addr,
+            &fingerprint[..fingerprint.len().min(16)]
+        );
 
         let Ok(mut local) =
             tokio::net::TcpStream::connect(SocketAddr::from(([127, 0, 0, 1], port))).await
@@ -1174,11 +1178,18 @@ async fn route_transport(
             } else {
                 target.fingerprint.clone()
             };
+            log::info!(
+                "[SEND] bridge dial to relay={} fp={}...{}",
+                settings.addr,
+                &bridge_fp[..bridge_fp.len().min(12)],
+                &bridge_fp[bridge_fp.len().saturating_sub(8)..]
+            );
             match dial_bridge(&settings.addr, &bridge_fp).await {
                 Ok(_) => {
-                    debug!(
-                        "send routed via relay bridge to {} ({})",
-                        target.alias, target.fingerprint
+                    log::info!(
+                        "[SEND] bridge dial OK — routed via relay bridge to {} ({})",
+                        target.alias,
+                        target.fingerprint
                     );
                     if let Some(id) = session_id {
                         core.sessions().mark_route(id, "turn").await;
@@ -1186,7 +1197,7 @@ async fn route_transport(
                     let port = spawn_raw_bridge(settings.addr.clone(), bridge_fp.clone()).await;
                     return Ok(crate::relay::bridged_view(target, port));
                 }
-                Err(e) => debug!("bridge dial failed, trying hole punch: {e}"),
+                Err(e) => log::info!("[SEND] bridge dial FAILED: {e}"),
             }
         }
     }
